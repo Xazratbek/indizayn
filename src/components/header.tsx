@@ -5,7 +5,7 @@ import { Search, UserCircle, Menu } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Logo } from "./icons"
 import {
   DropdownMenu,
@@ -63,6 +63,9 @@ export function Header() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="pr-0">
+            <SheetHeader>
+               <SheetTitle className="sr-only">Asosiy Menyu</SheetTitle>
+            </SheetHeader>
             <Link href="/" className="mr-6 flex items-center space-x-2">
               <Logo className="h-6 w-6 text-primary" />
               <span className="font-bold sm:inline-block font-headline">
