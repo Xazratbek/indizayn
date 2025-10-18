@@ -17,6 +17,8 @@ const ThreeShowcase: React.FC<ThreeShowcaseProps> = ({ designers }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const contentGroupRef = useRef<THREE.Group | null>(null);
+  const animationFrameId = useRef<number | null>(null);
+
 
   useEffect(() => {
     if (!mountRef.current || !containerRef.current) return;
@@ -86,8 +88,9 @@ const ThreeShowcase: React.FC<ThreeShowcaseProps> = ({ designers }) => {
         }
     };
 
-    mountRef.current.addEventListener('mousemove', onMouseMove);
-    mountRef.current.addEventListener('click', onClick);
+    const currentMount = mountRef.current;
+    currentMount.addEventListener('mousemove', onMouseMove);
+    currentMount.addEventListener('click', onClick);
 
 
     const handleResize = () => {
@@ -102,7 +105,7 @@ const ThreeShowcase: React.FC<ThreeShowcaseProps> = ({ designers }) => {
     const clock = new THREE.Clock();
 
     const animate = () => {
-      requestAnimationFrame(animate);
+      animationFrameId.current = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
       // Automatic rotation + mouse follow
@@ -124,7 +127,7 @@ const ThreeShowcase: React.FC<ThreeShowcaseProps> = ({ designers }) => {
             hoveredObject = intersects[0].object;
             // @ts-ignore
             hoveredObject.material.color.set(0xcccccc);
-            mountRef.current!.style.cursor = 'pointer';
+            if (mountRef.current) mountRef.current.style.cursor = 'pointer';
         }
       } else {
         if(hoveredObject) {
@@ -132,7 +135,7 @@ const ThreeShowcase: React.FC<ThreeShowcaseProps> = ({ designers }) => {
             hoveredObject.material.color.set(0xffffff);
         }
         hoveredObject = null;
-        mountRef.current!.style.cursor = 'default';
+        if (mountRef.current) mountRef.current.style.cursor = 'default';
       }
 
 
@@ -142,22 +145,29 @@ const ThreeShowcase: React.FC<ThreeShowcaseProps> = ({ designers }) => {
     animate();
 
     return () => {
-      if (mountRef.current) {
-        mountRef.current.removeEventListener('mousemove', onMouseMove);
-        mountRef.current.removeEventListener('click', onClick);
-        if(renderer.domElement) {
-          mountRef.current.removeChild(renderer.domElement);
-        }
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
       }
+      
+      currentMount.removeEventListener('mousemove', onMouseMove);
+      currentMount.removeEventListener('click', onClick);
       window.removeEventListener('resize', handleResize);
+      
+      if(renderer.domElement.parentElement) {
+          renderer.domElement.parentElement.removeChild(renderer.domElement);
+      }
       
       // Cleanup THREE.js objects
       scene.traverse(object => {
         if (object instanceof THREE.Mesh) {
           object.geometry.dispose();
           if(Array.isArray(object.material)) {
-             object.material.forEach(material => material.dispose());
+             object.material.forEach(material => {
+                 material.map?.dispose();
+                 material.dispose();
+             });
           } else {
+            object.material.map?.dispose();
             object.material.dispose();
           }
         }
