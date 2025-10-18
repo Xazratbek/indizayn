@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet"
-import { Separator } from "./ui/separator"
 
+// Mock user login state
+const isLoggedIn = false;
 
 export function Header() {
   const isMobile = useIsMobile();
@@ -31,7 +31,7 @@ export function Header() {
           href="/browse"
           className="transition-colors hover:text-foreground/80 text-foreground/60"
         >
-          Ko'rib Chiqish
+          Loyihalar
         </Link>
         <Link
           href="/designers"
@@ -40,10 +40,10 @@ export function Header() {
           Dizaynerlar
         </Link>
         <Link
-          href="/account"
+          href="/about"
           className="transition-colors hover:text-foreground/80 text-foreground/60"
         >
-          Mening Hisobim
+          Haqida
         </Link>
       </nav>
     ) : null
@@ -69,38 +69,49 @@ export function Header() {
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Loyihalarni qidirish..."
+                  placeholder="Qidiruv..."
                   className="w-full pl-8 md:w-[200px] lg:w-[336px]"
                 />
               </div>
             </form>
           </div>
           <nav className="flex items-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://picsum.photos/seed/101/100/100" alt="@shadcn" />
-                    <AvatarFallback>ER</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Elena Rivera</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      elena@example.com
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link href="/account">Boshqaruv paneli</Link></DropdownMenuItem>
-                <DropdownMenuItem>Sozlamalar</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Chiqish</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+             {isLoggedIn ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src="https://picsum.photos/seed/101/100/100" alt="Elena Rivera" />
+                        <AvatarFallback>ER</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">Elena Rivera</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          elena@example.com
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild><Link href="/account">Boshqaruv paneli</Link></DropdownMenuItem>
+                    <DropdownMenuItem>Sozlamalar</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Chiqish</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div className="hidden md:flex items-center gap-2">
+                    <Button variant="ghost" asChild>
+                        <Link href="/auth">Kirish</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/auth">Ro'yxatdan o'tish</Link>
+                    </Button>
+                </div>
+              )}
           </nav>
         </div>
       </div>

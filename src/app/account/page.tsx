@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Heart, Eye, Users, FolderKanban } from "lucide-react";
 import { getProjectsByDesigner, designers } from "@/lib/mock-data";
 import PortfolioCard from "@/components/portfolio-card";
+import { Textarea } from "@/components/ui/textarea";
 
 // Mocking a logged-in user
 const loggedInDesigner = designers[0];
@@ -119,8 +120,9 @@ export default function AccountPage() {
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="bio">Biografiya</Label>
-                    <Input id="bio" placeholder="Hammaga o'zingiz haqingizda bir oz aytib bering" />
+                    <Textarea id="bio" placeholder="Hammaga o'zingiz haqingizda bir oz aytib bering" />
                 </div>
+                 <Button>Profilni Yangilash</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -150,7 +152,7 @@ export default function AccountPage() {
                         </div>
                     </div>
                 </div>
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">Sozlamalarni Yangilash</Button>
+                <Button>Sozlamalarni Yangilash</Button>
             </CardContent>
           </Card>
         </TabsContent>

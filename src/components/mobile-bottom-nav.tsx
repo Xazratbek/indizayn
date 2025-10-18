@@ -8,9 +8,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems = [
   { href: "/", label: "Bosh Sahifa", icon: Home },
-  { href: "/browse", label: "Ko'rish", icon: LayoutGrid },
+  { href: "/browse", label: "Loyihalar", icon: LayoutGrid },
   { href: "/designers", label: "Dizaynerlar", icon: Users },
-  { href: "/account", label: "Hisobim", icon: User },
+  { href: "/account", label: "Profil", icon: User },
 ];
 
 export function MobileBottomNav() {
