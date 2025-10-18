@@ -45,7 +45,7 @@ const ThreeShowcase: React.FC<ThreeShowcaseProps> = ({ designers }) => {
     contentGroupRef.current = contentGroup;
     contentGroup.position.z = 0.5;
 
-    const textureLoader = new THREETextureLoader();
+    const textureLoader = new THREE.TextureLoader();
     const cards: THREE.Mesh[] = [];
 
     designers.forEach((designer, i) => {
