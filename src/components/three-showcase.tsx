@@ -169,7 +169,7 @@ const ThreeShowcase: React.FC = () => {
   }, []);
 
   return (
-    <div className="absolute inset-0 z-0 opacity-20 dark:opacity-10">
+    <div className="absolute inset-0 z-0 opacity-30 dark:opacity-20">
         <div ref={mountRef} className="w-full h-full" />
     </div>
   );
