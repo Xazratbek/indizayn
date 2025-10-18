@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { designers, projects as allProjects } from '@/lib/mock-data';
 import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import HeroText from '@/components/hero-text';
 import { motion } from 'framer-motion';
+import ScrambledText from '@/components/scrambled-text';
 
 const featuredDesigners = designers.slice(0, 5);
 const featuredProjects = allProjects.sort((a, b) => b.likes - a.likes).slice(0, 4);
@@ -46,20 +46,24 @@ export default function Home() {
       <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
         <ThreeShowcase />
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-          <div className="relative w-full max-w-4xl h-48">
-            <HeroText text="inDizayn-ga Xush Kelibsiz!" asciiFontSize={6} textFontSize={100} planeBaseHeight={12} />
-          </div>
-          <motion.p
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="mt-4 max-w-2xl text-lg text-muted-foreground">
+          <ScrambledText
+            duration={1.5}
+            scrambleChars="*#?@!_"
+            className="text-4xl md:text-6xl font-bold font-headline mb-4"
+          >
+            inDizayn-ga Xush Kelibsiz!
+          </ScrambledText>
+          <ScrambledText
+            duration={1.5}
+            speed={0.3}
+            className="mt-4 max-w-2xl text-lg text-muted-foreground"
+          >
             Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
-          </motion.p>
+          </ScrambledText>
           <motion.div
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
-             transition={{ duration: 0.8, ease: "easeOut", delay: 0.4 }}
+             transition={{ duration: 0.8, ease: "easeOut", delay: 1.5 }}
              whileHover={{ scale: 1.05, boxShadow: "0px 10px 30px -5px hsl(var(--primary) / 0.3)" }}
           >
             <Button asChild size="lg" className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground">
