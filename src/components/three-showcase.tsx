@@ -28,17 +28,37 @@ const ThreeShowcase: React.FC = () => {
     const particlesGeometry = new THREE.BufferGeometry();
     const posArray = new Float32Array(particleCount * 3);
     const velocities = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
     
-    for (let i = 0; i < particleCount * 3; i++) {
-        posArray[i] = (Math.random() - 0.5) * 100;
-        velocities[i] = (Math.random() - 0.5) * 0.1;
+    const palette = [
+        new THREE.Color(0xFF69B4), // Pink
+        new THREE.Color(0x9370DB), // Purple
+        new THREE.Color(0x32CD32), // Green
+        new THREE.Color(0xFFF00)  // Yellow
+    ];
+
+    for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        posArray[i3] = (Math.random() - 0.5) * 100;
+        posArray[i3 + 1] = (Math.random() - 0.5) * 100;
+        posArray[i3 + 2] = (Math.random() - 0.5) * 100;
+        
+        velocities[i3] = (Math.random() - 0.5) * 0.1;
+        velocities[i3 + 1] = (Math.random() - 0.5) * 0.1;
+
+        const randomColor = palette[Math.floor(Math.random() * palette.length)];
+        colors[i3] = randomColor.r;
+        colors[i3 + 1] = randomColor.g;
+        colors[i3 + 2] = randomColor.b;
     }
 
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     
     const particlesMaterial = new THREE.PointsMaterial({
-        size: 0.15,
-        color: 0x87CEEB, // sky blue
+        size: 0.25,
+        vertexColors: true,
+        sizeAttenuation: true
     });
 
     const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
@@ -47,9 +67,9 @@ const ThreeShowcase: React.FC = () => {
     // Lines
     const linesGeometry = new THREE.BufferGeometry();
     const linesMaterial = new THREE.LineBasicMaterial({
-        color: 0x87CEEB,
+        color: 0xffffff,
         transparent: true,
-        opacity: 0.1
+        opacity: 0.2
     });
     const linesMesh = new THREE.LineSegments(linesGeometry, linesMaterial);
     scene.add(linesMesh);
@@ -73,11 +93,8 @@ const ThreeShowcase: React.FC = () => {
     };
     window.addEventListener('resize', handleResize);
 
-    const clock = new THREE.Clock();
-
     const animate = () => {
       animationFrameId.current = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
 
       const positions = (particlesMesh.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
       
@@ -113,9 +130,7 @@ const ThreeShowcase: React.FC = () => {
       (linesMesh.geometry as THREE.BufferGeometry).setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
       particlesMesh.geometry.attributes.position.needsUpdate = true;
 
-      // Mouse interaction - slightly repel particles
-      const target = new THREE.Vector3(mouse.x * 50, mouse.y * 50, camera.position.z - 10);
-      camera.lookAt(0,0,0);
+      // Mouse interaction - slightly pan camera
       camera.position.x += (mouse.x * 5 - camera.position.x) * .05;
       camera.position.y += (-mouse.y * 5 - camera.position.y) * .05;
       camera.lookAt(scene.position);
@@ -129,23 +144,27 @@ const ThreeShowcase: React.FC = () => {
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current);
       }
-      currentMount.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('resize', handleResize);
-      if (renderer.domElement.parentElement) {
-          renderer.domElement.parentElement.removeChild(renderer.domElement);
+      if(currentMount) {
+        currentMount.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('resize', handleResize);
+        if (renderer.domElement.parentElement) {
+            renderer.domElement.parentElement.removeChild(renderer.domElement);
+        }
       }
       
       scene?.traverse(object => {
         if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) {
-          object.geometry.dispose();
+          if(object.geometry) object.geometry.dispose();
+          
           if (Array.isArray(object.material)) {
              object.material.forEach(material => material.dispose());
-          } else {
+          } else if(object.material) {
             object.material.dispose();
           }
         }
       });
       scene = null;
+      renderer.dispose();
     };
   }, []);
 
