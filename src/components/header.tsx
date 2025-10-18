@@ -103,14 +103,18 @@ export function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <div className="hidden md:flex items-center gap-2">
-                    <Button variant="ghost" asChild>
-                        <Link href="/auth">Kirish</Link>
-                    </Button>
-                    <Button asChild>
-                        <Link href="/auth">Ro'yxatdan o'tish</Link>
-                    </Button>
-                </div>
+                <>
+                  {isMobile === false && (
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" asChild>
+                            <Link href="/auth">Kirish</Link>
+                        </Button>
+                        <Button asChild>
+                            <Link href="/auth">Ro'yxatdan o'tish</Link>
+                        </Button>
+                    </div>
+                  )}
+                </>
               )}
           </nav>
         </div>
