@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Eye, Heart, Calendar, Wrench } from 'lucide-react';
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
+import { uz } from 'date-fns/locale';
 
 const allImages = imageData.placeholderImages;
 
@@ -65,8 +66,8 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
               <Separator className="my-6" />
 
               <div className="prose prose-lg dark:prose-invert max-w-none">
-                <p>This project was created to solve a specific design challenge. We focused on user experience and modern aesthetics to deliver a product that is both beautiful and functional. The process involved extensive research, wireframing, prototyping, and user testing.</p>
-                <p>Throughout the project, we leveraged a variety of tools to bring our vision to life. The final result is a testament to the collaborative effort and creative synergy of the team.</p>
+                <p>Ushbu loyiha muayyan dizayn muammosini hal qilish uchun yaratilgan. Biz ham chiroyli, ham funktsional mahsulotni taqdim etish uchun foydalanuvchi tajribasi va zamonaviy estetikaga e'tibor qaratdik. Jarayon keng qamrovli tadqiqotlar, simli chizmalar, prototiplash va foydalanuvchi sinovlarini o'z ichiga oldi.</p>
+                <p>Loyiha davomida biz o'z qarashlarimizni hayotga tatbiq etish uchun turli xil vositalardan foydalandik. Yakuniy natija jamoaning birgalikdagi sa'y-harakatlari va ijodiy sinergiyasining isbotidir.</p>
               </div>
 
             </CardContent>
@@ -96,7 +97,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                 <div className="flex gap-2">
                   <Button onClick={handleLike} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" variant={isLiked ? "secondary" : "default"}>
                     <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
-                    {isLiked ? 'Liked' : 'Like'}
+                    {isLiked ? 'Yoqdi' : 'Yoqdi'}
                   </Button>
                 </div>
                 <div className="flex justify-around text-sm text-muted-foreground">
@@ -106,7 +107,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Eye className="w-4 h-4" />
-                    <span>{project.views.toLocaleString()} Views</span>
+                    <span>{project.views.toLocaleString()} Ko'rishlar</span>
                   </div>
                 </div>
               </CardContent>
@@ -117,14 +118,14 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                 <div className="flex items-start">
                   <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
                   <div>
-                    <h4 className="font-semibold">Published</h4>
-                    <p className="text-muted-foreground">{format(parseISO(project.createdAt), 'MMMM d, yyyy')}</p>
+                    <h4 className="font-semibold">Chop etilgan</h4>
+                    <p className="text-muted-foreground">{format(parseISO(project.createdAt), 'd MMMM, yyyy', { locale: uz })}</p>
                   </div>
                 </div>
                 <div className="flex items-start">
                   <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
                   <div>
-                    <h4 className="font-semibold">Tools Used</h4>
+                    <h4 className="font-semibold">Foydalanilgan vositalar</h4>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
                     </div>
@@ -132,7 +133,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                 </div>
                 <div className="flex items-start">
                   <div>
-                    <h4 className="font-semibold">Tags</h4>
+                    <h4 className="font-semibold">Teglar</h4>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {project.tags.map(tag => <Badge key={tag} variant="outline">{tag}</Badge>)}
                     </div>

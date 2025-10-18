@@ -7,7 +7,7 @@ import { Footer } from '@/components/footer';
 
 export const metadata: Metadata = {
   title: 'DesignFlow',
-  description: 'The ultimate platform for designers to showcase their work.',
+  description: 'Dizaynerlar uchun o\'z ishlarini namoyish qilish uchun eng zo\'r platforma.',
 };
 
 export default function RootLayout({
@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="uz" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

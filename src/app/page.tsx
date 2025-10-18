@@ -14,13 +14,13 @@ export default function Home() {
       <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
           <h1 className="font-headline text-4xl md:text-7xl font-bold tracking-tighter text-foreground">
-            Where Creativity Flows
+            Ijodkorlik Oqimi
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
-            The ultimate platform for designers to showcase their work, get inspired, and connect with a global community.
+            Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
           </p>
           <Button asChild size="lg" className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Link href="/browse">Explore Designs <MoveRight className="ml-2" /></Link>
+            <Link href="/browse">Dizaynlarni Ko'rish <MoveRight className="ml-2" /></Link>
           </Button>
         </div>
         <ThreeShowcase designers={featuredDesigners} />
@@ -29,8 +29,8 @@ export default function Home() {
       <section className="py-16 md:py-24 bg-secondary/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="font-headline text-3xl md:text-4xl font-bold">Featured Projects</h2>
-            <p className="text-muted-foreground mt-2">Handpicked projects from our talented community.</p>
+            <h2 className="font-headline text-3xl md:text-4xl font-bold">Tavsiya Etilgan Loyihalar</h2>
+            <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan tanlab olingan loyihalar.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {featuredProjects.map(project => (
@@ -39,7 +39,7 @@ export default function Home() {
           </div>
            <div className="text-center mt-12">
             <Button asChild variant="outline">
-              <Link href="/browse">View All Projects</Link>
+              <Link href="/browse">Barcha Loyihalarni Ko'rish</Link>
             </Button>
           </div>
         </div>

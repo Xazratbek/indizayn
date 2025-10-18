@@ -33,7 +33,7 @@ export default function DesignerProfilePage({ params }: { params: { id: string }
         <div className="h-48 bg-secondary">
           <Image 
             src={`https://picsum.photos/seed/${designer.id}99/1200/200`} 
-            alt={`${designer.name}'s cover photo`}
+            alt={`${designer.name}ning muqova surati`}
             width={1200}
             height={200}
             className="w-full h-full object-cover"
@@ -55,35 +55,35 @@ export default function DesignerProfilePage({ params }: { params: { id: string }
             <div className="flex gap-2">
               <Button onClick={() => setIsFollowing(!isFollowing)} variant={isFollowing ? "secondary" : "default"}>
                 <UserPlus className="mr-2 h-4 w-4" />
-                {isFollowing ? "Following" : "Follow"}
+                {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
               </Button>
               <Button variant="outline">
-                <Mail className="mr-2 h-4 w-4" /> Message
+                <Mail className="mr-2 h-4 w-4" /> Xabar
               </Button>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t">
               <div className="text-center">
                   <p className="text-2xl font-bold font-headline">{(designer.subscribers + (isFollowing ? 1 : 0)).toLocaleString()}</p>
-                  <p className="text-sm text-muted-foreground">Subscribers</p>
+                  <p className="text-sm text-muted-foreground">Obunachilar</p>
               </div>
               <div className="text-center">
                   <p className="text-2xl font-bold font-headline">{designerProjects.length}</p>
-                  <p className="text-sm text-muted-foreground">Projects</p>
+                  <p className="text-sm text-muted-foreground">Loyihalar</p>
               </div>
               <div className="text-center">
                   <p className="text-2xl font-bold font-headline">{totalLikes.toLocaleString()}</p>
-                  <p className="text-sm text-muted-foreground">Total Likes</p>
+                  <p className="text-sm text-muted-foreground">Jami Likelar</p>
               </div>
               <div className="text-center">
                   <p className="text-2xl font-bold font-headline">{totalViews.toLocaleString()}</p>
-                  <p className="text-sm text-muted-foreground">Total Views</p>ika
+                  <p className="text-sm text-muted-foreground">Jami ko'rishlar</p>
               </div>
           </div>
         </CardContent>
       </Card>
       
-      <h2 className="font-headline text-3xl font-bold mb-8">Projects</h2>
+      <h2 className="font-headline text-3xl font-bold mb-8">Loyihalar</h2>
       {designerProjects.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {designerProjects.map(project => (
@@ -92,7 +92,7 @@ export default function DesignerProfilePage({ params }: { params: { id: string }
         </div>
       ) : (
          <div className="text-center py-16 border rounded-lg bg-card">
-            <p className="text-muted-foreground">{designer.name} hasn't uploaded any projects yet.</p>
+            <p className="text-muted-foreground">{designer.name} hali hech qanday loyiha yuklamagan.</p>
         </div>
       )}
     </div>

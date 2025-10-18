@@ -19,62 +19,62 @@ const totalViews = designerProjects.reduce((acc, p) => acc + p.views, 0);
 export default function AccountPage() {
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="font-headline text-4xl font-bold mb-8">My Account</h1>
+      <h1 className="font-headline text-4xl font-bold mb-8">Mening Hisobim</h1>
       <Tabs defaultValue="dashboard" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="projects">My Projects</TabsTrigger>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+          <TabsTrigger value="dashboard">Boshqaruv Paneli</TabsTrigger>
+          <TabsTrigger value="projects">Mening Loyihalarim</TabsTrigger>
+          <TabsTrigger value="profile">Profil</TabsTrigger>
+          <TabsTrigger value="settings">Sozlamalar</TabsTrigger>
         </TabsList>
         <TabsContent value="dashboard">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mt-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+                <CardTitle className="text-sm font-medium">Jami Ko'rishlar</CardTitle>
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalViews.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">+10.2% from last month</p>
+                <p className="text-xs text-muted-foreground">o'tgan oyga nisbatan +10.2%</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Likes</CardTitle>
+                <CardTitle className="text-sm font-medium">Jami Likelar</CardTitle>
                 <Heart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalLikes.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">+15.1% from last month</p>
+                <p className="text-xs text-muted-foreground">o'tgan oyga nisbatan +15.1%</p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Subscribers</CardTitle>
+                <CardTitle className="text-sm font-medium">Obunachilar</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{loggedInDesigner.subscribers.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">+201 since last month</p>
+                <p className="text-xs text-muted-foreground">o'tgan oydan beri +201</p>
               </CardContent>
             </Card>
              <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Projects</CardTitle>
+                <CardTitle className="text-sm font-medium">Loyihalar</CardTitle>
                 <FolderKanban className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{designerProjects.length}</div>
-                <p className="text-xs text-muted-foreground">+2 uploaded this month</p>
+                <p className="text-xs text-muted-foreground">shu oyda +2 yuklandi</p>
               </CardContent>
             </Card>
           </div>
           <div className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>A summary of your recent performance.</CardDescription>
+                <CardTitle>So'nggi Faoliyat</CardTitle>
+                <CardDescription>Sizning so'nggi faoliyatingizning qisqacha mazmuni.</CardDescription>
               </CardHeader>
               <CardContent>
                 <BarChart className="h-64 w-full text-primary" />
@@ -84,8 +84,8 @@ export default function AccountPage() {
         </TabsContent>
         <TabsContent value="projects">
             <div className="flex justify-between items-center mt-6 mb-6">
-                <h2 className="text-2xl font-bold font-headline">My Projects ({designerProjects.length})</h2>
-                <Button>Upload Project</Button>
+                <h2 className="text-2xl font-bold font-headline">Mening Loyihalarim ({designerProjects.length})</h2>
+                <Button>Loyiha Yuklash</Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {designerProjects.map(project => (
@@ -96,8 +96,8 @@ export default function AccountPage() {
         <TabsContent value="profile">
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Public Profile</CardTitle>
-              <CardDescription>This is how others will see you on the site.</CardDescription>
+              <CardTitle>Ommaviy Profil</CardTitle>
+              <CardDescription>Saytda boshqalar sizni shunday ko'radilar.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
@@ -105,21 +105,21 @@ export default function AccountPage() {
                         <AvatarImage src={`https://picsum.photos/seed/101/100/100`} />
                         <AvatarFallback>ER</AvatarFallback>
                     </Avatar>
-                    <Button variant="outline">Change Photo</Button>
+                    <Button variant="outline">Rasmni O'zgartirish</Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
+                        <Label htmlFor="name">To'liq Ism</Label>
                         <Input id="name" defaultValue={loggedInDesigner.name} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="specialization">Specialization</Label>
+                        <Label htmlFor="specialization">Mutaxassislik</Label>
                         <Input id="specialization" defaultValue={loggedInDesigner.specialization} />
                     </div>
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Input id="bio" placeholder="Tell everyone a little about yourself" />
+                    <Label htmlFor="bio">Biografiya</Label>
+                    <Input id="bio" placeholder="Hammaga o'zingiz haqingizda bir oz aytib bering" />
                 </div>
             </CardContent>
           </Card>
@@ -127,30 +127,30 @@ export default function AccountPage() {
         <TabsContent value="settings">
           <Card className="mt-6">
             <CardHeader>
-              <CardTitle>Account Settings</CardTitle>
-              <CardDescription>Manage your account preferences.</CardDescription>
+              <CardTitle>Hisob Sozlamalari</CardTitle>
+              <CardDescription>Hisobingiz afzalliklarini boshqaring.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label htmlFor="email">Elektron pochta manzili</Label>
                     <Input id="email" type="email" defaultValue="elena@example.com" />
                 </div>
                 <Separator />
                 <div>
-                    <h3 className="text-lg font-medium">Password</h3>
-                    <p className="text-sm text-muted-foreground">For security, you must provide your current password to change it.</p>
+                    <h3 className="text-lg font-medium">Parol</h3>
+                    <p className="text-sm text-muted-foreground">Xavfsizlik uchun parolni o'zgartirish uchun joriy parolingizni kiritishingiz kerak.</p>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div className="space-y-2">
-                            <Label htmlFor="current-password">Current Password</Label>
+                            <Label htmlFor="current-password">Joriy Parol</Label>
                             <Input id="current-password" type="password" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="new-password">New Password</Label>
+                            <Label htmlFor="new-password">Yangi Parol</Label>
                             <Input id="new-password" type="password" />
                         </div>
                     </div>
                 </div>
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">Update Settings</Button>
+                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">Sozlamalarni Yangilash</Button>
             </CardContent>
           </Card>
         </TabsContent>

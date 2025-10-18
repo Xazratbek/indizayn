@@ -33,19 +33,19 @@ export function Header() {
               href="/browse"
               className="transition-colors hover:text-foreground/80 text-foreground/60"
             >
-              Browse
+              Ko'rib Chiqish
             </Link>
             <Link
               href="/#featured-designers"
               className="transition-colors hover:text-foreground/80 text-foreground/60"
             >
-              Designers
+              Dizaynerlar
             </Link>
             <Link
               href="/account"
               className="transition-colors hover:text-foreground/80 text-foreground/60"
             >
-              My Account
+              Mening Hisobim
             </Link>
           </nav>
         </div>
@@ -59,7 +59,7 @@ export function Header() {
               className="md:hidden"
             >
               <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle Menu</span>
+              <span className="sr-only">Menyuni ochish</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="pr-0">
@@ -70,9 +70,9 @@ export function Header() {
               </span>
             </Link>
             <div className="flex flex-col space-y-3 pt-6">
-              <Link href="/browse" className="text-foreground">Browse</Link>
-              <Link href="/#featured-designers" className="text-foreground">Designers</Link>
-              <Link href="/account" className="text-foreground">My Account</Link>
+              <Link href="/browse" className="text-foreground">Ko'rib Chiqish</Link>
+              <Link href="/#featured-designers" className="text-foreground">Dizaynerlar</Link>
+              <Link href="/account" className="text-foreground">Mening Hisobim</Link>
             </div>
           </SheetContent>
         </Sheet>
@@ -85,7 +85,7 @@ export function Header() {
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search projects..."
+                  placeholder="Loyihalarni qidirish..."
                   className="w-full pl-8 md:w-[200px] lg:w-[336px]"
                 />
               </div>
@@ -111,10 +111,10 @@ export function Header() {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild><Link href="/account">Dashboard</Link></DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem asChild><Link href="/account">Boshqaruv paneli</Link></DropdownMenuItem>
+                <DropdownMenuItem>Sozlamalar</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Log out</DropdownMenuItem>
+                <DropdownMenuItem>Chiqish</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </nav>

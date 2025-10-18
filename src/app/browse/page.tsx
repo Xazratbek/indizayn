@@ -43,9 +43,9 @@ export default function BrowsePage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="text-center mb-12">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold">Explore Designs</h1>
+        <h1 className="font-headline text-4xl md:text-5xl font-bold">Dizaynlarni O'rganing</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-          Discover a world of creativity. Search for projects, designers, or tags to find your next inspiration.
+          Ijodkorlik dunyosini kashf eting. Keyingi ilhomingizni topish uchun loyihalar, dizaynerlar yoki teglarni qidiring.
         </p>
       </div>
 
@@ -54,7 +54,7 @@ export default function BrowsePage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search by project, designer, or tag..."
+            placeholder="Loyiha, dizayner yoki teg bo'yicha qidirish..."
             className="w-full pl-10 h-12"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -64,29 +64,29 @@ export default function BrowsePage() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="h-12">
               <SlidersHorizontal className="mr-2 h-4 w-4" />
-              Filter & Sort
+              Filtrlash va Saralash
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+            <DropdownMenuLabel>Saralash</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
               checked={sortBy === 'trending'}
               onCheckedChange={() => setSortBy('trending')}
             >
-              Trending
+              Trenddagilar
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={sortBy === 'latest'}
               onCheckedChange={() => setSortBy('latest')}
             >
-              Latest
+              Eng so'nggilari
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={sortBy === 'popular'}
               onCheckedChange={() => setSortBy('popular')}
             >
-              Most Liked
+              Eng mashhurlari
             </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -100,7 +100,7 @@ export default function BrowsePage() {
         </div>
       ) : (
         <div className="text-center py-16">
-            <p className="text-muted-foreground">No projects found for "{searchTerm}". Try a different search.</p>
+            <p className="text-muted-foreground">"{searchTerm}" uchun hech qanday loyiha topilmadi. Boshqa qidiruvni sinab ko'ring.</p>
         </div>
       )}
     </div>

@@ -10,16 +10,16 @@ export function Footer() {
             <Logo className="w-6 h-6 text-primary" />
             <span className="font-semibold font-headline">DesignFlow</span>
           </Link>
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} DesignFlow. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} DesignFlow. Barcha huquqlar himoyalangan.</p>
           <nav className="flex items-center gap-4 text-sm">
             <Link href="#" className="hover:underline">
-              Terms
+              Shartlar
             </Link>
             <Link href="#" className="hover:underline">
-              Privacy
+              Maxfiylik
             </Link>
             <Link href="#" className="hover:underline">
-              Contact
+              Aloqa
             </Link>
           </nav>
         </div>
