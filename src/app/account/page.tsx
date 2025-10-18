@@ -12,6 +12,8 @@ import { getProjectsByDesigner, designers } from "@/lib/mock-data";
 import PortfolioCard from "@/components/portfolio-card";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
+import { motion, useInView, useMotionValue, useSpring } from "framer-motion";
+import { useRef } from "react";
 
 // Mocking a logged-in user
 const loggedInDesigner = designers[0];
@@ -19,6 +21,36 @@ const designerProjects = getProjectsByDesigner(loggedInDesigner.id);
 
 const totalLikes = designerProjects.reduce((acc, p) => acc + p.likes, 0);
 const totalViews = designerProjects.reduce((acc, p) => acc + p.views, 0);
+
+function AnimatedNumber({ value }: { value: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const motionValue = useMotionValue(0);
+  const springValue = useSpring(motionValue, {
+    damping: 100,
+    stiffness: 100,
+  });
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  useEffect(() => {
+    if (isInView) {
+      motionValue.set(value);
+    }
+  }, [motionValue, isInView, value]);
+
+  useEffect(
+    () =>
+      springValue.on("change", (latest) => {
+        if (ref.current) {
+          ref.current.textContent = Intl.NumberFormat("en-US").format(
+            latest.toFixed(0)
+          );
+        }
+      }),
+    [springValue]
+  );
+
+  return <span ref={ref} />;
+}
 
 export default function AccountPage() {
   const [isClient, setIsClient] = useState(false);
@@ -45,7 +77,7 @@ export default function AccountPage() {
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isClient ? totalViews.toLocaleString() : totalViews}</div>
+                <div className="text-2xl font-bold">{isClient ? <AnimatedNumber value={totalViews} /> : 0}</div>
                 <p className="text-xs text-muted-foreground">o'tgan oyga nisbatan +10.2%</p>
               </CardContent>
             </Card>
@@ -55,7 +87,7 @@ export default function AccountPage() {
                 <Heart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isClient ? totalLikes.toLocaleString() : totalLikes}</div>
+                <div className="text-2xl font-bold">{isClient ? <AnimatedNumber value={totalLikes} /> : 0}</div>
                 <p className="text-xs text-muted-foreground">o'tgan oyga nisbatan +15.1%</p>
               </CardContent>
             </Card>
@@ -65,7 +97,7 @@ export default function AccountPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isClient ? loggedInDesigner.subscribers.toLocaleString() : loggedInDesigner.subscribers}</div>
+                <div className="text-2xl font-bold">{isClient ? <AnimatedNumber value={loggedInDesigner.subscribers} /> : 0}</div>
                 <p className="text-xs text-muted-foreground">o'tgan oydan beri +201</p>
               </CardContent>
             </Card>
