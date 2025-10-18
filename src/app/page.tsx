@@ -46,7 +46,9 @@ export default function Home() {
       <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
         <ThreeShowcase />
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-          <HeroText />
+          <div className="relative w-full max-w-4xl h-48">
+            <HeroText text="inDizayn-ga Xush Kelibsiz!" asciiFontSize={6} textFontSize={100} planeBaseHeight={12} />
+          </div>
           <motion.p
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
@@ -58,7 +60,7 @@ export default function Home() {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, ease: "easeOut", delay: 0.4 }}
-             whileHover={{ scale: 1.05, boxShadow: "0px 10px 30px -5px rgba(var(--primary), 0.3)" }}
+             whileHover={{ scale: 1.05, boxShadow: "0px 10px 30px -5px hsl(var(--primary) / 0.3)" }}
           >
             <Button asChild size="lg" className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground">
               <Link href="/browse">Boshlash <MoveRight className="ml-2" /></Link>
@@ -83,6 +85,18 @@ export default function Home() {
             {advantages.map((adv, index) => (
                 <motion.div
                   key={index}
+                  custom={index}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, amount: 0.5 }}
+                  variants={{
+                    hidden: { opacity: 0, y: 50 },
+                    visible: { 
+                      opacity: 1, 
+                      y: 0,
+                      transition: { duration: 0.5, delay: index * 0.1 }
+                    }
+                  }}
                   whileHover={{ y: -8, boxShadow: "0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
                   transition={{ duration: 0.3 }}
                 >
