@@ -34,7 +34,7 @@ const ThreeShowcase: React.FC = () => {
         new THREE.Color(0xFF69B4), // Pink
         new THREE.Color(0x9370DB), // Purple
         new THREE.Color(0x32CD32), // Green
-        new THREE.Color(0xFFF00)  // Yellow
+        new THREE.Color(0xFFFF00)  // Yellow
     ];
 
     for (let i = 0; i < particleCount; i++) {
