@@ -8,9 +8,9 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <Link href="/" className="flex items-center gap-2">
             <Logo className="w-6 h-6 text-primary" />
-            <span className="font-semibold font-headline">DesignFlow</span>
+            <span className="font-semibold font-headline">inDizayn</span>
           </Link>
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} DesignFlow. Barcha huquqlar himoyalangan.</p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} inDizayn. Barcha huquqlar himoyalangan.</p>
           <nav className="flex items-center gap-4 text-sm">
             <Link href="#" className="hover:underline">
               Shartlar

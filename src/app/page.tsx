@@ -14,7 +14,7 @@ export default function Home() {
       <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
           <h1 className="font-headline text-4xl md:text-7xl font-bold tracking-tighter text-foreground">
-            Ijodkorlik Oqimi
+            inDizayn-ga Xush Kelibsiz!
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
             Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.

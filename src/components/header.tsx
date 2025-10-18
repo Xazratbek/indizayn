@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Search, UserCircle, Menu } from "lucide-react"
+import { Search, UserCircle, Menu, Home, Compass, Users } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet"
+import { Separator } from "./ui/separator"
 
 
 export function Header() {
@@ -23,7 +25,7 @@ export function Header() {
 
   // Render nothing on the server for the nav to avoid hydration mismatch
   const navContent = isMobile === undefined ? null : (
-    !isMobile && (
+    !isMobile ? (
       <nav className="flex items-center gap-6 text-sm">
         <Link
           href="/browse"
@@ -44,7 +46,7 @@ export function Header() {
           Mening Hisobim
         </Link>
       </nav>
-    )
+    ) : null
   );
 
   return (
@@ -54,7 +56,7 @@ export function Header() {
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <Logo className="h-6 w-6 text-primary" />
             <span className="hidden font-bold sm:inline-block font-headline">
-              DesignFlow
+              inDizayn
             </span>
           </Link>
           {navContent}

@@ -7,7 +7,7 @@ import { Footer } from '@/components/footer';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 
 export const metadata: Metadata = {
-  title: 'DesignFlow',
+  title: 'inDizayn',
   description: 'Dizaynerlar uchun o\'z ishlarini namoyish qilish uchun eng zo\'r platforma.',
 };
 
