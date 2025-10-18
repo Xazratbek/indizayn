@@ -42,7 +42,7 @@ export default function Home() {
             <Link href="/browse">Boshlash <MoveRight className="ml-2" /></Link>
           </Button>
         </div>
-        <ThreeShowcase designers={featuredDesigners} />
+        <ThreeShowcase />
       </section>
 
       <section className="py-16 md:py-24 bg-background">

@@ -2,142 +2,123 @@
 
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
-import Link from 'next/link';
-import type { Designer } from '@/lib/types';
-import imageData from '@/lib/placeholder-images.json';
 
-const allImages = imageData.placeholderImages;
-
-interface ThreeShowcaseProps {
-  designers: Designer[];
-}
-
-const ThreeShowcase: React.FC<ThreeShowcaseProps> = ({ designers }) => {
+const ThreeShowcase: React.FC = () => {
   const mountRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const contentGroupRef = useRef<THREE.Group | null>(null);
   const animationFrameId = useRef<number | null>(null);
 
-
   useEffect(() => {
-    if (!mountRef.current || !containerRef.current) return;
-    if (sceneRef.current) return; // Initialize only once
-
-    const TMath = THREE.MathUtils;
-    let localMouse = { x: 0, y: 0 };
-    const CARD_COUNT = designers.length;
-    const RADIUS = 3.5;
-    const CARD_WIDTH = 1.2;
-    const CARD_HEIGHT = 1.2 * 0.75;
-
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-
-    const camera = new THREE.PerspectiveCamera(75, mountRef.current.clientWidth / mountRef.current.clientHeight, 0.1, 1000);
-    camera.position.z = 5;
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    mountRef.current.appendChild(renderer.domElement);
-
-    const contentGroup = new THREE.Group();
-    scene.add(contentGroup);
-    contentGroupRef.current = contentGroup;
-    contentGroup.position.z = 0.5;
-
-    const textureLoader = new THREE.TextureLoader();
-    const cards: THREE.Mesh[] = [];
-
-    designers.forEach((designer, i) => {
-      const designerAvatar = allImages.find(img => img.id === designer.avatarId);
-      if (designerAvatar) {
-        const texture = textureLoader.load(designerAvatar.imageUrl);
-        const geometry = new THREE.PlaneGeometry(CARD_WIDTH, CARD_HEIGHT);
-        const material = new THREE.MeshBasicMaterial({ map: texture });
-        const card = new THREE.Mesh(geometry, material);
-
-        const angle = (i / CARD_COUNT) * Math.PI * 2;
-        card.position.set(Math.sin(angle) * RADIUS, 0, Math.cos(angle) * RADIUS);
-        card.lookAt(0, 0, 0);
-        
-        // Store designer data on the object
-        card.userData = { id: designer.id };
-        
-        contentGroup.add(card);
-        cards.push(card);
-      }
-    });
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    const onMouseMove = (event: MouseEvent) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      localMouse.x = mouse.x;
-      localMouse.y = mouse.y;
-    };
-    
-    let hoveredObject: THREE.Object3D | null = null;
-    const onClick = (event: MouseEvent) => {
-        if(hoveredObject && hoveredObject.userData.id) {
-            containerRef.current?.querySelector(`a[data-designer-id="${hoveredObject.userData.id}"]`)?.click();
-        }
-    };
+    if (!mountRef.current) return;
+    let scene: THREE.Scene | null = new THREE.Scene();
 
     const currentMount = mountRef.current;
+
+    // Camera
+    const camera = new THREE.PerspectiveCamera(75, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
+    camera.position.z = 50;
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    currentMount.appendChild(renderer.domElement);
+
+    // Particles
+    const particleCount = 500;
+    const particlesGeometry = new THREE.BufferGeometry();
+    const posArray = new Float32Array(particleCount * 3);
+    const velocities = new Float32Array(particleCount * 3);
+    
+    for (let i = 0; i < particleCount * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 100;
+        velocities[i] = (Math.random() - 0.5) * 0.1;
+    }
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+    
+    const particlesMaterial = new THREE.PointsMaterial({
+        size: 0.15,
+        color: 0x87CEEB, // sky blue
+    });
+
+    const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particlesMesh);
+
+    // Lines
+    const linesGeometry = new THREE.BufferGeometry();
+    const linesMaterial = new THREE.LineBasicMaterial({
+        color: 0x87CEEB,
+        transparent: true,
+        opacity: 0.1
+    });
+    const linesMesh = new THREE.LineSegments(linesGeometry, linesMaterial);
+    scene.add(linesMesh);
+
+    // Mouse interaction
+    const mouse = new THREE.Vector2(-100, -100);
+    const onMouseMove = (event: MouseEvent) => {
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    };
     currentMount.addEventListener('mousemove', onMouseMove);
-    currentMount.addEventListener('click', onClick);
 
-
+    // Resize handler
     const handleResize = () => {
-      if (mountRef.current) {
-        camera.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight;
+      if (currentMount) {
+        camera.aspect = currentMount.clientWidth / currentMount.clientHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+        renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
       }
     };
     window.addEventListener('resize', handleResize);
-    
+
     const clock = new THREE.Clock();
 
     const animate = () => {
       animationFrameId.current = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Automatic rotation + mouse follow
-      contentGroup.rotation.y = elapsedTime * 0.15 + localMouse.x * 0.1;
+      const positions = (particlesMesh.geometry.attributes.position as THREE.BufferAttribute).array as Float32Array;
       
-      // Animate camera for depth
-      camera.position.z = 5 - Math.sin(elapsedTime * 0.3) * 0.3;
+      const linePositions = [];
+      const connectionDistance = 20;
 
-      // Raycasting for hover effect
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(cards);
+      for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        
+        // Update position
+        positions[i3] += velocities[i3];
+        positions[i3 + 1] += velocities[i3 + 1];
 
-      if (intersects.length > 0) {
-        if(hoveredObject !== intersects[0].object) {
-            if(hoveredObject) {
-                // @ts-ignore
-                hoveredObject.material.color.set(0xffffff);
+        // Bounce off walls
+        if (positions[i3] > 50 || positions[i3] < -50) velocities[i3] *= -1;
+        if (positions[i3 + 1] > 50 || positions[i3 + 1] < -50) velocities[i3 + 1] *= -1;
+
+        // Connect to other particles
+        for(let j = i + 1; j < particleCount; j++) {
+            const j3 = j * 3;
+            const dx = positions[i3] - positions[j3];
+            const dy = positions[i3 + 1] - positions[j3 + 1];
+            const dz = positions[i3 + 2] - positions[j3 + 2];
+            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            
+            if (distance < connectionDistance) {
+                linePositions.push(positions[i3], positions[i3 + 1], positions[i3 + 2]);
+                linePositions.push(positions[j3], positions[j3 + 1], positions[j3 + 2]);
             }
-            hoveredObject = intersects[0].object;
-            // @ts-ignore
-            hoveredObject.material.color.set(0xcccccc);
-            if (mountRef.current) mountRef.current.style.cursor = 'pointer';
         }
-      } else {
-        if(hoveredObject) {
-            // @ts-ignore
-            hoveredObject.material.color.set(0xffffff);
-        }
-        hoveredObject = null;
-        if (mountRef.current) mountRef.current.style.cursor = 'default';
       }
 
+      (linesMesh.geometry as THREE.BufferGeometry).setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+      particlesMesh.geometry.attributes.position.needsUpdate = true;
+
+      // Mouse interaction - slightly repel particles
+      const target = new THREE.Vector3(mouse.x * 50, mouse.y * 50, camera.position.z - 10);
+      camera.lookAt(0,0,0);
+      camera.position.x += (mouse.x * 5 - camera.position.x) * .05;
+      camera.position.y += (-mouse.y * 5 - camera.position.y) * .05;
+      camera.lookAt(scene.position);
 
       renderer.render(scene, camera);
     };
@@ -148,45 +129,29 @@ const ThreeShowcase: React.FC<ThreeShowcaseProps> = ({ designers }) => {
       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current);
       }
-      
       currentMount.removeEventListener('mousemove', onMouseMove);
-      currentMount.removeEventListener('click', onClick);
       window.removeEventListener('resize', handleResize);
-      
-      if(renderer.domElement.parentElement) {
+      if (renderer.domElement.parentElement) {
           renderer.domElement.parentElement.removeChild(renderer.domElement);
       }
       
-      // Cleanup THREE.js objects
-      scene.traverse(object => {
-        if (object instanceof THREE.Mesh) {
+      scene?.traverse(object => {
+        if (object instanceof THREE.Mesh || object instanceof THREE.Points || object instanceof THREE.LineSegments) {
           object.geometry.dispose();
-          if(Array.isArray(object.material)) {
-             object.material.forEach(material => {
-                 material.map?.dispose();
-                 material.dispose();
-             });
+          if (Array.isArray(object.material)) {
+             object.material.forEach(material => material.dispose());
           } else {
-            object.material.map?.dispose();
             object.material.dispose();
           }
         }
       });
-      sceneRef.current = null;
+      scene = null;
     };
-  }, [designers]);
+  }, []);
 
   return (
-    <div ref={containerRef} className="absolute inset-0 z-0 opacity-20 dark:opacity-10">
+    <div className="absolute inset-0 z-0 opacity-20 dark:opacity-10">
         <div ref={mountRef} className="w-full h-full" />
-        {/* Hidden links for navigation */}
-        <div style={{ display: 'none' }}>
-            {designers.map(d => (
-                <Link key={d.id} href={`/designers/${d.id}`} data-designer-id={d.id} aria-hidden="true" tabIndex={-1}>
-                    {d.name}
-                </Link>
-            ))}
-        </div>
     </div>
   );
 };
