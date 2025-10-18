@@ -17,8 +17,12 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const isMobile = useIsMobile();
 
-  if (!isMobile) {
+  if (isMobile === false) { // Explicitly check for false, as undefined means we haven't checked yet
     return null;
+  }
+  
+  if (isMobile === undefined) {
+      return null;
   }
 
   return (

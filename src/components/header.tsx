@@ -19,7 +19,33 @@ import { useIsMobile } from "@/hooks/use-mobile"
 
 
 export function Header() {
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile();
+
+  // Render nothing on the server for the nav to avoid hydration mismatch
+  const navContent = isMobile === undefined ? null : (
+    !isMobile && (
+      <nav className="flex items-center gap-6 text-sm">
+        <Link
+          href="/browse"
+          className="transition-colors hover:text-foreground/80 text-foreground/60"
+        >
+          Ko'rib Chiqish
+        </Link>
+        <Link
+          href="/designers"
+          className="transition-colors hover:text-foreground/80 text-foreground/60"
+        >
+          Dizaynerlar
+        </Link>
+        <Link
+          href="/account"
+          className="transition-colors hover:text-foreground/80 text-foreground/60"
+        >
+          Mening Hisobim
+        </Link>
+      </nav>
+    )
+  );
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -31,28 +57,7 @@ export function Header() {
               DesignFlow
             </span>
           </Link>
-          {!isMobile && (
-            <nav className="flex items-center gap-6 text-sm">
-                <Link
-                  href="/browse"
-                  className="transition-colors hover:text-foreground/80 text-foreground/60"
-                >
-                  Ko'rib Chiqish
-                </Link>
-                <Link
-                  href="/designers"
-                  className="transition-colors hover:text-foreground/80 text-foreground/60"
-                >
-                  Dizaynerlar
-                </Link>
-                <Link
-                  href="/account"
-                  className="transition-colors hover:text-foreground/80 text-foreground/60"
-                >
-                  Mening Hisobim
-                </Link>
-            </nav>
-          )}
+          {navContent}
         </div>
         
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
