@@ -1,0 +1,125 @@
+"use client"
+
+import Link from "next/link"
+import { Search, UserCircle, Menu } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Logo } from "./icons"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+
+export function Header() {
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 max-w-screen-2xl items-center">
+        <div className="mr-4 hidden md:flex">
+          <Link href="/" className="mr-6 flex items-center space-x-2">
+            <Logo className="h-6 w-6 text-primary" />
+            <span className="hidden font-bold sm:inline-block font-headline">
+              DesignFlow
+            </span>
+          </Link>
+          <nav className="flex items-center gap-6 text-sm">
+            <Link
+              href="/browse"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Browse
+            </Link>
+            <Link
+              href="/#featured-designers"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              Designers
+            </Link>
+            <Link
+              href="/account"
+              className="transition-colors hover:text-foreground/80 text-foreground/60"
+            >
+              My Account
+            </Link>
+          </nav>
+        </div>
+        
+        {/* Mobile Nav */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="pr-0">
+            <Link href="/" className="mr-6 flex items-center space-x-2">
+              <Logo className="h-6 w-6 text-primary" />
+              <span className="font-bold sm:inline-block font-headline">
+                DesignFlow
+              </span>
+            </Link>
+            <div className="flex flex-col space-y-3 pt-6">
+              <Link href="/browse" className="text-foreground">Browse</Link>
+              <Link href="/#featured-designers" className="text-foreground">Designers</Link>
+              <Link href="/account" className="text-foreground">My Account</Link>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <div className="w-full flex-1 md:w-auto md:flex-none">
+            <form>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search projects..."
+                  className="w-full pl-8 md:w-[200px] lg:w-[336px]"
+                />
+              </div>
+            </form>
+          </div>
+          <nav className="flex items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src="https://picsum.photos/seed/101/100/100" alt="@shadcn" />
+                    <AvatarFallback>ER</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">Elena Rivera</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      elena@example.com
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild><Link href="/account">Dashboard</Link></DropdownMenuItem>
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Log out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
+        </div>
+      </div>
+    </header>
+  )
+}
