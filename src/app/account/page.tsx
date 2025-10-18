@@ -1,3 +1,5 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +11,7 @@ import { BarChart, Heart, Eye, Users, FolderKanban } from "lucide-react";
 import { getProjectsByDesigner, designers } from "@/lib/mock-data";
 import PortfolioCard from "@/components/portfolio-card";
 import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from "react";
 
 // Mocking a logged-in user
 const loggedInDesigner = designers[0];
@@ -18,6 +21,12 @@ const totalLikes = designerProjects.reduce((acc, p) => acc + p.likes, 0);
 const totalViews = designerProjects.reduce((acc, p) => acc + p.views, 0);
 
 export default function AccountPage() {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="font-headline text-4xl font-bold mb-8">Mening Hisobim</h1>
@@ -36,7 +45,7 @@ export default function AccountPage() {
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalViews.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{isClient ? totalViews.toLocaleString() : totalViews}</div>
                 <p className="text-xs text-muted-foreground">o'tgan oyga nisbatan +10.2%</p>
               </CardContent>
             </Card>
@@ -46,7 +55,7 @@ export default function AccountPage() {
                 <Heart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{totalLikes.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{isClient ? totalLikes.toLocaleString() : totalLikes}</div>
                 <p className="text-xs text-muted-foreground">o'tgan oyga nisbatan +15.1%</p>
               </CardContent>
             </Card>
@@ -56,7 +65,7 @@ export default function AccountPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{loggedInDesigner.subscribers.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{isClient ? loggedInDesigner.subscribers.toLocaleString() : loggedInDesigner.subscribers}</div>
                 <p className="text-xs text-muted-foreground">o'tgan oydan beri +201</p>
               </CardContent>
             </Card>

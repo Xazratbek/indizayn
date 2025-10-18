@@ -7,15 +7,20 @@ import imageData from '@/lib/placeholder-images.json';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserPlus, Mail, BarChart2 } from 'lucide-react';
+import { UserPlus, Mail } from 'lucide-react';
 import PortfolioCard from '@/components/portfolio-card';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const allImages = imageData.placeholderImages;
 
 export default function DesignerProfilePage({ params }: { params: { id: string } }) {
   const designer = allDesigners.find(d => d.id === params.id);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
   
   if (!designer) {
     notFound();
@@ -26,6 +31,7 @@ export default function DesignerProfilePage({ params }: { params: { id: string }
 
   const totalLikes = designerProjects.reduce((acc, p) => acc + p.likes, 0);
   const totalViews = designerProjects.reduce((acc, p) => acc + p.views, 0);
+  const subscribers = designer.subscribers + (isFollowing ? 1 : 0);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -64,7 +70,7 @@ export default function DesignerProfilePage({ params }: { params: { id: string }
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t">
               <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{(designer.subscribers + (isFollowing ? 1 : 0)).toLocaleString()}</p>
+                  <p className="text-2xl font-bold font-headline">{isClient ? subscribers.toLocaleString() : subscribers}</p>
                   <p className="text-sm text-muted-foreground">Obunachilar</p>
               </div>
               <div className="text-center">
@@ -72,11 +78,11 @@ export default function DesignerProfilePage({ params }: { params: { id: string }
                   <p className="text-sm text-muted-foreground">Loyihalar</p>
               </div>
               <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{totalLikes.toLocaleString()}</p>
+                  <p className="text-2xl font-bold font-headline">{isClient ? totalLikes.toLocaleString() : totalLikes}</p>
                   <p className="text-sm text-muted-foreground">Jami Likelar</p>
               </div>
               <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{totalViews.toLocaleString()}</p>
+                  <p className="text-2xl font-bold font-headline">{isClient ? totalViews.toLocaleString() : totalViews}</p>
                   <p className="text-sm text-muted-foreground">Jami ko'rishlar</p>
               </div>
           </div>

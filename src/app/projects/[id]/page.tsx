@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Eye, Heart, Calendar, Wrench } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { uz } from 'date-fns/locale';
 
@@ -21,6 +21,11 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   const projectDetails = getFullProjectDetails(params.id);
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(projectDetails?.likes ?? 0);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   if (!projectDetails || !projectDetails.designer) {
     notFound();
@@ -29,6 +34,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   const { project, designer } = { project: projectDetails, designer: projectDetails.designer };
   const projectImage = allImages.find(img => img.id === project.imageId);
   const designerAvatar = allImages.find(img => img.id === designer.avatarId);
+  const projectViews = project.views;
 
   const handleLike = () => {
     if(isLiked) {
@@ -103,11 +109,11 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                 <div className="flex justify-around text-sm text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <Heart className="w-4 h-4" />
-                    <span>{likes.toLocaleString()} Likes</span>
+                    <span>{isClient ? likes.toLocaleString() : likes} Likes</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Eye className="w-4 h-4" />
-                    <span>{project.views.toLocaleString()} Ko'rishlar</span>
+                    <span>{isClient ? projectViews.toLocaleString() : projectViews} Ko'rishlar</span>
                   </div>
                 </div>
               </CardContent>
@@ -119,7 +125,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                   <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
                   <div>
                     <h4 className="font-semibold">Chop etilgan</h4>
-                    <p className="text-muted-foreground">{format(parseISO(project.createdAt), 'd MMMM, yyyy', { locale: uz })}</p>
+                    <p className="text-muted-foreground">{isClient ? format(parseISO(project.createdAt), 'd MMMM, yyyy', { locale: uz }) : project.createdAt}</p>
                   </div>
                 </div>
                 <div className="flex items-start">

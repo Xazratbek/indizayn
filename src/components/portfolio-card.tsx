@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 
 interface PortfolioCardProps {
   project: Project;
@@ -20,6 +21,15 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
   const designer = designers.find((d) => d.id === project.designerId);
   const projectImage = allImages.find((img) => img.id === project.imageId);
   const designerAvatar = allImages.find((img) => img.id === designer?.avatarId);
+  
+  const [likes, setLikes] = useState(project.likes);
+  const [views, setViews] = useState(project.views);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   if (!designer || !projectImage) {
     return null;
@@ -47,11 +57,11 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Heart className="w-4 h-4" />
-                <span>{project.likes.toLocaleString()}</span>
+                <span>{isClient ? likes.toLocaleString() : likes}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Eye className="w-4 h-4" />
-                <span>{project.views.toLocaleString()}</span>
+                <span>{isClient ? views.toLocaleString() : views}</span>
               </div>
             </div>
           </div>
