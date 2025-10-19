@@ -47,7 +47,7 @@ export default function Home() {
   const db = useFirestore();
 
   const featuredProjectsQuery = useMemoFirebase(() =>
-    query(collection(db, 'projects'), orderBy('likeCount', 'desc'), limit(4))
+    db ? query(collection(db, 'projects'), orderBy('likeCount', 'desc'), limit(4)) : null
   , [db]);
   const { data: featuredProjects, isLoading: areProjectsLoading } = useCollection<Project>(featuredProjectsQuery);
 

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -27,12 +28,12 @@ export default function ProjectDetailsPage() {
   const [isLiked, setIsLiked] = useState(false);
 
   // Fetch project details and increment view count
-  const projectDocRef = useMemoFirebase(() => doc(db, 'projects', id), [db, id]);
+  const projectDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'projects', id) : null, [db, id]);
   const { data: project, isLoading: isProjectLoading, error } = useDoc<Project>(projectDocRef);
   
   useEffect(() => {
     // Increment view count only once per page load
-    if (id) {
+    if (id && db) {
         const projectRef = doc(db, 'projects', id);
         const viewed = sessionStorage.getItem(`viewed_${id}`);
         if (!viewed) {
@@ -47,7 +48,7 @@ export default function ProjectDetailsPage() {
 
   // Fetch designer details based on designerId from the project
   const designerDocRef = useMemoFirebase(() => 
-    project ? doc(db, 'users', project.designerId) : null
+    (db && project) ? doc(db, 'users', project.designerId) : null
   , [db, project]);
   const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
 

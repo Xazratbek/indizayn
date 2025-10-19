@@ -28,8 +28,8 @@ function AnimatedNumber({ value }: { value: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const motionValue = useMotionValue(0);
   const springValue = useSpring(motionValue, {
-    damping: 40,
-    stiffness: 200,
+    damping: 25,
+    stiffness: 250,
   });
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -372,5 +372,3 @@ export default function AccountPage() {
     </div>
   );
 }
-
-    

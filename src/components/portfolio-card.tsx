@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Eye, Heart } from 'lucide-react';
@@ -8,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { useEffect, useState, useRef } from 'react';
+import { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Skeleton } from './ui/skeleton';
 
@@ -23,7 +24,7 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
 
   // Fetch designer details for the project
   const designerDocRef = useMemoFirebase(() => 
-    project ? doc(db, 'users', project.designerId) : null
+    (db && project) ? doc(db, 'users', project.designerId) : null
   , [db, project]);
   const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
   

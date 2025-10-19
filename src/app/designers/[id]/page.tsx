@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -23,11 +24,11 @@ export default function DesignerProfilePage() {
   const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   // Fetch designer's profile
-  const designerDocRef = useMemoFirebase(() => doc(db, 'users', id), [db, id]);
+  const designerDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'users', id) : null, [db, id]);
   const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
 
   // Fetch designer's projects
-  const projectsQuery = useMemoFirebase(() => query(collection(db, 'projects'), where('designerId', '==', id)), [db, id]);
+  const projectsQuery = useMemoFirebase(() => (db && id) ? query(collection(db, 'projects'), where('designerId', '==', id)) : null, [db, id]);
   const { data: designerProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
   
   // Check if the current logged-in user is already following this designer
@@ -178,4 +179,3 @@ export default function DesignerProfilePage() {
     </div>
   );
 }
-    

@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { collection, query, orderBy, limit, startAt, getDocs, where } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 
 
@@ -25,6 +25,7 @@ export default function BrowsePage() {
   const db = useFirestore();
 
   const projectsQuery = useMemoFirebase(() => {
+    if (!db) return null;
     const baseQuery = collection(db, 'projects');
     if (sortBy === 'latest') {
       return query(baseQuery, orderBy('createdAt', 'desc'));
@@ -33,7 +34,6 @@ export default function BrowsePage() {
       return query(baseQuery, orderBy('likeCount', 'desc'));
     }
     // "trending" is more complex, for now, we'll sort by views.
-    // A real trending algorithm would require more logic (e.g., views in the last 7 days).
     return query(baseQuery, orderBy('viewCount', 'desc'));
   }, [db, sortBy]);
 

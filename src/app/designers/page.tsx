@@ -1,3 +1,4 @@
+
 "use client";
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import type { Designer } from "@/lib/types";
@@ -10,7 +11,9 @@ import { collection, query, orderBy } from 'firebase/firestore';
 
 export default function DesignersPage() {
   const db = useFirestore();
-  const designersQuery = useMemoFirebase(() => query(collection(db, 'users'), orderBy('subscriberCount', 'desc')), [db]);
+  const designersQuery = useMemoFirebase(() => 
+    db ? query(collection(db, 'users'), orderBy('subscriberCount', 'desc')) : null, 
+  [db]);
   const { data: designers, isLoading } = useCollection<Designer>(designersQuery);
 
   return (
