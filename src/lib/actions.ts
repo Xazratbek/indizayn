@@ -12,18 +12,22 @@ cloudinary.config({
 
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; url?: string; error?: string; publicId?: string }> {
   const file = formData.get('image') as File;
+  
   if (!file) {
     return { success: false, error: 'Rasm topilmadi.' };
   }
 
   try {
+    // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Upload to Cloudinary using upload_stream inside a Promise
     const result: UploadApiResponse = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           tags: ['nextjs-server-actions-upload'],
+          // You can add more upload options here, like transformations
         },
         (error, result) => {
           if (error) {
@@ -37,6 +41,7 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
       uploadStream.end(buffer);
     });
 
+    // On successful upload, revalidate the path and return success response
     revalidatePath('/account');
     
     return {
@@ -45,7 +50,12 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
       publicId: result.public_id,
     };
   } catch (error: any) {
+    // Catch any error during the process
     console.error('Cloudinary yuklashda xatolik:', error);
-    return { success: false, error: error.message || "Rasm yuklashda noma'lum xatolik." };
+    // Return a structured error response
+    return { 
+      success: false, 
+      error: error.message || "Rasm yuklashda noma'lum server xatoligi." 
+    };
   }
 }
