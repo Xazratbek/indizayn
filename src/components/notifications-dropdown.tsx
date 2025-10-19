@@ -39,14 +39,14 @@ export default function NotificationsDropdown() {
   const [isMarkingRead, setIsMarkingRead] = useState(false);
 
   const notificationsQuery = useMemoFirebase(() => 
-    (db && user) 
+    (db && user?.uid) // Ensure user and user.uid exist before creating the query
       ? query(
           collection(db, 'notifications'), 
           where('userId', '==', user.uid),
           orderBy('createdAt', 'desc')
         )
       : null, 
-    [db, user]
+    [db, user?.uid] // Depend on user.uid to re-run when the user logs in
   );
   
   const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
@@ -192,5 +192,3 @@ export default function NotificationsDropdown() {
     </Popover>
   );
 }
-
-    
