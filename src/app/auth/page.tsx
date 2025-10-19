@@ -2,9 +2,11 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/firebase";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { useAuth, useUser } from "@/firebase";
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px" {...props}>
@@ -18,19 +20,60 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function AuthPage() {
     const auth = useAuth();
+    const { user, isUserLoading } = useUser();
     const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            router.push('/account');
+        }
+    }, [user, router]);
+
+    useEffect(() => {
+        // This effect runs when the component mounts after a redirect.
+        const checkRedirectResult = async () => {
+            if (isUserLoading || !auth) return;
+            setIsLoading(true);
+            try {
+                const result = await getRedirectResult(auth);
+                if (result) {
+                    // This means the user has just signed in via redirect.
+                    router.push('/account');
+                } else {
+                    // No redirect result, maybe the user landed here directly.
+                    setIsLoading(false);
+                }
+            } catch (error: any) {
+                console.error("Error getting redirect result: ", error);
+                toast({
+                    variant: "destructive",
+                    title: "Kirishda xatolik",
+                    description: "Google orqali kirishda muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
+                });
+                setIsLoading(false);
+            }
+        };
+
+        checkRedirectResult();
+    }, [auth, router, isUserLoading]);
+
 
     const handleGoogleSignIn = async () => {
+        if (isLoading || isUserLoading) return;
+        setIsLoading(true);
         const provider = new GoogleAuthProvider();
         try {
-            await signInWithPopup(auth, provider);
-            router.push('/account');
+            await signInWithRedirect(auth, provider);
+            // The page will redirect, and the result will be handled by the useEffect hook.
         } catch (error: any) {
-            // This is a common scenario - the user just closed the popup.
-            // We don't want to show an error in the console for this.
-            if (error.code !== 'auth/popup-closed-by-user') {
-                 console.error("Error signing in with Google: ", error);
-            }
+            console.error("Error signing in with Google: ", error);
+            toast({
+                variant: "destructive",
+                title: "Kirishda xatolik",
+                description: "Google orqali kirishda muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
+            });
+            setIsLoading(false);
         }
     };
 
@@ -45,9 +88,17 @@ export default function AuthPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn}>
-                            <GoogleIcon className="mr-2" />
-                            Google bilan davom eting
+                        <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isLoading || isUserLoading}>
+                           {isLoading ? (
+                                <div className="spinner-sm" role="status">
+                                    <span className="sr-only">Yuklanmoqda...</span>
+                                </div>
+                           ) : (
+                                <>
+                                    <GoogleIcon className="mr-2" />
+                                    Google bilan davom eting
+                                </>
+                           )}
                         </Button>
                     </div>
                     <div className="mt-6 text-center text-sm text-muted-foreground">

@@ -9,8 +9,9 @@ import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useAuth, useUser } from '@/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
 import { useRouter } from 'next/navigation';
+import { toast } from '@/hooks/use-toast';
 
 const featuredProjects = allProjects.sort((a, b) => b.likes - a.likes).slice(0, 4);
 
@@ -46,23 +47,23 @@ export default function Home() {
   const auth = useAuth();
   const router = useRouter();
 
-  const handleGoogleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-        await signInWithPopup(auth, provider);
-        router.push('/browse');
-    } catch (error: any) {
-        if (error.code !== 'auth/popup-closed-by-user') {
-            console.error("Error signing in with Google: ", error);
-        }
-    }
-  };
+  const handleStartClick = async () => {
+    if (isUserLoading) return;
 
-  const handleStartClick = () => {
     if (user) {
       router.push('/browse');
     } else {
-      handleGoogleSignIn();
+        try {
+            const provider = new GoogleAuthProvider();
+            await signInWithRedirect(auth, provider);
+        } catch (error: any) {
+             console.error("Error initiating sign in with redirect: ", error);
+             toast({
+                variant: "destructive",
+                title: "Kirishda xatolik",
+                description: "Tizimga kirishda kutilmagan muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
+            });
+        }
     }
   };
 
