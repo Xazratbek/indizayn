@@ -60,7 +60,7 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Start as true
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   const [snapshot, setSnapshot] = useState<QuerySnapshot<DocumentData> | null>(null);
 
@@ -69,10 +69,12 @@ export function useCollection<T = any>(
       console.warn('useCollection received a query/ref that was not memoized with useMemoFirebase. This can lead to performance issues and infinite loops.', memoizedTargetRefOrQuery);
     }
     
+    // If the query/ref is not ready, don't attempt to listen.
+    // Set loading to false and clear data/error.
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setSnapshot(null);
-      setIsLoading(false); // Not loading if there's no query
+      setIsLoading(false);
       setError(null);
       return;
     }

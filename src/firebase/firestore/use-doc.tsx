@@ -45,7 +45,7 @@ export function useDoc<T = any>(
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Start as true
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
@@ -53,9 +53,11 @@ export function useDoc<T = any>(
       console.warn('useDoc received a ref that was not memoized with useMemoFirebase. This can lead to performance issues and infinite loops.', memoizedDocRef);
     }
     
+    // If the ref is not ready, don't attempt to listen.
+    // Set loading to false and clear data/error.
     if (!memoizedDocRef) {
       setData(null);
-      setIsLoading(false); // Not loading if there's no ref
+      setIsLoading(false);
       setError(null);
       return;
     }
