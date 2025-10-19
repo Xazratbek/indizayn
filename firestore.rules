@@ -1,13 +1,22 @@
+/**
+ * @fileoverview Firestore Security Rules for Prototyping.
+ *
+ * Core Philosophy: This ruleset is in prototyping mode and allows any read or write.
+ *
+ * Data Structure: The database consists of four top-level collections: `users`, `projects`, `messages`, and `notifications`.
+ *   - `/users/{userId}`: Stores user profiles, where `{userId}` is the Firebase Auth UID.
+ *   - `/projects/{projectId}`: Stores design portfolio projects.
+ *   - `/messages/{messageId}`: Stores direct messages between users.
+ *   - `/notifications/{notificationId}`: Stores notifications for users.
+ *
+ * Key Security Decisions:
+ *   - WARNING: This ruleset is in prototyping mode and allows any read or write. This is insecure and must be changed before production.
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
-      allow get: if request.auth != null && request.auth.uid == userId;
-      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
-    }
-    match /projects/{projectId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null;
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
