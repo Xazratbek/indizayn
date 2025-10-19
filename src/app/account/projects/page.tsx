@@ -12,14 +12,14 @@ export default function MyProjectsPage() {
     const db = useFirestore();
 
     const myProjectsQuery = useMemoFirebase(() => 
-        (db && user) 
+        (db && user?.uid) 
             ? query(
                 collection(db, 'projects'), 
                 where('designerId', '==', user.uid),
                 orderBy('createdAt', 'desc')
               ) 
             : null, 
-    [db, user]);
+    [db, user?.uid]);
 
     const { data: myProjects, isLoading: areProjectsLoading } = useCollection<Project>(myProjectsQuery);
 
