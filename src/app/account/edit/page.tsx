@@ -9,9 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { useEffect, useState, useRef } from "react";
-import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase";
+import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc, DocumentData } from "firebase/firestore";
-import { updateProfile } from "firebase/auth";
 import { useForm } from "react-hook-form";
 import { uploadImage } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
@@ -19,11 +18,13 @@ import { Loader2, Upload } from "lucide-react";
 import type { Designer } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
 export default function ProfileEditPage() {
-  const { user, isUserLoading } = useUser();
+  const { data: session, status, update: updateSession } = useSession();
+  const user = session?.user;
+  const isUserLoading = status === 'loading';
   const db = useFirestore();
-  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const profilePicInputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +42,7 @@ export default function ProfileEditPage() {
   });
 
   const userProfileQuery = useMemoFirebase(() => 
-    (db && user) ? doc(db, 'users', user.uid) : null
+    (db && user) ? doc(db, 'users', user.id) : null
   , [db, user]);
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<Designer>(userProfileQuery);
 
@@ -86,7 +87,7 @@ export default function ProfileEditPage() {
   };
 
   const onSubmit = async (data: { name: string; specialization: string; bio: string }) => {
-    if (!user || !userProfile || !auth?.currentUser) return;
+    if (!user || !userProfile) return;
 
     if (!isDirty && !profilePic.file && !coverPhoto.file) {
       toast({ description: "O'zgarish kiritilmadi." });
@@ -96,7 +97,6 @@ export default function ProfileEditPage() {
     setIsSaving(true);
     let newPhotoURL = userProfile.photoURL || null;
     let newCoverPhotoURL = userProfile.coverPhotoURL || null;
-    let profilePicChanged = false;
 
     try {
       if (profilePic.file || coverPhoto.file) {
@@ -114,7 +114,6 @@ export default function ProfileEditPage() {
 
         if (profilePic.file) {
             newPhotoURL = await uploadFile(profilePic.file);
-            profilePicChanged = true;
         }
         if (coverPhoto.file) {
             newCoverPhotoURL = await uploadFile(coverPhoto.file);
@@ -125,7 +124,7 @@ export default function ProfileEditPage() {
         setTimeout(() => setUploadProgress(null), 1000);
       }
 
-      const userRef = doc(db, "users", user.uid);
+      const userRef = doc(db, "users", user.id);
       
       const updatedData: Partial<Designer> = {};
       if (dirtyFields.name) updatedData.name = data.name;
@@ -134,26 +133,25 @@ export default function ProfileEditPage() {
       if (newPhotoURL && newPhotoURL !== userProfile.photoURL) updatedData.photoURL = newPhotoURL;
       if (newCoverPhotoURL && newCoverPhotoURL !== userProfile.coverPhotoURL) updatedData.coverPhotoURL = newCoverPhotoURL;
 
-      const profileOrNameChanged = profilePicChanged || (dirtyFields.name && data.name !== auth.currentUser.displayName);
 
       if (Object.keys(updatedData).length > 0) {
         await updateDoc(userRef, updatedData as DocumentData);
-        if (profileOrNameChanged) {
-            await updateProfile(auth.currentUser, {
-                displayName: data.name,
-                photoURL: newPhotoURL,
-            });
-        }
       }
+      
+      // Update next-auth session
+      await updateSession({
+        ...session,
+        user: {
+          ...user,
+          name: data.name,
+          image: newPhotoURL,
+        }
+      });
       
       toast({ title: "Muvaffaqiyatli!", description: "Profil yangilandi!" });
       setProfilePic({ file: null, previewUrl: null });
       setCoverPhoto({ file: null, previewUrl: null });
-
-      if (profileOrNameChanged) {
-        // Force a full reload to ensure the auth state is updated everywhere, including the header.
-        window.location.reload();
-      }
+      router.refresh(); // Re-fetches server components
 
     } catch (err: any) {
       toast({
@@ -179,7 +177,7 @@ export default function ProfileEditPage() {
     );
   }
 
-  if (!user) {
+  if (status === 'unauthenticated') {
     router.push('/auth');
     return (
       <div className="flex items-center justify-center h-screen">

@@ -4,10 +4,10 @@
 import Link from "next/link";
 import { Logo } from "./icons";
 import { Button } from "./ui/button";
-import { useUser } from "@/firebase";
+import { useSession } from "next-auth/react";
 
 export function Footer() {
-  const { user } = useUser();
+  const { data: session } = useSession();
 
   return (
     <footer className="w-full border-t bg-background">
@@ -32,7 +32,7 @@ export function Footer() {
                          <Link href="/about" className="text-muted-foreground hover:text-foreground">Haqida</Link>
                     </nav>
                 </div>
-                 {!user && (
+                 {!session && (
                     <div>
                         <h4 className="font-semibold mb-2 font-headline">Dizayner bo'ling</h4>
                         <p className="text-muted-foreground mb-4">Hamjamiyatimizga qo'shiling va ijodingizni namoyish eting.</p>

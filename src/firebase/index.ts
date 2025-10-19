@@ -1,13 +1,12 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+// Removing getAuth and Auth as we'll no longer use firebase/auth for sessions
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { firebaseConfig } from './config';
 
 // This structure holds the initialized Firebase services.
 interface FirebaseServices {
   firebaseApp: FirebaseApp;
-  auth: Auth;
   firestore: Firestore;
 }
 
@@ -25,12 +24,11 @@ export function initializeFirebase(): FirebaseServices {
   }
 
   const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  const auth = getAuth(app);
+  // Auth is no longer initialized here for client-side use
   const firestore = getFirestore(app);
 
   firebaseServices = {
     firebaseApp: app,
-    auth,
     firestore,
   };
 
@@ -42,7 +40,7 @@ export * from './provider';
 export * from './client-provider';
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
-export * from './auth/use-user';
+// use-user is now obsolete with next-auth
+// export * from './auth/use-user';
 export * from './errors';
 export * from './error-emitter';
-

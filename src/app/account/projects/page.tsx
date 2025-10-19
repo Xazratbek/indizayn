@@ -1,29 +1,39 @@
 
 "use client";
 
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import PortfolioCard from '@/components/portfolio-card';
 import { Loader2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 export default function MyProjectsPage() {
-    const { user, isUserLoading } = useUser();
+    const { data: session, status } = useSession();
+    const user = session?.user;
+    const isUserLoading = status === 'loading';
+    const router = useRouter();
     const db = useFirestore();
 
     const myProjectsQuery = useMemoFirebase(() => 
-        (db && user?.uid) 
+        (db && user?.id) 
             ? query(
                 collection(db, 'projects'), 
-                where('designerId', '==', user.uid),
+                where('designerId', '==', user.id),
                 orderBy('createdAt', 'desc')
               ) 
             : null, 
-    [db, user?.uid]);
+    [db, user?.id]);
 
     const { data: myProjects, isLoading: areProjectsLoading } = useCollection<Project>(myProjectsQuery);
 
     const isLoading = isUserLoading || areProjectsLoading;
+    
+    if (status === 'unauthenticated') {
+        router.replace('/auth');
+        return null;
+    }
 
     return (
         <div className="container mx-auto py-8 px-4">

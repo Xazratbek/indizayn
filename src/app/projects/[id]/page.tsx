@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -18,12 +19,14 @@ import type { Project, Designer } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Lightbox from '@/components/lightbox';
+import { useSession } from 'next-auth/react';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
   const id = typeof params.id === 'string' ? params.id : '';
   const db = useFirestore();
-  const { user } = useUser();
+  const { data: session } = useSession();
+  const user = session?.user;
 
   const [isLiked, setIsLiked] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -57,12 +60,12 @@ export default function ProjectDetailsPage() {
   // Check if current user has liked this project
   useEffect(() => {
     if (user && project?.likes) {
-      setIsLiked(project.likes.includes(user.uid));
+      setIsLiked(project.likes.includes(user.id));
     }
   }, [user, project]);
 
   const handleLikeToggle = async () => {
-    if (!user || !project || !designer) {
+    if (!user || !project || !designer || !db) {
       toast({
         variant: "destructive",
         title: "Xatolik!",
@@ -71,7 +74,7 @@ export default function ProjectDetailsPage() {
       return;
     }
 
-    if(user.uid === project.designerId) {
+    if(user.id === project.designerId) {
       toast({ description: "O'z loyihangizga like bosa olmaysiz." });
       return;
     }
@@ -82,14 +85,14 @@ export default function ProjectDetailsPage() {
         if (isLiked) {
             // Unlike
             await updateDoc(projectRef, {
-                likes: arrayRemove(user.uid),
+                likes: arrayRemove(user.id),
                 likeCount: increment(-1)
             });
             setIsLiked(false);
         } else {
             // Like
             await updateDoc(projectRef, {
-                likes: arrayUnion(user.uid),
+                likes: arrayUnion(user.id),
                 likeCount: increment(1)
             });
             setIsLiked(true);
@@ -99,9 +102,9 @@ export default function ProjectDetailsPage() {
             await addDoc(notificationsRef, {
                 userId: project.designerId,
                 type: 'like',
-                senderId: user.uid,
-                senderName: user.displayName || 'Anonim',
-                senderPhotoURL: user.photoURL || '',
+                senderId: user.id,
+                senderName: user.name || 'Anonim',
+                senderPhotoURL: user.image || '',
                 isRead: false,
                 projectId: project.id,
                 projectName: project.name,

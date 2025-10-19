@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { useDoc, useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -13,12 +14,15 @@ import { useState, useEffect } from 'react';
 import type { Designer, Project } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import SendMessageDialog from '@/components/send-message-dialog';
+import { useSession } from 'next-auth/react';
 
 export default function DesignerProfilePage() {
   const params = useParams();
   const id = typeof params.id === 'string' ? params.id : '';
   const db = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const isUserLoading = status === 'loading';
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
@@ -35,12 +39,12 @@ export default function DesignerProfilePage() {
   // Check if the current logged-in user is already following this designer
   useEffect(() => {
     if (user && designer?.followers) {
-      setIsFollowing(designer.followers.includes(user.uid));
+      setIsFollowing(designer.followers.includes(user.id));
     }
   }, [user, designer]);
 
   const handleFollowToggle = async () => {
-    if (!user || !designer) {
+    if (!user || !designer || !db) {
       toast({
         variant: "destructive",
         title: "Xatolik",
@@ -49,7 +53,7 @@ export default function DesignerProfilePage() {
       return;
     }
 
-    if (user.uid === id) {
+    if (user.id === id) {
        toast({
         variant: "destructive",
         title: "Xatolik",
@@ -65,7 +69,7 @@ export default function DesignerProfilePage() {
         if (isFollowing) {
             // Unfollow
             await updateDoc(designerRef, {
-                followers: arrayRemove(user.uid),
+                followers: arrayRemove(user.id),
                 subscriberCount: increment(-1)
             });
             setIsFollowing(false);
@@ -74,7 +78,7 @@ export default function DesignerProfilePage() {
         } else {
             // Follow
             await updateDoc(designerRef, {
-                followers: arrayUnion(user.uid),
+                followers: arrayUnion(user.id),
                 subscriberCount: increment(1)
             });
             setIsFollowing(true);
@@ -85,9 +89,9 @@ export default function DesignerProfilePage() {
             await addDoc(notificationsRef, {
                 userId: designer.id,
                 type: 'follow',
-                senderId: user.uid,
-                senderName: user.displayName || 'Anonim',
-                senderPhotoURL: user.photoURL || '',
+                senderId: user.id,
+                senderName: user.name || 'Anonim',
+                senderPhotoURL: user.image || '',
                 isRead: false,
                 createdAt: serverTimestamp(),
             });
@@ -147,7 +151,7 @@ export default function DesignerProfilePage() {
               <h1 className="font-headline text-4xl font-bold">{designer.name}</h1>
               <p className="text-muted-foreground text-lg">{designer.specialization}</p>
             </div>
-            { user && user.uid !== id && (
+            { user && user.id !== id && (
               <div className="flex gap-2">
                 <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading}>
                   {isFollowLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}

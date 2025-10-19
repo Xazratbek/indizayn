@@ -2,7 +2,7 @@ import { Timestamp } from "firebase/firestore";
 
 // Corresponds to the 'users' collection in Firestore
 export interface Designer {
-  id: string; // The user's UID from Firebase Auth
+  id: string; // The user's UID from Firebase Auth (now from next-auth token.sub)
   uid: string;
   name: string;
   email: string;
@@ -54,4 +54,22 @@ export interface Notification {
     projectName?: string;
     messageSnippet?: string; // For 'message'
     createdAt: Timestamp;
+}
+
+
+// Extending NextAuth types
+import type { DefaultSession, User } from 'next-auth';
+
+declare module 'next-auth' {
+  interface Session {
+    user: {
+      id: string;
+    } & DefaultSession['user'];
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+  }
 }

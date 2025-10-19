@@ -1,7 +1,7 @@
 
 "use client"
 
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import type { Project, Designer } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -9,6 +9,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Loader2, Eye, Heart, Users } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
     <Card>
@@ -24,10 +26,13 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: string |
 
 
 export default function MyStatsPage() {
-    const { user, isUserLoading } = useUser();
+    const { data: session, status } = useSession();
+    const user = session?.user;
+    const isUserLoading = status === 'loading';
+    const router = useRouter();
     const db = useFirestore();
 
-    const id = user?.uid;
+    const id = user?.id;
     
     // Fetch designer's profile for subscriber count
     const designerDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'users', id) : null, [db, id]);
@@ -39,6 +44,11 @@ export default function MyStatsPage() {
     const { data: projects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
 
     const isLoading = isUserLoading || areProjectsLoading || isDesignerLoading;
+    
+    if (status === 'unauthenticated') {
+        router.replace('/auth');
+        return null;
+    }
 
     if (isLoading) {
         return (

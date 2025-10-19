@@ -15,20 +15,20 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useAuth, useUser } from "@/firebase"
-import { signOut } from "firebase/auth"
+import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { Skeleton } from "./ui/skeleton"
 // import NotificationsDropdown from "./notifications-dropdown"
 
 export function Header() {
   const isMobile = useIsMobile();
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const isUserLoading = status === 'loading';
   const router = useRouter();
 
   const handleSignOut = async () => {
-    if(!auth) return;
-    await signOut(auth);
+    await signOut({ redirect: false });
     router.push('/');
   }
 
@@ -75,7 +75,9 @@ export function Header() {
             {/* Search can be implemented later */}
           </div>
           <nav className="flex items-center gap-2">
-             {!isUserLoading && user ? (
+             {isUserLoading ? (
+               <Skeleton className="h-8 w-8 rounded-full" />
+             ) : user ? (
                <>
                 {isMobile === false && (
                   <Button asChild size="sm">
@@ -89,15 +91,15 @@ export function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'Foydalanuvchi'} />
-                        <AvatarFallback>{user.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
+                        <AvatarImage src={user.image ?? ''} alt={user.name ?? 'Foydalanuvchi'} />
+                        <AvatarFallback>{user.name?.charAt(0) ?? 'U'}</AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                        <p className="text-sm font-medium leading-none">{user.name}</p>
                         <p className="text-xs leading-none text-muted-foreground">
                           {user.email}
                         </p>
@@ -115,7 +117,7 @@ export function Header() {
                </>
               ) : (
                 <>
-                  {!isUserLoading && isMobile === false && (
+                  {isMobile === false && (
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" asChild>
                             <Link href="/auth">Kirish</Link>

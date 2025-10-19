@@ -1,20 +1,18 @@
 
 "use client";
 
-import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useDoc, useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, collection, query, where, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserPlus, Mail, Loader2, UserCheck, LayoutDashboard, BarChart2, PlusSquare, Pencil } from 'lucide-react';
-import PortfolioCard from '@/components/portfolio-card';
-import { useState, useEffect } from 'react';
+import { Loader2, LayoutDashboard, BarChart2, PlusSquare, Pencil } from 'lucide-react';
 import type { Designer, Project } from '@/lib/types';
-import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 const StatCard = ({ label, value }: { label: string; value: number | string }) => (
     <div className="text-center bg-secondary p-4 rounded-lg">
@@ -25,10 +23,14 @@ const StatCard = ({ label, value }: { label: string; value: number | string }) =
 
 
 export default function AccountDashboardPage() {
-  const { user, isUserLoading } = useUser();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const isUserLoading = status === 'loading';
+  const router = useRouter();
+
   const db = useFirestore();
   
-  const id = user?.uid;
+  const id = user?.id;
 
   // Fetch designer's profile
   const designerDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'users', id) : null, [db, id]);
@@ -39,6 +41,12 @@ export default function AccountDashboardPage() {
   const { data: designerProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
 
   const isLoading = isDesignerLoading || areProjectsLoading || isUserLoading;
+  
+  if (status === 'unauthenticated') {
+    router.replace('/auth');
+    return null;
+  }
+
 
   if (isLoading) {
     return (
@@ -69,10 +77,8 @@ export default function AccountDashboardPage() {
     return (
         <div className="flex h-[80vh] items-center justify-center">
             <div className='text-center'>
-                <p>Profil topilmadi.</p>
-                <Button asChild className="mt-4">
-                    <Link href="/">Bosh sahifaga</Link>
-                </Button>
+                <p>Profil topilmadi. Ma'lumotlar sinxronlanmoqda...</p>
+                 <Loader2 className="mx-auto mt-4 h-8 w-8 animate-spin" />
             </div>
         </div>
     );

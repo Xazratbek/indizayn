@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
+import { useSession } from 'next-auth/react';
 
 
 const advantages = [
@@ -42,7 +43,9 @@ const sectionVariants = {
 };
 
 export default function Home() {
-  const { user, isUserLoading } = useUser();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const isUserLoading = status === 'loading';
   const router = useRouter();
   const db = useFirestore();
 

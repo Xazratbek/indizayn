@@ -1,7 +1,7 @@
+
 "use client";
 
 import { useState } from 'react';
-import { User } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -19,12 +19,13 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Designer } from '@/lib/types';
+import type { Session } from 'next-auth';
 
 interface SendMessageDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   recipient: Designer;
-  currentUser: User;
+  currentUser: Session['user'];
 }
 
 export default function SendMessageDialog({ isOpen, onOpenChange, recipient, currentUser }: SendMessageDialogProps) {
@@ -49,7 +50,7 @@ export default function SendMessageDialog({ isOpen, onOpenChange, recipient, cur
       // 1. Save message to 'messages' collection
       const messagesRef = collection(db, 'messages');
       await addDoc(messagesRef, {
-        senderId: currentUser.uid,
+        senderId: currentUser.id,
         receiverId: recipient.id,
         content: message,
         isRead: false,
@@ -61,9 +62,9 @@ export default function SendMessageDialog({ isOpen, onOpenChange, recipient, cur
       await addDoc(notificationsRef, {
         userId: recipient.id,
         type: 'message',
-        senderId: currentUser.uid,
-        senderName: currentUser.displayName || 'Anonim foydalanuvchi',
-        senderPhotoURL: currentUser.photoURL || '',
+        senderId: currentUser.id,
+        senderName: currentUser.name || 'Anonim foydalanuvchi',
+        senderPhotoURL: currentUser.image || '',
         isRead: false,
         messageSnippet: message.substring(0, 50) + (message.length > 50 ? '...' : ''),
         createdAt: serverTimestamp(),

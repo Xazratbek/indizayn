@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
-import { FirebaseClientProvider } from '@/firebase';
+import AuthProvider from '@/components/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'inDizayn',
@@ -25,7 +25,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('min-h-screen font-body antialiased')}>
-        <FirebaseClientProvider>
+        <AuthProvider>
           <div className="relative flex min-h-dvh flex-col bg-background">
             <Header />
             <main className="flex-1 pb-20 md:pb-0">{children}</main>
@@ -33,7 +33,7 @@ export default function RootLayout({
             <MobileBottomNav />
           </div>
           <Toaster />
-        </FirebaseClientProvider>
+        </AuthProvider>
       </body>
     </html>
   );

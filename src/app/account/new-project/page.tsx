@@ -12,13 +12,14 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UploadCloud, X } from "lucide-react";
-import { useUser, useFirestore } from "@/firebase";
+import { useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { uploadImage } from "@/lib/actions";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: "Loyiha nomi kamida 3 belgidan iborat bo'lishi kerak." }),
@@ -30,7 +31,8 @@ const projectSchema = z.object({
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
 export default function NewProjectPage() {
-  const { user } = useUser();
+  const { data: session, status } = useSession();
+  const user = session?.user;
   const db = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
@@ -82,6 +84,7 @@ export default function NewProjectPage() {
   const onSubmit = async (data: ProjectFormValues) => {
     if (!user) {
       toast({ variant: "destructive", title: "Xatolik", description: "Loyiha yuklash uchun tizimga kiring." });
+      router.push("/auth");
       return;
     }
     if (imageFiles.length === 0) {
@@ -109,10 +112,12 @@ export default function NewProjectPage() {
       const tagsArray = data.tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [];
       const toolsArray = data.tools?.split(',').map(tool => tool.trim()).filter(Boolean) || [];
 
+      if(!db) throw new Error("Database connection not found.");
+
       await addDoc(collection(db, "projects"), {
         name: data.name,
         description: data.description,
-        designerId: user.uid,
+        designerId: user.id, // Use user.id from next-auth session
         imageUrl: imageUrls[0], // Main image
         imageUrls: imageUrls, // All images
         tags: tagsArray,
@@ -143,6 +148,16 @@ export default function NewProjectPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (status === 'loading') {
+    return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin h-10 w-10" /></div>;
+  }
+  
+  if (status === 'unauthenticated') {
+    router.push('/auth');
+    return <div className="flex items-center justify-center h-screen"><p>Loyiha yuklash uchun tizimga kiring.</p></div>;
+  }
+
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
@@ -268,5 +283,3 @@ export default function NewProjectPage() {
     </div>
   );
 }
-
-    
