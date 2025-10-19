@@ -10,10 +10,12 @@ interface FirebaseClientProviderProps {
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  // `useMemo` ensures that `initializeFirebase` is called only once per component
+  // lifecycle on the client-side. This is the single source of truth for
+  // client-side Firebase services.
   const firebaseServices = useMemo(() => {
-    // Initialize Firebase on the client side, once per component mount.
     return initializeFirebase();
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   return (
     <FirebaseProvider
