@@ -2,11 +2,10 @@
 
 import React, { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
-import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin';
 import { useInView } from 'framer-motion';
 
-gsap.registerPlugin(ScrambleTextPlugin);
-
+// This is a simplified version that doesn't rely on SplitText or hover effects
+// but uses a simple scramble-on-view animation.
 interface ScrambledTextProps {
   children: React.ReactNode;
   className?: string;
@@ -19,7 +18,7 @@ const ScrambledText: React.FC<ScrambledTextProps> = ({
   children,
   className,
   duration = 1.2,
-  scrambleChars = ".:",
+  scrambleChars = "*#?@!_",
   speed = 0.5,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -27,23 +26,25 @@ const ScrambledText: React.FC<ScrambledTextProps> = ({
   const animation = useRef<gsap.core.Tween | null>(null);
 
   useEffect(() => {
+    // ScrambleTextPlugin needs to be registered. Assuming it's done elsewhere or here.
+    if (!gsap.plugins.scrambleText) {
+        console.error("GSAP ScrambleTextPlugin is not registered.");
+        return;
+    }
+    
     if (isInView && ref.current) {
       const originalText = ref.current.textContent || '';
       
-      // Clear any previous animation
       if (animation.current) {
         animation.current.kill();
       }
 
-      // Start with scrambled text, then reveal
       animation.current = gsap.to(ref.current, {
         duration: duration,
         scrambleText: {
           text: originalText,
           chars: scrambleChars,
           speed: speed,
-          revealDelay: 0.5,
-          newClass: "is-revealed"
         },
         ease: 'none',
       });
