@@ -44,6 +44,14 @@ export default function SendMessageDialog({ isOpen, onOpenChange, recipient, cur
       return;
     }
     if (!db || !currentUser) return;
+    if (currentUser.id === recipient.id) {
+        toast({
+            variant: "destructive",
+            title: "Xatolik",
+            description: "O'zingizga xabar yubora olmaysiz.",
+        });
+        return;
+    }
 
     setIsSending(true);
     try {

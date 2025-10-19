@@ -37,6 +37,7 @@ export default function ProjectDetailsPage() {
   const user = session?.user;
 
   const [isLiked, setIsLiked] = useState(false);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
 
@@ -89,6 +90,7 @@ export default function ProjectDetailsPage() {
       return;
     }
 
+    setIsLikeLoading(true);
     const projectRef = doc(db, 'projects', id);
 
     try {
@@ -108,18 +110,20 @@ export default function ProjectDetailsPage() {
             setIsLiked(true);
 
              // Create notification for the project owner
-            const notificationsRef = collection(db, "notifications");
-            await addDoc(notificationsRef, {
-                userId: project.designerId,
-                type: 'like',
-                senderId: user.id,
-                senderName: user.name || 'Anonim',
-                senderPhotoURL: user.image || '',
-                isRead: false,
-                projectId: project.id,
-                projectName: project.name,
-                createdAt: serverTimestamp(),
-            });
+            if (project.designerId !== user.id) { // Don't notify self
+              const notificationsRef = collection(db, "notifications");
+              await addDoc(notificationsRef, {
+                  userId: project.designerId,
+                  type: 'like',
+                  senderId: user.id,
+                  senderName: user.name || 'Anonim',
+                  senderPhotoURL: user.image || '',
+                  isRead: false,
+                  projectId: project.id,
+                  projectName: project.name,
+                  createdAt: serverTimestamp(),
+              });
+            }
         }
     } catch (err) {
         console.error("Like/Unlike error", err);
@@ -128,6 +132,8 @@ export default function ProjectDetailsPage() {
             title: "Xatolik!",
             description: "Amalni bajarishda xatolik yuz berdi.",
         });
+    } finally {
+        setIsLikeLoading(false);
     }
   };
 
@@ -228,8 +234,10 @@ export default function ProjectDetailsPage() {
               <Card>
                 <CardContent className="p-4 space-y-4">
                   <div className="flex gap-2">
-                    <Button onClick={handleLikeToggle} className="w-full" variant={isLiked ? "secondary" : "default"} disabled={!user}>
+                    <Button onClick={handleLikeToggle} className="w-full" variant={isLiked ? "secondary" : "default"} disabled={!user || isLikeLoading}>
+                      {isLikeLoading ? <LoadingPage/> :
                       <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
+                      }
                       {isLiked ? 'Yoqdi' : 'Yoqdi'}
                     </Button>
                   </div>
@@ -295,5 +303,3 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
-
-    

@@ -17,6 +17,7 @@ import SendMessageDialog from '@/components/send-message-dialog';
 import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 export default function DesignerProfilePage() {
   const params = useParams();
@@ -87,16 +88,18 @@ export default function DesignerProfilePage() {
             toast({ description: `${designer?.name} ga obuna bo'ldingiz.` });
 
             // Create notification for the followed user
-            const notificationsRef = collection(db, "notifications");
-            await addDoc(notificationsRef, {
-                userId: designer.id,
-                type: 'follow',
-                senderId: user.id,
-                senderName: user.name || 'Anonim',
-                senderPhotoURL: user.image || '',
-                isRead: false,
-                createdAt: serverTimestamp(),
-            });
+            if (designer.id !== user.id) { // Don't notify self
+              const notificationsRef = collection(db, "notifications");
+              await addDoc(notificationsRef, {
+                  userId: designer.id,
+                  type: 'follow',
+                  senderId: user.id,
+                  senderName: user.name || 'Anonim',
+                  senderPhotoURL: user.image || '',
+                  isRead: false,
+                  createdAt: serverTimestamp(),
+              });
+            }
         }
     } catch(error) {
         console.error("Follow/unfollow error", error);
