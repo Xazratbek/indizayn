@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { UserPlus } from "lucide-react";
 import Link from "next/link";
 import { collection, query, orderBy } from 'firebase/firestore';
-import { LoadingPage } from "../loading";
+import LoadingPage from "../loading";
 
 export default function DesignersPage() {
   const db = useFirestore();

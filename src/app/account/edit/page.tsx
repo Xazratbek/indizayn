@@ -18,7 +18,7 @@ import type { Designer } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
-import { LoadingPage } from "@/app/loading";
+import LoadingPage from "@/app/loading";
 
 export default function ProfileEditPage() {
   const { data: session, status, update: updateSession } = useSession();

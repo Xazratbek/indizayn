@@ -15,7 +15,8 @@ import type { Designer, Project } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import SendMessageDialog from '@/components/send-message-dialog';
 import { useSession } from 'next-auth/react';
-import { LoadingPage } from '@/app/loading';
+import LoadingPage from '@/app/loading';
+import Link from 'next/link';
 
 export default function DesignerProfilePage() {
   const params = useParams();
@@ -113,7 +114,7 @@ export default function DesignerProfilePage() {
   const isLoading = isDesignerLoading || areProjectsLoading || isUserLoading;
 
   if (isLoading) {
-    return <div className="flex h-[80vh] items-center justify-center"><LoadingPage /></div>;
+    return <LoadingPage />;
   }
   
   if (!designer) {

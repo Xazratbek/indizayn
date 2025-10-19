@@ -20,7 +20,7 @@ import { toast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Lightbox from '@/components/lightbox';
 import { useSession } from 'next-auth/react';
-import { LoadingPage } from '@/app/loading';
+import LoadingPage from '@/app/loading';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -130,7 +130,7 @@ export default function ProjectDetailsPage() {
   const isLoading = isProjectLoading || isDesignerLoading;
 
   if (isLoading) {
-    return <div className="flex h-[80vh] items-center justify-center"><LoadingPage /></div>;
+    return <LoadingPage />;
   }
   
   if (!project || !designer) {

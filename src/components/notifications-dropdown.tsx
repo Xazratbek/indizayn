@@ -18,7 +18,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Notification } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { LoadingPage } from '@/app/loading';
+import LoadingPage from '@/app/loading';
 
 function NotificationIcon({ type }: { type: Notification['type'] }) {
     switch (type) {

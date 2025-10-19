@@ -18,7 +18,7 @@ import {
 import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import PaginationControls from '@/components/pagination-controls';
-import { LoadingPage } from '../loading';
+import LoadingPage from '../loading';
 
 const PROJECTS_PER_PAGE = 10;
 

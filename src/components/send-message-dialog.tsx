@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import type { Designer } from '@/lib/types';
 import type { Session } from 'next-auth';
-import { LoadingPage } from '@/app/loading';
+import LoadingPage from '@/app/loading';
 
 interface SendMessageDialogProps {
   isOpen: boolean;

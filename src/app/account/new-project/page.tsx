@@ -19,7 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { LoadingPage } from "@/app/loading";
+import LoadingPage from "@/app/loading";
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: "Loyiha nomi kamida 3 belgidan iborat bo'lishi kerak." }),

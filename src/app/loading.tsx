@@ -1,4 +1,4 @@
-export default function LoadingSpinner() {
+export function LoadingSpinner() {
   return (
     <div className="spinner">
       <div className="spinner-outer"></div>
@@ -7,7 +7,7 @@ export default function LoadingSpinner() {
   );
 }
 
-export function LoadingPage() {
+export default function LoadingPage() {
   return (
     <div className="flex h-[80vh] items-center justify-center">
       <LoadingSpinner />

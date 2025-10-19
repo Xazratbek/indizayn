@@ -8,7 +8,7 @@ import PortfolioCard from '@/components/portfolio-card';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { LoadingPage } from '@/app/loading';
+import LoadingPage from '@/app/loading';
 
 export default function MyProjectsPage() {
     const { data: session, status } = useSession();

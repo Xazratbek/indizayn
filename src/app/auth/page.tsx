@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingPage } from "../loading";
+import LoadingPage from "../loading";
 
 export default function AuthPage() {
   const { data: session, status } = useSession();
