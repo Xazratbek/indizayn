@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,6 +13,8 @@ import {
   getDoc,
   setDoc,
   serverTimestamp,
+  collection,
+  addDoc,
 } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useAuth, useFirestore, useUser } from "@/firebase";
@@ -43,6 +46,7 @@ export default function AuthPage() {
 
     if (!snapshot.exists()) {
       try {
+        // Create user document
         await setDoc(userRef, {
           uid: firebaseUser.uid,
           name: firebaseUser.displayName,
@@ -53,6 +57,31 @@ export default function AuthPage() {
           subscriberCount: 0,
           followers: [],
         });
+
+        // Create initial notification to ensure collection exists
+        const notificationsRef = collection(db, "notifications");
+        await addDoc(notificationsRef, {
+            userId: firebaseUser.uid,
+            type: 'follow', // Using 'follow' as a welcome message type
+            senderId: 'system',
+            senderName: 'inDizayn',
+            senderPhotoURL: '', // Add a system logo URL if available
+            isRead: false,
+            messageSnippet: `inDizayn platformasiga xush kelibsiz, ${firebaseUser.displayName}!`,
+            createdAt: serverTimestamp(),
+        });
+        
+        // Create initial message to ensure collection exists
+        const messagesRef = collection(db, "messages");
+        await addDoc(messagesRef, {
+            senderId: "system",
+            receiverId: firebaseUser.uid,
+            content: `Salom, ${firebaseUser.displayName}! inDizayn jamoasi sizni qutlaydi. Platformamizda ijodingizni namoyish eting va ilhomlaning!`,
+            isRead: false,
+            createdAt: serverTimestamp(),
+        });
+
+
       } catch (error) {
         console.error("Foydalanuvchini Firestorega saqlashda xatolik:", error);
         toast({
@@ -181,3 +210,5 @@ export default function AuthPage() {
     </div>
   );
 }
+
+    

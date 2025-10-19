@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -91,6 +92,34 @@ export default function NotificationsDropdown() {
     }
   };
 
+  const getNotificationText = (notification: Notification) => {
+    if (notification.senderId === 'system') {
+        return notification.messageSnippet || "Tizim xabari.";
+    }
+    
+    switch(notification.type) {
+        case 'like':
+            return <>
+                <span className="font-semibold">{notification.senderName}</span>
+                {` loyihangizni yoqtirdi: `}
+                <span className="font-semibold italic">"{notification.projectName}"</span>
+            </>;
+        case 'follow':
+            return <>
+                <span className="font-semibold">{notification.senderName}</span>
+                {` sizga obuna bo'ldi.`}
+            </>;
+        case 'message':
+            return <>
+                <span className="font-semibold">{notification.senderName}</span>
+                {` sizga xabar yubordi.`}
+            </>;
+        default:
+            return "Yangi bildirishnoma."
+    }
+  }
+
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -134,10 +163,7 @@ export default function NotificationsDropdown() {
                                 </Avatar>
                                 <div className="text-sm flex-1">
                                     <p>
-                                        <span className="font-semibold">{notif.senderName}</span>
-                                        {notif.type === 'like' && ` loyihangizni yoqtirdi: "${notif.projectName}"`}
-                                        {notif.type === 'follow' && ` sizga obuna bo'ldi.`}
-                                        {notif.type === 'message' && ` sizga xabar yubordi.`}
+                                        {getNotificationText(notif)}
                                     </p>
                                     {notif.type === 'message' && notif.messageSnippet && (
                                         <p className="text-xs text-muted-foreground mt-1 p-2 bg-secondary rounded-md italic">
@@ -166,3 +192,5 @@ export default function NotificationsDropdown() {
     </Popover>
   );
 }
+
+    
