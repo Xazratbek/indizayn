@@ -1,6 +1,5 @@
 'use server';
 
-import 'dotenv/config';
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import { revalidatePath } from 'next/cache';
 
