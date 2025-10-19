@@ -1,10 +1,10 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
-import { firebaseConfig } from '@/firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore, useAuth, initializeFirebase } from '@/firebase';
+import { useFirestore, initializeFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 
@@ -17,7 +17,6 @@ googleProvider.addScope('email');
 googleProvider.setCustomParameters({
   prompt: 'select_account',
 });
-
 
 // ============================================
 // XATOLARNI QAYTA ISHLASH
@@ -37,7 +36,7 @@ const getErrorMessage = (error: any): string => {
       'auth/internal-error': 'Ichki xatolik. Firebase sozlamalarini tekshiring.',
     };
 
-    console.log('Xato kodi:', error.code);
+    console.error('Xato kodi:', error.code, error.message);
     return errorMessages[error.code] || error.message || 'Noma\'lum xatolik yuz berdi.';
 };
 
@@ -46,11 +45,9 @@ const getErrorMessage = (error: any): string => {
 // GOOGLE AUTH COMPONENT
 // ============================================
 export default function AuthPage() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isProcessingLogin, setIsProcessingLogin] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(true);
   const db = useFirestore();
   const router = useRouter();
-
 
   // ============================================
   // DATABASE HELPER
@@ -72,6 +69,10 @@ export default function AuthPage() {
           subscriberCount: 0,
           followers: [],
         });
+        toast({
+            title: "Xush kelibsiz!",
+            description: `Profilingiz muvaffaqiyatli yaratildi.`,
+        });
       } catch (error) {
         console.error("Foydalanuvchini Firestorega saqlashda xatolik:", error);
         toast({
@@ -88,72 +89,54 @@ export default function AuthPage() {
   // AUTH STATE LOGIC
   // ============================================
   useEffect(() => {
-    let mounted = true;
-    
-    if (!auth) {
-        setIsProcessingLogin(false);
-        return;
-    }
-
-    const processRedirect = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && result.user && mounted) {
+    // 1. Check if user is returning from a redirect
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          // User has successfully signed in via redirect.
           await saveUserToDB(result.user);
           toast({
             title: "Muvaffaqiyatli kirdingiz!",
             description: `Xush kelibsiz, ${result.user.displayName}!`,
           });
           router.replace('/account');
+          // No need to set isProcessing to false, as we are redirecting away.
         } else {
-             // Agar redirect natijasi bo'lmasa, onAuthStateChanged ni kutamiz
-            setIsProcessingLogin(false);
+          // No redirect result, now check for an existing session.
+          const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+              // User is already logged in, redirect them.
+              router.replace('/account');
+            } else {
+              // User is not logged in and not coming from a redirect.
+              // It's safe to show the login page.
+              setIsProcessing(false);
+            }
+            unsubscribe(); // We only need to check this once on initial load.
+          });
         }
-      } catch (err: any) {
-        console.error('❌ Redirect xatosi:', err);
-        if (mounted) {
-           toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
-           setIsProcessingLogin(false);
-        }
-      } 
-    };
-
-    processRedirect();
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!mounted) return;
-      
-      setCurrentUser(user);
-      if(user) {
-        if(window.location.pathname.startsWith('/auth')) {
-            router.replace('/account');
-        }
-      }
-      setIsProcessingLogin(false);
-    });
-
-    return () => {
-      mounted = false;
-      unsubscribe();
-    };
-  }, [router, db, auth]);
+      })
+      .catch((err) => {
+        console.error('getRedirectResult xatosi:', err);
+        toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
+        setIsProcessing(false);
+      });
+  }, [router, db]);
 
 
   // ============================================
   // GOOGLE SIGN IN (REDIRECT)
   // ============================================
   const handleSignIn = async () => {
-    if (!auth) {
-        toast({ variant: "destructive", title: "Xatolik", description: "Autentifikatsiya xizmati tayyor emas." });
-        return;
-    }
-    setIsProcessingLogin(true);
+    setIsProcessing(true);
     try {
       await signInWithRedirect(auth, googleProvider);
+      // After this call, the page will redirect to Google. 
+      // The logic in useEffect will handle the result upon returning.
     } catch (err: any) {
-      console.error('❌ Sign in xatosi:', err);
+      console.error('signInWithRedirect xatosi:', err);
       toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
-      setIsProcessingLogin(false);
+      setIsProcessing(false);
     }
   };
 
@@ -161,7 +144,7 @@ export default function AuthPage() {
   // ============================================
   // LOADING STATE
   // ============================================
-  if (isProcessingLogin) {
+  if (isProcessing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
@@ -170,7 +153,7 @@ export default function AuthPage() {
             <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
           </div>
           <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-            Yuklanmoqda...
+            Autentifikatsiya...
           </h2>
           <p className="text-gray-600">
              Iltimos kuting...
@@ -180,16 +163,6 @@ export default function AuthPage() {
     );
   }
   
-  if (currentUser) {
-    // Already logged in, redirecting...
-    return (
-         <div className="min-h-screen flex items-center justify-center">
-             <p>Tizimga kirilgansiz, yo'naltirilmoqda...</p>
-         </div>
-    );
-  }
-
-
   // ============================================
   // LOGIN PAGE
   // ============================================
@@ -213,7 +186,6 @@ export default function AuthPage() {
           
           <button
             onClick={handleSignIn}
-            disabled={isProcessingLogin}
             className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 hover:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24">
@@ -244,4 +216,5 @@ export default function AuthPage() {
     </div>
   );
 }
+
     
