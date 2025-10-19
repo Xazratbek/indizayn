@@ -13,6 +13,7 @@ import type { Designer, Project } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 const StatCard = ({ label, value }: { label: string; value: number | string }) => (
     <div className="text-center bg-secondary p-4 rounded-lg">
@@ -32,6 +33,12 @@ export default function AccountDashboardPage() {
   
   const id = user?.id;
 
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/auth');
+    }
+  }, [status, router]);
+
   // Fetch designer's profile
   const designerDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'users', id) : null, [db, id]);
   const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
@@ -41,14 +48,8 @@ export default function AccountDashboardPage() {
   const { data: designerProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
 
   const isLoading = isDesignerLoading || areProjectsLoading || isUserLoading;
-  
-  if (status === 'unauthenticated') {
-    router.replace('/auth');
-    return null;
-  }
 
-
-  if (isLoading) {
+  if (isLoading || status !== 'authenticated') {
     return (
         <div className="container mx-auto py-8 px-4">
              <Card className="overflow-hidden mb-8">
@@ -95,7 +96,7 @@ export default function AccountDashboardPage() {
             <Image 
               src={designer.coverPhotoURL}
               alt={`${designer.name}ning muqova surati`}
-              layout="fill"
+              fill
               className="w-full h-full object-cover"
               priority
             />

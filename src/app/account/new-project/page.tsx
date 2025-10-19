@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +40,12 @@ export default function NewProjectPage() {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/auth');
+    }
+  }, [status, router]);
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
@@ -84,7 +90,6 @@ export default function NewProjectPage() {
   const onSubmit = async (data: ProjectFormValues) => {
     if (!user) {
       toast({ variant: "destructive", title: "Xatolik", description: "Loyiha yuklash uchun tizimga kiring." });
-      router.push("/auth");
       return;
     }
     if (imageFiles.length === 0) {
@@ -149,15 +154,9 @@ export default function NewProjectPage() {
     }
   };
 
-  if (status === 'loading') {
+  if (status !== 'authenticated') {
     return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin h-10 w-10" /></div>;
   }
-  
-  if (status === 'unauthenticated') {
-    router.push('/auth');
-    return <div className="flex items-center justify-center h-screen"><p>Loyiha yuklash uchun tizimga kiring.</p></div>;
-  }
-
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
@@ -232,7 +231,7 @@ export default function NewProjectPage() {
                                      <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 pr-4">
                                          {imagePreviews.map((preview, index) => (
                                              <div key={index} className="relative aspect-square">
-                                                 <Image src={preview} alt={`Loyiha rasmi ${index + 1}`} layout="fill" className="object-cover rounded-md" />
+                                                 <Image src={preview} alt={`Loyiha rasmi ${index + 1}`} fill className="object-cover rounded-md" />
                                                  <Button
                                                      type="button"
                                                      variant="destructive"

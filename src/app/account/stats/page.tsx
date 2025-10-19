@@ -11,6 +11,7 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
     <Card>
@@ -32,6 +33,12 @@ export default function MyStatsPage() {
     const router = useRouter();
     const db = useFirestore();
 
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            router.replace('/auth');
+        }
+    }, [status, router]);
+
     const id = user?.id;
     
     // Fetch designer's profile for subscriber count
@@ -45,12 +52,7 @@ export default function MyStatsPage() {
 
     const isLoading = isUserLoading || areProjectsLoading || isDesignerLoading;
     
-    if (status === 'unauthenticated') {
-        router.replace('/auth');
-        return null;
-    }
-
-    if (isLoading) {
+    if (isLoading || status !== 'authenticated') {
         return (
             <div className="flex items-center justify-center h-screen">
                 <Loader2 className="animate-spin h-10 w-10" />

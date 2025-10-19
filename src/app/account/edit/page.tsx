@@ -41,6 +41,12 @@ export default function ProfileEditPage() {
     previewUrl: null,
   });
 
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.replace('/auth');
+    }
+  }, [status, router]);
+
   const userProfileQuery = useMemoFirebase(() => 
     (db && user) ? doc(db, 'users', user.id) : null
   , [db, user]);
@@ -169,19 +175,9 @@ export default function ProfileEditPage() {
 
   const isLoading = isUserLoading || isProfileLoading;
 
-  if (isLoading) {
+  if (isLoading || status !== 'authenticated') {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="animate-spin h-10 w-10" />
-      </div>
-    );
-  }
-
-  if (status === 'unauthenticated') {
-    router.push('/auth');
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Iltimos, hisobga kiring.</p>
         <Loader2 className="animate-spin h-10 w-10" />
       </div>
     );
