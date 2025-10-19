@@ -1,81 +1,101 @@
 /**
- * @fileoverview Firestore Security Rules for the design portfolio application.
+ * @fileoverview Firestore Security Rules for the Design Portfolio application.
  *
  * Core Philosophy:
- * This ruleset prioritizes user data protection, allowing only authenticated users to access their own data while permitting public read access to portfolio projects.
+ * This ruleset enforces a user-ownership model for user profiles and allows public read access to portfolio projects,
+ * but restricts modifications to project owners.
  *
  * Data Structure:
- * - User profiles are stored in `/users/{userId}`, where `{userId}` matches the Firebase Auth UID.
- * - Portfolio projects are stored in `/projects/{projectId}`.  Projects contain a `designerId` field indicating ownership.
+ * - /users/{userId}: Stores user profiles, where {userId} is the Firebase Auth UID.
+ * - /projects/{projectId}: Stores portfolio projects. Each project has a 'designerId' field indicating the owner.
  *
  * Key Security Decisions:
- * - Users can only read and write their own profile data.
- * - Project data is publicly readable but can only be created, updated, or deleted by the project's owner (the designer).
- * - Listing of users is not allowed.
+ * - Users can only read their own profile data and cannot list all users.
+ * - Portfolio projects are publicly readable but only editable/deletable by their respective designers.
+ * - Data validation is relaxed in this prototyping phase to allow for rapid schema iteration, but critical
+ *   authorization fields are validated for relational integrity.
  *
  * Denormalization for Authorization:
- * - The `Project` entity includes a `designerId` field. This denormalization is **critical** for implementing owner-only writes on projects without needing to perform costly `get()` operations to look up the designer's ID from a separate document.
+ * - Projects include a `designerId` field, denormalizing the user's UID for efficient ownership checks.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Restricts access to user profiles. Users can only read and write their own profile.
-     * @path /databases/{database}/documents/users/{userId}
-     * @allow (create) - If the user is creating their own profile (auth.uid == userId).
-     * @allow (get, update, delete) - If the user is the owner of the profile (auth.uid == userId).
-     * @deny (create) - If the user is attempting to create a profile with a different userId.
-     * @deny (get, update, delete) - If the user is not the owner of the profile.
-     * @principle Enforces user-ownership for profile data.
+     * @description Manages user profile data.
+     * @path /users/{userId}
+     * @allow (get) Authenticated user can read their own profile.
+     * @allow (create) Authenticated user can create their own profile if the UID matches.
+     * @allow (update) Authenticated user can update their own profile if the UID matches.
+     * @allow (delete) Authenticated user can delete their own profile if the UID matches.
+     * @deny (list)  Listing all users is not permitted.
+     * @principle Enforces document ownership for reads and writes.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
+      // Helper function to check if the request is from the owner of the user document.
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
 
+      // Helper function to check if the request is from an existing owner of the user document.
       function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
       }
+
+      // Only allow authenticated users to read their own profile.
       allow get: if isOwner(userId);
+
+      // Prevent listing of all users.
       allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.uid == userId;
+
+      // Allow creating a user document if the authenticated user's UID matches the document ID.
+      allow create: if isOwner(userId) && request.resource.data.uid == userId;
+
+      // Allow updates if the user is the owner and the user ID is immutable.
       allow update: if isExistingOwner(userId) && request.resource.data.uid == resource.data.uid;
+
+      // Allow delete if the user is the owner.
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to portfolio projects.  Anyone can read project data, but only the owner can create, update, or delete.
-     * @path /databases/{database}/documents/projects/{projectId}
-     * @allow (get, list) - Public read access is allowed for all projects.
-     * @allow (create) - If the user is authenticated and the designerId matches their UID.
-     * @allow (update, delete) - If the user is authenticated and is the owner of the project (designerId matches their UID).
-     * @deny (create) - If the user is not authenticated or the designerId does not match their UID.
-     * @deny (update, delete) - If the user is not the owner of the project.
-     * @principle Public read, owner-only write access for portfolio projects.
+     * @description Manages portfolio projects.
+     * @path /projects/{projectId}
+     * @allow (get, list) Anyone can read or list projects.
+     * @allow (create) Only authenticated users can create projects with their UID as the designerId.
+     * @allow (update) Only the designer can update their own project.
+     * @allow (delete) Only the designer can delete their own project.
+     * @deny (create) Non-authenticated users cannot create projects.
+     * @principle Allows public read access but enforces ownership for writes.
      */
     match /projects/{projectId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(designerId) {
+      // Helper function to check if the request is from the designer of the project.
+      function isDesigner(designerId) {
         return request.auth.uid == designerId;
       }
 
-      function isExistingOwner(designerId) {
-        return isOwner(designerId) && resource != null;
+      // Helper function to check if the request is from an existing designer of the project.
+      function isExistingDesigner(designerId) {
+        return isDesigner(designerId) && resource != null;
       }
 
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && isOwner(request.resource.data.designerId);
-      allow update: if isExistingOwner(resource.data.designerId);
-      allow delete: if isExistingOwner(resource.data.designerId);
+      // Allow anyone to read or list projects.
+      allow get, list: if true;
+
+      // Allow authenticated users to create projects if the designerId matches their UID.
+      allow create: if isSignedIn() && request.resource.data.designerId == request.auth.uid;
+
+      // Allow the designer to update their own project.
+      allow update: if isExistingDesigner(resource.data.designerId);
+
+      // Allow the designer to delete their own project.
+      allow delete: if isExistingDesigner(resource.data.designerId);
     }
+  }
+
+  // Helper function to check if a user is signed in.
+  function isSignedIn() {
+    return request.auth != null;
   }
 }
