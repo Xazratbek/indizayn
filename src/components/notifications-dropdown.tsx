@@ -32,48 +32,52 @@ function NotificationIcon({ type }: { type: Notification['type'] }) {
 }
 
 export default function NotificationsDropdown() {
-  const { user } = useUser();
-  const db = useFirestore();
-  const { toast } = useToast();
-  const [isMarkingRead, setIsMarkingRead] = useState(false);
+//   const { user } = useUser();
+//   const db = useFirestore();
+//   const { toast } = useToast();
+//   const [isMarkingRead, setIsMarkingRead] = useState(false);
 
-  const notificationsQuery = useMemoFirebase(() => 
-    (db && user) 
-      ? query(
-          collection(db, 'notifications'), 
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc')
-        )
-      : null, 
-    [db, user]
-  );
+//   const notificationsQuery = useMemoFirebase(() => 
+//     (db && user) 
+//       ? query(
+//           collection(db, 'notifications'), 
+//           where('userId', '==', user.uid),
+//           orderBy('createdAt', 'desc')
+//         )
+//       : null, 
+//     [db, user]
+//   );
   
-  const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
+//   const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
   
-  const unreadNotifications = notifications?.filter(n => !n.isRead) || [];
+//   const unreadNotifications = notifications?.filter(n => !n.isRead) || [];
+  const isLoading = true;
+  const notifications: Notification[] = [];
+  const unreadNotifications: Notification[] = [];
+
 
   const handleMarkAllRead = async () => {
-    if (!db || !user || unreadNotifications.length === 0) return;
+    // if (!db || !user || unreadNotifications.length === 0) return;
     
-    setIsMarkingRead(true);
-    try {
-        const batch = writeBatch(db);
-        unreadNotifications.forEach(notif => {
-            const notifRef = collection(db, 'notifications');
-            batch.update(notifRef.doc(notif.id), { isRead: true });
-        });
-        await batch.commit();
-        toast({ description: "Barcha bildirishnomalar o'qildi." });
-    } catch (error) {
-        console.error("Bildirishnomalarni o'qilgan deb belgilashda xatolik:", error);
-        toast({
-            variant: "destructive",
-            title: "Xatolik",
-            description: "Amalni bajarib bo'lmadi.",
-        });
-    } finally {
-        setIsMarkingRead(false);
-    }
+    // setIsMarkingRead(true);
+    // try {
+    //     const batch = writeBatch(db);
+    //     unreadNotifications.forEach(notif => {
+    //         const notifRef = collection(db, 'notifications');
+    //         batch.update(notifRef.doc(notif.id), { isRead: true });
+    //     });
+    //     await batch.commit();
+    //     toast({ description: "Barcha bildirishnomalar o'qildi." });
+    // } catch (error) {
+    //     console.error("Bildirishnomalarni o'qilgan deb belgilashda xatolik:", error);
+    //     toast({
+    //         variant: "destructive",
+    //         title: "Xatolik",
+    //         description: "Amalni bajarib bo'lmadi.",
+    //     });
+    // } finally {
+    //     setIsMarkingRead(false);
+    // }
   };
 
 
@@ -111,9 +115,10 @@ export default function NotificationsDropdown() {
             variant="ghost" 
             size="sm" 
             onClick={handleMarkAllRead}
-            disabled={isMarkingRead || unreadNotifications.length === 0}
+            disabled={true}
+            // disabled={isMarkingRead || unreadNotifications.length === 0}
           >
-            {isMarkingRead ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4 mr-2" />}
+            {false ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4 mr-2" />}
             Barchasini o'qish
           </Button>
         </div>
