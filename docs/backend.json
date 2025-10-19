@@ -26,6 +26,7 @@
         "name": { "type": "string", "description": "Name of the portfolio project." },
         "designerId": { "type": "string", "description": "UID of the user who created the project." },
         "imageUrl": { "type": "string", "description": "URL of the project's main image.", "format": "uri" },
+        "imageUrls": { "type": "array", "items": { "type": "string", "format": "uri" }, "description": "Array of URLs for the project's images." },
         "description": { "type": "string", "description": "Detailed description of the project." },
         "tags": { "type": "array", "items": { "type": "string" }, "description": "Descriptive tags for the project." },
         "tools": { "type": "array", "items": { "type": "string" }, "description": "Tools used to create the project." },
@@ -34,7 +35,7 @@
         "likes": { "type": "array", "items": { "type": "string" }, "description": "List of UIDs of users who liked this project." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of project creation." }
       },
-      "required": ["name", "designerId", "imageUrl", "description", "createdAt", "viewCount", "likeCount", "likes"]
+      "required": ["name", "designerId", "imageUrl", "imageUrls", "description", "createdAt", "viewCount", "likeCount", "likes"]
     }
   },
   "auth": {

@@ -11,11 +11,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Eye, Heart, Calendar, Wrench, Loader2 } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
-import { format, parseISO } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Project, Designer } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -33,9 +34,13 @@ export default function ProjectDetailsPage() {
     // Increment view count only once per page load
     if (id) {
         const projectRef = doc(db, 'projects', id);
-        updateDoc(projectRef, {
-            viewCount: increment(1)
-        }).catch(err => console.error("Failed to increment view count: ", err));
+        const viewed = sessionStorage.getItem(`viewed_${id}`);
+        if (!viewed) {
+          updateDoc(projectRef, {
+              viewCount: increment(1)
+          }).catch(err => console.error("Failed to increment view count: ", err));
+          sessionStorage.setItem(`viewed_${id}`, 'true');
+        }
     }
   }, [id, db]);
 
@@ -101,6 +106,9 @@ export default function ProjectDetailsPage() {
   if (!project || !designer) {
     return <div className="flex h-[80vh] items-center justify-center"><p>Loyiha topilmadi.</p></div>;
   }
+  
+  const projectImages = project.imageUrls && project.imageUrls.length > 0 ? project.imageUrls : [project.imageUrl];
+
 
   return (
     <div className="container mx-auto max-w-6xl py-8 px-4">
@@ -112,18 +120,28 @@ export default function ProjectDetailsPage() {
               <h1 className="font-headline text-4xl font-bold">{project.name}</h1>
             </CardHeader>
             <CardContent>
-              {project.imageUrl && (
-                <div className="aspect-[4/3] relative overflow-hidden rounded-lg mb-6">
-                  <Image
-                    src={project.imageUrl}
-                    alt={project.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 66vw"
-                    className="object-cover"
-                    data-ai-hint="project image"
-                    priority
-                  />
-                </div>
+              {projectImages && projectImages.length > 0 && (
+                 <Carousel className="w-full mb-6">
+                    <CarouselContent>
+                    {projectImages.map((url, index) => (
+                        <CarouselItem key={index}>
+                        <div className="aspect-[4/3] relative overflow-hidden rounded-lg">
+                            <Image
+                            src={url}
+                            alt={`${project.name} - ${index + 1}`}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 66vw"
+                            className="object-cover"
+                            data-ai-hint="project image"
+                            priority={index === 0}
+                            />
+                        </div>
+                        </CarouselItem>
+                    ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="left-4" />
+                    <CarouselNext className="right-4"/>
+                </Carousel>
               )}
               <p className="text-lg text-muted-foreground leading-relaxed">{project.description}</p>
               
@@ -205,7 +223,7 @@ export default function ProjectDetailsPage() {
                 {project.tags && project.tags.length > 0 && (
                   <div className="flex items-start">
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {project.tags.map(tag => <Badge key={tag} variant="outline">{tag}</Badge>)}
+                      {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
                     </div>
                   </div>
                 )}

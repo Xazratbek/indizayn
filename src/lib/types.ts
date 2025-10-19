@@ -19,7 +19,8 @@ export interface Project {
   id: string; // Document ID from Firestore
   name: string;
   designerId: string; // UID of the designer who created it
-  imageUrl: string;
+  imageUrl: string; // The primary image for thumbnails
+  imageUrls: string[]; // Array of all project image URLs
   tags: string[];
   tools: string[];
   viewCount: number;
