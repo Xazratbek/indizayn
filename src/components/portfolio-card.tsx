@@ -3,22 +3,37 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Eye } from 'lucide-react';
+import { Heart, Eye, Pencil, Trash2 } from 'lucide-react';
 import type { Project, Designer } from '@/lib/types';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Skeleton } from './ui/skeleton';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from './ui/button';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface PortfolioCardProps {
   project: Project;
   className?: string;
+  showAdminControls?: boolean;
 }
 
 function PortfolioCardSkeleton({ className }: { className?: string }) {
@@ -38,11 +53,13 @@ function PortfolioCardSkeleton({ className }: { className?: string }) {
     );
 }
 
-export default function PortfolioCard({ project, className }: PortfolioCardProps) {
+export default function PortfolioCard({ project, className, showAdminControls = false }: PortfolioCardProps) {
   const db = useFirestore();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const designerDocRef = useMemoFirebase(() => 
     (db && project) ? doc(db, 'users', project.designerId) : null
@@ -93,6 +110,30 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
       }
       // For other pages like /account/projects, it will navigate to the project detail page directly.
   };
+
+  const handleDeleteProject = async () => {
+    if (!db) return;
+    setIsDeleting(true);
+    try {
+        await deleteDoc(doc(db, "projects", project.id));
+        toast({
+            variant: "success",
+            title: "Muvaffaqiyatli!",
+            description: "Loyiha o'chirildi.",
+        });
+        // We might need to refresh the page or parent component state
+        router.refresh(); 
+    } catch(error) {
+        console.error("Loyiha o'chirishda xatolik:", error);
+        toast({
+            variant: "destructive",
+            title: "Xatolik!",
+            description: "Loyihani o'chirishda xatolik yuz berdi.",
+        });
+    } finally {
+        setIsDeleting(false);
+    }
+  }
 
   if (isDesignerLoading) {
     return <PortfolioCardSkeleton className={className} />;
@@ -149,6 +190,36 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
                         <span>{project.viewCount || 0}</span>
                     </div>
                 </div>
+                {showAdminControls && (
+                     <div className="absolute top-2 right-2 flex gap-2">
+                        <Button asChild size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                            <Link href={`/account/projects/edit/${project.id}`}>
+                                <Pencil className="h-4 w-4" />
+                            </Link>
+                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Haqiqatan ham o'chirmoqchimisiz?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Bu amalni qaytarib bo'lmaydi. Bu loyihani butunlay o'chirib yuboradi.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDeleteProject} disabled={isDeleting}>
+                                        {isDeleting ? "O'chirilmoqda..." : "O'chirish"}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                )}
             </div>
           </Link>
 
