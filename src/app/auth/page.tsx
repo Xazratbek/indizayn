@@ -25,8 +25,12 @@ export default function AuthPage() {
         try {
             await signInWithPopup(auth, provider);
             router.push('/account');
-        } catch (error) {
-            console.error("Error signing in with Google: ", error);
+        } catch (error: any) {
+            // This is a common scenario - the user just closed the popup.
+            // We don't want to show an error in the console for this.
+            if (error.code !== 'auth/popup-closed-by-user') {
+                 console.error("Error signing in with Google: ", error);
+            }
         }
     };
 

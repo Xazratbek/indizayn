@@ -51,8 +51,10 @@ export default function Home() {
     try {
         await signInWithPopup(auth, provider);
         router.push('/browse');
-    } catch (error) {
-        console.error("Error signing in with Google: ", error);
+    } catch (error: any) {
+        if (error.code !== 'auth/popup-closed-by-user') {
+            console.error("Error signing in with Google: ", error);
+        }
     }
   };
 
@@ -69,7 +71,6 @@ export default function Home() {
       <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
         <ThreeShowcase />
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-          
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -95,7 +96,7 @@ export default function Home() {
              className="mt-8"
           >
             <div className="animated-border-box">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick} disabled={isUserLoading}>
+               <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick} disabled={isUserLoading}>
                 Boshlash <MoveRight className="ml-2" />
               </Button>
             </div>
