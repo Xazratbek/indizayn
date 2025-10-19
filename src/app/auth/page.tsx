@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { 
     GoogleAuthProvider, 
     signInWithRedirect, 
-    getRedirectResult 
+    getRedirectResult,
+    User
 } from "firebase/auth";
 import {
   doc,
@@ -33,12 +34,12 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function AuthPage() {
   const auth = useAuth();
   const db = useFirestore();
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const router = useRouter();
   const [isProcessingLogin, setIsProcessingLogin] = useState(true);
 
   // This function saves user data to Firestore if they don't exist
-  const saveUserToDB = async (firebaseUser: any) => {
+  const saveUserToDB = async (firebaseUser: User) => {
     if (!firebaseUser || !db) return;
     const userRef = doc(db, "users", firebaseUser.uid);
     const snapshot = await getDoc(userRef);
@@ -80,7 +81,6 @@ export default function AuthPage() {
             createdAt: serverTimestamp(),
         });
 
-
       } catch (error) {
         console.error("Foydalanuvchini Firestorega saqlashda xatolik:", error);
         toast({
@@ -94,60 +94,55 @@ export default function AuthPage() {
   
   const handleSignIn = async () => {
     if (!auth) return;
-    setIsProcessingLogin(true);
+    setIsProcessingLogin(true); // Show loader when sign-in starts
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    try {
-      await signInWithRedirect(auth, provider);
-    } catch (error: any) {
-        console.error("Redirect orqali kirishda xatolik:", error);
-        toast({
-            variant: "destructive",
-            title: "Kirishda xatolik",
-            description: "Tizimga kirishda noma'lum xatolik yuz berdi.",
-        });
-        setIsProcessingLogin(false);
-    }
+    await signInWithRedirect(auth, provider);
   };
 
   useEffect(() => {
-    if (!auth || isUserLoading) {
+    // If a user object exists, they are already logged in. Redirect them.
+    if (user) {
+      router.replace("/account");
       return;
     }
-
-    if (user) {
-        router.replace("/account");
+    
+    // Only proceed if auth is initialized.
+    if (!auth) {
+        // We could set isProcessingLogin to false here if auth is taking too long to initialize
         return;
     }
 
     const processRedirect = async () => {
-        try {
-            const result = await getRedirectResult(auth);
-            if (result && result.user) {
-                await saveUserToDB(result.user);
-                toast({
-                    title: "Muvaffaqiyatli kirdingiz!",
-                    description: `Xush kelibsiz, ${result.user.displayName}!`,
-                });
-                router.replace("/account");
-            } else {
-                // No redirect result, user is not logged in.
-                setIsProcessingLogin(false);
-            }
-        } catch (error) {
-            console.error("Redirect natijasini olishda xatolik: ", error);
-            toast({
-                variant: "destructive",
-                title: "Kirishda xatolik",
-                description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi.",
-            });
-            setIsProcessingLogin(false);
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          await saveUserToDB(result.user);
+          toast({
+            title: "Muvaffaqiyatli kirdingiz!",
+            description: `Xush kelibsiz, ${result.user.displayName}!`,
+          });
+          router.replace("/account");
+        } else {
+          // No redirect result, user is not logged in from a redirect.
+          // It's now safe to allow a new sign-in attempt.
+          setIsProcessingLogin(false);
         }
+      } catch (error: any) {
+        console.error("Redirect natijasini olishda xatolik: ", error);
+        toast({
+            variant: "destructive",
+            title: "Kirishda xatolik",
+            description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi.",
+        });
+        setIsProcessingLogin(false);
+      }
     };
-
+    
     processRedirect();
 
-  }, [auth, isUserLoading, user, db, router]);
+  }, [auth, user, router]);
+
 
   return (
     <div className="flex items-center justify-center min-h-[80vh] bg-background p-4">
