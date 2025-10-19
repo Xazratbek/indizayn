@@ -28,6 +28,8 @@ import { Separator } from '@/components/ui/separator';
 import { Loader2 } from 'lucide-react';
 
 const { auth } = initializeFirebase();
+
+// Create and configure the provider ONCE, outside of the component.
 const googleProvider = new GoogleAuthProvider();
 googleProvider.addScope('profile');
 googleProvider.addScope('email');
@@ -127,7 +129,7 @@ export default function AuthPage() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        if (router.pathname === '/auth') {
+        if (window.location.pathname.includes('/auth')) {
            router.replace('/account');
         }
       } else {
@@ -153,7 +155,8 @@ export default function AuthPage() {
     } catch (err: any) {
       console.error('Google sign-in xatosi:', err);
       toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
-      setIsProcessing(false);
+    } finally {
+        setIsProcessing(false);
     }
   };
 
@@ -168,7 +171,8 @@ export default function AuthPage() {
       router.push('/account');
     } catch (error: any) {
        toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(error) });
-       setIsProcessing(false);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -178,7 +182,7 @@ export default function AuthPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
         await updateProfile(userCredential.user, { displayName: data.name });
 
-        const updatedUser = { ...userCredential.user, displayName: data.name };
+        const updatedUser = { ...userCredential.user, displayName: data.name, photoURL: userCredential.user.photoURL }; // ensure photoURL is carried over
         
         await saveUserToDB(updatedUser as User);
 
@@ -189,7 +193,8 @@ export default function AuthPage() {
         router.push('/account');
     } catch (error: any) {
         toast({ variant: "destructive", title: "Ro'yxatdan o'tishda xatolik", description: getErrorMessage(error) });
-        setIsProcessing(false);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
