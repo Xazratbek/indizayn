@@ -101,15 +101,12 @@ export default function AuthPage() {
   };
 
   useEffect(() => {
-    // If a user object exists, they are already logged in. Redirect them.
     if (user) {
       router.replace("/account");
       return;
     }
     
-    // Only proceed if auth is initialized.
     if (!auth) {
-        // We could set isProcessingLogin to false here if auth is taking too long to initialize
         return;
     }
 
@@ -124,16 +121,17 @@ export default function AuthPage() {
           });
           router.replace("/account");
         } else {
-          // No redirect result, user is not logged in from a redirect.
-          // It's now safe to allow a new sign-in attempt.
           setIsProcessingLogin(false);
         }
       } catch (error: any) {
         console.error("Redirect natijasini olishda xatolik: ", error);
+        const errorMessage = error.code === 'auth/popup-closed-by-user' 
+          ? "Kirish oynasi yopildi. Iltimos, qayta urinib ko'ring."
+          : "Tizimga kirishda noma'lum xatolik yuz berdi.";
         toast({
             variant: "destructive",
             title: "Kirishda xatolik",
-            description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi.",
+            description: errorMessage,
         });
         setIsProcessingLogin(false);
       }
@@ -141,7 +139,7 @@ export default function AuthPage() {
     
     processRedirect();
 
-  }, [auth, user, router]);
+  }, [auth, user, router, db]);
 
 
   return (
