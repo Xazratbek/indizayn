@@ -161,8 +161,8 @@ export default function PortfolioCard({ project, className, showAdminControls = 
     >
       <Card className={cn("overflow-hidden group transition-shadow duration-300 hover:shadow-xl w-full h-full bg-card", className)} style={{transform: 'translateZ(75px)', transformStyle: 'preserve-3d'}}>
         <CardContent className="p-0">
-          <Link href={projectLink} onClick={handleClick} scroll={false} className="block">
-            <div className="aspect-[4/3] relative overflow-hidden rounded-t-lg">
+          <div className="aspect-[4/3] relative overflow-hidden rounded-t-lg">
+            <Link href={projectLink} onClick={handleClick} scroll={false} className="block w-full h-full">
                <motion.div
                  style={{
                    transform: 'translateZ(50px)',
@@ -190,38 +190,38 @@ export default function PortfolioCard({ project, className, showAdminControls = 
                         <span>{project.viewCount || 0}</span>
                     </div>
                 </div>
-                {showAdminControls && (
-                     <div className="absolute top-2 right-2 flex gap-2">
-                        <Button asChild size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                            <Link href={`/account/projects/edit/${project.id}`}>
-                                <Pencil className="h-4 w-4" />
-                            </Link>
-                        </Button>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Haqiqatan ham o'chirmoqchimisiz?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Bu amalni qaytarib bo'lmaydi. Bu loyihani butunlay o'chirib yuboradi.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDeleteProject} disabled={isDeleting}>
-                                        {isDeleting ? "O'chirilmoqda..." : "O'chirish"}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                )}
-            </div>
-          </Link>
+            </Link>
+            {showAdminControls && (
+                  <div className="absolute top-2 right-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Button asChild size="icon" className="h-8 w-8">
+                        <Link href={`/account/projects/edit/${project.id}`}>
+                            <Pencil className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon" className="h-8 w-8">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Haqiqatan ham o'chirmoqchimisiz?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Bu amalni qaytarib bo'lmaydi. Bu loyihani butunlay o'chirib yuboradi.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteProject} disabled={isDeleting}>
+                                    {isDeleting ? "O'chirilmoqda..." : "O'chirish"}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            )}
+          </div>
 
           <div className="p-4" style={{transform: 'translateZ(40px)'}}>
             <Link href={projectLink} onClick={handleClick} scroll={false}>
@@ -243,3 +243,4 @@ export default function PortfolioCard({ project, className, showAdminControls = 
     </motion.div>
   );
 }
+
