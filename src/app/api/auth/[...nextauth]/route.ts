@@ -2,8 +2,10 @@
 import NextAuth from "next-auth";
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { doc, getDocs, setDoc, serverTimestamp, collection, query, where } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/firebase/firestore-config";
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,16 +18,30 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
+  ...(isProduction && {
+    useSecureCookies: true,
+    cookies: {
+      sessionToken: {
+        name: `__Secure-next-auth.session-token`,
+        options: {
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+          secure: true,
+          domain: new URL(process.env.NEXTAUTH_URL!).hostname
+        }
+      },
+    },
+  }),
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (account?.provider !== "google" || !user.email) {
-        return false; // Faqat Google va email mavjud bo'lsa davom etamiz
+        return false;
       }
-
       try {
         if (!db) {
-          console.error("Firestore instance (db) is not available in next-auth route.");
-          return false; // Agar DB ulanmagan bo'lsa, kirishni bloklaymiz
+          console.error("Firestore instance is not available.");
+          return false;
         }
 
         const usersRef = collection(db, "users");
@@ -33,11 +49,10 @@ export const authOptions: NextAuthOptions = {
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          // Foydalanuvchi topilmadi, demak yangi akkaunt yaratamiz
-          // Google'dan kelgan user.id'ni hujjat ID'si sifatida ishlatamiz.
+          // New user, create a document with Google's user.id as the doc id
           const newUserDocRef = doc(db, "users", user.id);
           await setDoc(newUserDocRef, {
-            uid: user.id, // Bu maydonni saqlab qolamiz, chunki boshqa joylarda ishlatilishi mumkin
+            uid: user.id, // Store uid in the document as well
             name: user.name,
             email: user.email,
             photoURL: user.image,
@@ -49,26 +64,38 @@ export const authOptions: NextAuthOptions = {
             followers: [],
           });
         }
-        // Agar foydalanuvchi topilsa, hech narsa qilmaymiz. Kirish muvaffaqiyatli davom etadi.
+        // If user exists, we just let them sign in.
         return true;
-
       } catch (error) {
-        console.error("Error in signIn callback:", error);
-        return false; // Xatolik yuz bersa kirishni to'xtatamiz
+        console.error("Error in signIn callback: ", error);
+        return false;
       }
     },
-
-    async jwt({ token, user }) {
-        if (user) {
-            // Birinchi marta (signIn'dan so'ng)
-            token.id = user.id;
+    
+    async jwt({ token, user, account, profile }) {
+      if (user && user.email) {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", user.email));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          // Set the user's Firestore document ID to the token.
+          // This will be passed to the session callback.
+          token.id = userDoc.id; 
+        } else {
+            // This case might happen on the very first sign-in
+            // where the document was just created in `signIn` callback.
+            // We use the google id which was used to create the doc.
+            token.id = user.id
         }
-        return token;
+      }
+      return token;
     },
-
+    
     async session({ session, token }) {
-      // Har bir sessiya so'rovida token'dagi id'ni session.user'ga o'tkazamiz
-      if (session?.user && token?.id) {
+      // Pass the user's Firestore document ID to the session object
+      if (session?.user) {
         session.user.id = token.id as string;
       }
       return session;
