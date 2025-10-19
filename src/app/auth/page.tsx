@@ -93,7 +93,14 @@ export default function AuthPage() {
   };
   
   const handleSignIn = async () => {
-    if (!auth) return;
+    if (!auth) {
+        toast({
+            variant: "destructive",
+            title: "Xatolik",
+            description: "Autentifikatsiya xizmati tayyor emas. Iltimos, birozdan so'ng qayta urinib ko'ring.",
+        });
+        return;
+    }
     setIsProcessingLogin(true); // Show loader when sign-in starts
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
@@ -107,6 +114,9 @@ export default function AuthPage() {
     }
     
     if (!auth) {
+        // Auth is not ready yet, but we shouldn't block the UI.
+        // The button will be shown, and handleSignIn will catch if auth is still not ready.
+        setIsProcessingLogin(false);
         return;
     }
 
@@ -121,6 +131,7 @@ export default function AuthPage() {
           });
           router.replace("/account");
         } else {
+          // No redirect result, so we are not in a login flow. Show the button.
           setIsProcessingLogin(false);
         }
       } catch (error: any) {
