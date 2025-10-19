@@ -16,7 +16,6 @@ import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { uploadImage } from "@/lib/actions";
 import Image from "next/image";
-import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
@@ -38,7 +37,6 @@ export default function NewProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProjectFormValues>({
@@ -92,22 +90,19 @@ export default function NewProjectPage() {
     }
 
     setIsSubmitting(true);
-    setUploadProgress(0);
 
     try {
       // --- 1. Upload Images to Cloudinary ---
       const imageUrls: string[] = [];
-      for (let i = 0; i < imageFiles.length; i++) {
-        const file = imageFiles[i];
+      for (const file of imageFiles) {
         const formData = new FormData();
         formData.append('image', file);
         const imageResult = await uploadImage(formData);
         
         if (!imageResult.success || !imageResult.url) {
-          throw new Error(imageResult.error || `Rasm #${i+1} ni yuklab bo'lmadi.`);
+          throw new Error(imageResult.error || `Rasm yuklab bo'lmadi.`);
         }
         imageUrls.push(imageResult.url);
-        setUploadProgress(((i + 1) / imageFiles.length) * 100);
       }
 
       // --- 2. Save Project to Firestore ---
@@ -146,7 +141,6 @@ export default function NewProjectPage() {
         description: error.message || "Loyihani yuklashda kutilmagan xatolik yuz berdi.",
       });
       setIsSubmitting(false);
-      setUploadProgress(null);
     }
   };
 
@@ -255,7 +249,6 @@ export default function NewProjectPage() {
                                          multiple
                                      />
                                  </div>
-                                 {uploadProgress !== null && <Progress value={uploadProgress} className="w-full mt-2" />}
                              </div>
                          </div>
 
@@ -275,3 +268,5 @@ export default function NewProjectPage() {
     </div>
   );
 }
+
+    
