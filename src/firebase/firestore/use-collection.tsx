@@ -65,12 +65,8 @@ export function useCollection<T = any>(
   const [snapshot, setSnapshot] = useState<QuerySnapshot<DocumentData> | null>(null);
 
   useEffect(() => {
-    if (memoizedTargetRefOrQuery && !(memoizedTargetRefOrQuery as any).__memo) {
-      console.warn('useCollection received a query/ref that was not memoized with useMemoFirebase. This can lead to performance issues and infinite loops.', memoizedTargetRefOrQuery);
-    }
-    
-    // If the query/ref is not ready, don't attempt to listen.
-    // Set loading to false and clear data/error.
+    // If the query/ref is not ready (null or undefined), do not attempt to listen.
+    // Reset state and exit early.
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setSnapshot(null);
@@ -78,7 +74,13 @@ export function useCollection<T = any>(
       setError(null);
       return;
     }
+    
+    // Warn if the query is not memoized, as it can cause performance issues.
+    if (!(memoizedTargetRefOrQuery as any).__memo) {
+      console.warn('useCollection received a query/ref that was not memoized with useMemoFirebase. This can lead to performance issues and infinite loops.', memoizedTargetRefOrQuery);
+    }
 
+    // Set loading state and clear previous errors before starting a new subscription.
     setIsLoading(true);
     setError(null);
 
@@ -86,15 +88,16 @@ export function useCollection<T = any>(
       memoizedTargetRefOrQuery,
       (snap: QuerySnapshot<DocumentData>) => {
         setSnapshot(snap);
-        const results: ResultItemType[] = [];
-        for (const doc of snap.docs) {
-          results.push({ ...(doc.data() as T), id: doc.id });
-        }
+        const results: ResultItemType[] = snap.docs.map(doc => ({
+          ...(doc.data() as T),
+          id: doc.id,
+        }));
         setData(results);
         setError(null);
         setIsLoading(false);
       },
       (err: FirestoreError) => {
+        console.error("useCollection Firestore Error:", err);
         const path: string =
           memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
@@ -103,19 +106,21 @@ export function useCollection<T = any>(
         const contextualError = new FirestorePermissionError({
           operation: 'list',
           path,
-        })
+        });
 
-        setError(contextualError)
-        setData(null)
+        setError(contextualError);
+        setData(null);
         setSnapshot(null);
-        setIsLoading(false)
+        setIsLoading(false);
 
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
+    // Cleanup function to unsubscribe from the listener when the component unmounts
+    // or when the query/ref changes.
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]);
+  }, [memoizedTargetRefOrQuery]); // Re-run effect only when the memoized query/ref changes.
   
   return { data, isLoading, error, snapshot };
 }
