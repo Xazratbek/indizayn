@@ -14,7 +14,7 @@ import { useState, useEffect } from 'react';
 const allImages = imageData.placeholderImages;
 
 export default function DesignerProfilePage({ params }: { params: { id: string } }) {
-  const id = params.id;
+  const { id } = params;
   const designer = allDesigners.find(d => d.id === id);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isClient, setIsClient] = useState(false);
