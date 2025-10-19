@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { useDoc, useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, collection, query, where, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, collection, query, where, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import PortfolioCard from '@/components/portfolio-card';
 import { useState, useEffect } from 'react';
 import type { Designer, Project } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
+import SendMessageDialog from '@/components/send-message-dialog';
 
 export default function DesignerProfilePage() {
   const params = useParams();
@@ -22,6 +22,7 @@ export default function DesignerProfilePage() {
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [isMessageDialogOpen, setIsMessageDialogOpen] = useState(false);
 
   // Fetch designer's profile
   const designerDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'users', id) : null, [db, id]);
@@ -39,7 +40,7 @@ export default function DesignerProfilePage() {
   }, [user, designer]);
 
   const handleFollowToggle = async () => {
-    if (!user) {
+    if (!user || !designer) {
       toast({
         variant: "destructive",
         title: "Xatolik",
@@ -78,6 +79,18 @@ export default function DesignerProfilePage() {
             });
             setIsFollowing(true);
             toast({ description: `${designer?.name} ga obuna bo'ldingiz.` });
+
+            // Create notification for the followed user
+            const notificationsRef = collection(db, "notifications");
+            await addDoc(notificationsRef, {
+                userId: designer.id,
+                type: 'follow',
+                senderId: user.uid,
+                senderName: user.displayName || 'Anonim',
+                senderPhotoURL: user.photoURL || '',
+                isRead: false,
+                createdAt: serverTimestamp(),
+            });
         }
     } catch(error) {
         console.error("Follow/unfollow error", error);
@@ -106,6 +119,7 @@ export default function DesignerProfilePage() {
   const totalViews = designerProjects?.reduce((acc, p) => acc + p.viewCount, 0) || 0;
   
   return (
+    <>
     <div className="container mx-auto py-8 px-4">
       <Card className="overflow-hidden mb-12">
         <div className="h-48 bg-secondary relative">
@@ -139,7 +153,7 @@ export default function DesignerProfilePage() {
                   {isFollowLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => setIsMessageDialogOpen(true)}>
                   <Mail className="mr-2 h-4 w-4" /> Xabar
                 </Button>
               </div>
@@ -179,5 +193,14 @@ export default function DesignerProfilePage() {
         </div>
       )}
     </div>
+    {user && designer && (
+         <SendMessageDialog 
+            isOpen={isMessageDialogOpen} 
+            onOpenChange={setIsMessageDialogOpen}
+            recipient={designer}
+            currentUser={user}
+         />
+    )}
+    </>
   );
 }

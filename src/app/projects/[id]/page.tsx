@@ -1,11 +1,10 @@
-
 "use client";
 
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -63,12 +62,17 @@ export default function ProjectDetailsPage() {
   }, [user, project]);
 
   const handleLikeToggle = async () => {
-    if (!user) {
+    if (!user || !project || !designer) {
       toast({
         variant: "destructive",
         title: "Xatolik!",
         description: "Loyiha yoqishi uchun tizimga kiring.",
       });
+      return;
+    }
+
+    if(user.uid === project.designerId) {
+      toast({ description: "O'z loyihangizga like bosa olmaysiz." });
       return;
     }
 
@@ -89,6 +93,20 @@ export default function ProjectDetailsPage() {
                 likeCount: increment(1)
             });
             setIsLiked(true);
+
+             // Create notification for the project owner
+            const notificationsRef = collection(db, "notifications");
+            await addDoc(notificationsRef, {
+                userId: project.designerId,
+                type: 'like',
+                senderId: user.uid,
+                senderName: user.displayName || 'Anonim',
+                senderPhotoURL: user.photoURL || '',
+                isRead: false,
+                projectId: project.id,
+                projectName: project.name,
+                createdAt: serverTimestamp(),
+            });
         }
     } catch (err) {
         console.error("Like/Unlike error", err);
@@ -180,7 +198,7 @@ export default function ProjectDetailsPage() {
               <Card>
                 <CardContent className="p-4 space-y-4">
                   <div className="flex gap-2">
-                    <Button onClick={handleLikeToggle} className="w-full" variant={isLiked ? "secondary" : "default"}>
+                    <Button onClick={handleLikeToggle} className="w-full" variant={isLiked ? "secondary" : "default"} disabled={!user}>
                       <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
                       {isLiked ? 'Yoqdi' : 'Yoqdi'}
                     </Button>

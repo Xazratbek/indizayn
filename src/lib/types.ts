@@ -30,3 +30,28 @@ export interface Project {
   description: string;
   createdAt: Timestamp;
 }
+
+// Corresponds to the 'messages' collection
+export interface Message {
+    id: string;
+    senderId: string;
+    receiverId: string;
+    content: string;
+    createdAt: Timestamp;
+    isRead: boolean;
+}
+
+// Corresponds to the 'notifications' collection
+export interface Notification {
+    id: string;
+    userId: string; // User who receives the notification
+    type: 'like' | 'follow' | 'message';
+    senderId: string; // User who triggered the notification
+    senderName: string;
+    senderPhotoURL?: string;
+    isRead: boolean;
+    projectId?: string; // For 'like' and 'comment' on a project
+    projectName?: string;
+    messageSnippet?: string; // For 'message'
+    createdAt: Timestamp;
+}

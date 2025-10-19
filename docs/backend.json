@@ -37,6 +37,37 @@
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of project creation." }
       },
       "required": ["name", "designerId", "imageUrl", "imageUrls", "description", "createdAt", "viewCount", "likeCount", "likes"]
+    },
+     "Message": {
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a direct message between two users.",
+      "properties": {
+        "senderId": { "type": "string", "description": "UID of the message sender." },
+        "receiverId": { "type": "string", "description": "UID of the message receiver." },
+        "content": { "type": "string", "description": "The text content of the message." },
+        "isRead": { "type": "boolean", "description": "Whether the message has been read by the receiver." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of message creation." }
+      },
+      "required": ["senderId", "receiverId", "content", "createdAt", "isRead"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a notification for a user.",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user who receives the notification." },
+        "type": { "type": "string", "enum": ["like", "follow", "message"], "description": "The type of notification." },
+        "senderId": { "type": "string", "description": "UID of the user who triggered the notification." },
+        "senderName": { "type": "string", "description": "Display name of the sender." },
+        "senderPhotoURL": { "type": "string", "format": "uri", "description": "Profile picture URL of the sender." },
+        "isRead": { "type": "boolean", "description": "Whether the notification has been read." },
+        "projectId": { "type": "string", "description": "Optional ID of the relevant project (for likes)." },
+        "projectName": { "type": "string", "description": "Optional name of the relevant project." },
+        "messageSnippet": { "type": "string", "description": "A short snippet of the message." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of notification creation." }
+      },
+      "required": ["userId", "type", "senderId", "senderName", "isRead", "createdAt"]
     }
   },
   "auth": {
@@ -50,7 +81,14 @@
     "/projects/{projectId}": {
       "schema": { "$ref": "#/entities/Project" },
       "description": "Stores all portfolio projects created by users."
+    },
+    "/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Stores all direct messages between users."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Stores notifications for users."
     }
   }
 }
-

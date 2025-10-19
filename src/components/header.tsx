@@ -18,7 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { useAuth, useUser } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
-import UploadProjectDialog from "./upload-project-dialog"
+import NotificationsDropdown from "./notifications-dropdown"
 
 export function Header() {
   const isMobile = useIsMobile();
@@ -73,23 +73,18 @@ export function Header() {
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <div className="w-full flex-1 md:w-auto md:flex-none">
             {/* Search can be implemented later */}
-            {/* <form>
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Qidiruv..."
-                  className="w-full pl-8 md:w-[200px] lg:w-[336px]"
-                />
-              </div>
-            </form> */}
           </div>
           <nav className="flex items-center gap-2">
              {!isUserLoading && user ? (
                <>
-                <Button asChild size="sm">
-                  <Link href="/account/new-project"><PlusSquare className="mr-2 h-4 w-4"/> Loyiha Yuklash</Link>
-                </Button>
+                {isMobile === false && (
+                  <Button asChild size="sm">
+                    <Link href="/account/new-project"><PlusSquare className="mr-2 h-4 w-4"/> Loyiha Yuklash</Link>
+                  </Button>
+                )}
+                
+                <NotificationsDropdown />
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
