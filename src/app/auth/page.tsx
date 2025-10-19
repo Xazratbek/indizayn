@@ -173,21 +173,22 @@ export default function AuthPage() {
     setIsProcessing(true);
     try {
       // First, try with popup
-      const result = await signInWithPopup(auth, googleProvider);
-      if (result && result.user) {
-        await handleAuthSuccess(result.user);
-      }
+      await signInWithPopup(auth, googleProvider).then(result => {
+        if(result && result.user) {
+            handleAuthSuccess(result.user);
+        }
+      }).catch(async (err: any) => {
+        // If popup is closed or blocked, fallback to redirect method
+        if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
+          await signInWithRedirect(auth, googleProvider);
+        } else {
+          toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
+          setIsProcessing(false);
+        }
+      });
     } catch (err: any) {
-      const errorMessage = getErrorMessage(err);
-      toast({ variant: "destructive", title: "Kirishda xatolik", description: errorMessage });
-
-      // If popup is closed or blocked, fallback to redirect method
-      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/popup-blocked') {
-        // No need to set isProcessing to false here, as the page will redirect
-        await signInWithRedirect(auth, googleProvider);
-      } else {
+        toast({ variant: "destructive", title: "Kutilmagan xatolik", description: getErrorMessage(err) });
         setIsProcessing(false);
-      }
     } 
   };
 
@@ -213,6 +214,7 @@ export default function AuthPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
         await updateProfile(userCredential.user, { displayName: data.name });
 
+        // create a new user object with the updated displayName to pass to handleAuthSuccess
         const updatedUser = { ...userCredential.user, displayName: data.name, photoURL: userCredential.user.photoURL }; 
         
         await handleAuthSuccess(updatedUser as User);
