@@ -21,6 +21,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoadingPage from "@/app/loading";
 import { TagInput } from "@/components/tag-input";
+import { TagSelector } from "@/components/tag-selector";
+import { PREDEFINED_TAGS } from "@/lib/predefined-tags";
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: "Loyiha nomi kamida 3 belgidan iborat bo'lishi kerak." }),
@@ -183,12 +185,9 @@ export default function NewProjectPage() {
                         onSubmit={form.handleSubmit(onSubmit)} 
                         className="space-y-6"
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                // Prevent form submission on Enter key press in any input
-                                const target = e.target as HTMLElement;
-                                if (target.tagName.toLowerCase() !== 'textarea') {
-                                    e.preventDefault();
-                                }
+                            // Prevent form submission on Enter key press in any input except Textarea
+                            if (e.key === 'Enter' && (e.target as HTMLElement).tagName.toLowerCase() !== 'textarea') {
+                                e.preventDefault();
                             }
                         }}
                      >
@@ -222,11 +221,11 @@ export default function NewProjectPage() {
                                  />
                                 <FormItem>
                                     <FormLabel>Teglar</FormLabel>
-                                    <TagInput 
-                                        value={tags}
-                                        onChange={setTags}
-                                        placeholder="Teg qo'shish uchun 'Enter' bosing..."
-                                    />
+                                     <TagSelector
+                                        allTags={PREDEFINED_TAGS}
+                                        selectedTags={tags}
+                                        onSelectedTagsChange={setTags}
+                                     />
                                 </FormItem>
                                 <FormItem>
                                     <FormLabel>Foydalanilgan vositalar</FormLabel>
