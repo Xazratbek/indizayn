@@ -44,17 +44,25 @@ export default function AuthPage() {
             })
             .catch((error) => {
                 console.error("Error getting redirect result: ", error);
-                toast({
-                    variant: "destructive",
-                    title: "Kirishda xatolik",
-                    description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
-                });
+                if (error.code !== 'auth/operation-not-allowed') {
+                  toast({
+                      variant: "destructive",
+                      title: "Kirishda xatolik",
+                      description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+                  });
+                } else {
+                   toast({
+                      variant: "destructive",
+                      title: "Avtorizatsiya usuli yoqilmagan",
+                      description: "Iltimos, Firebase loyihangiz sozlamalarida Google orqali kirishni yoqing.",
+                    });
+                }
             });
     }, [auth, router, isUserLoading, user]);
 
 
     const handlePopupSignIn = async () => {
-        if (isUserLoading) return;
+        if (isUserLoading || !auth) return;
         setStatus('loading');
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: "select_account" });
@@ -68,7 +76,16 @@ export default function AuthPage() {
                 setErrorCode(error.code);
             } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
                 handleRedirectSignIn();
-            } else {
+            } else if (error.code === 'auth/operation-not-allowed') {
+                setStatus('error');
+                setErrorCode(error.code);
+                 toast({
+                    variant: "destructive",
+                    title: "Ruxsat berilmagan operatsiya",
+                    description: "Firebase loyihangizda Google orqali kirish usuli yoqilmagan. Iltimos, uni Firebase konsolidan faollashtiring.",
+                });
+            }
+            else {
                 setStatus('error');
                 setErrorCode(error.code);
                 console.error("Error signing in with Google Popup: ", error);
@@ -82,7 +99,7 @@ export default function AuthPage() {
     };
 
     const handleRedirectSignIn = async () => {
-        if (isUserLoading) return;
+        if (isUserLoading || !auth) return;
         setStatus('loading');
         const provider = new GoogleAuthProvider();
         provider.setCustomParameters({ prompt: "select_account" });
@@ -93,11 +110,19 @@ export default function AuthPage() {
             setStatus('error');
             setErrorCode(error.code);
             console.error("Error signing in with Google Redirect: ", error);
-            toast({
-                variant: "destructive",
-                title: "Kirishda xatolik",
-                description: "Google'ga yo'naltirishda muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
-            });
+             if (error.code === 'auth/operation-not-allowed') {
+                 toast({
+                    variant: "destructive",
+                    title: "Ruxsat berilmagan operatsiya",
+                    description: "Firebase loyihangizda Google orqali kirish usuli yoqilmagan. Iltimos, uni Firebase konsolidan faollashtiring.",
+                });
+             } else {
+                toast({
+                    variant: "destructive",
+                    title: "Kirishda xatolik",
+                    description: "Google'ga yo'naltirishda muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
+                });
+            }
         }
     };
 
@@ -116,7 +141,7 @@ export default function AuthPage() {
                     <div className="space-y-4">
                         <Button variant="outline" className="w-full h-12 text-base" onClick={handlePopupSignIn} disabled={isLoading}>
                            {isLoading ? (
-                                <div className="spinner-sm" role="status">
+                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" role="status">
                                     <span className="sr-only">Yuklanmoqda...</span>
                                 </div>
                            ) : (
@@ -139,7 +164,7 @@ export default function AuthPage() {
                     )}
                     {status === 'error' && (
                          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-center">
-                             <p className="text-sm text-red-800">Xatolik kodi: {errorCode}</p>
+                             <p className="text-sm text-red-800">Xatolik yuz berdi. Kod: {errorCode}</p>
                          </div>
                     )}
 
@@ -158,3 +183,5 @@ export default function AuthPage() {
         </div>
     );
 }
+
+    
