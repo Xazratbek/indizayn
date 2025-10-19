@@ -131,12 +131,14 @@ export default function ProfileEditPage() {
       if (dirtyFields.name) updatedData.name = data.name;
       if (dirtyFields.specialization) updatedData.specialization = data.specialization;
       if (dirtyFields.bio) updatedData.bio = data.bio;
-      if (newPhotoURL !== userProfile.photoURL) updatedData.photoURL = newPhotoURL;
-      if (newCoverPhotoURL !== userProfile.coverPhotoURL) updatedData.coverPhotoURL = newCoverPhotoURL;
+      if (newPhotoURL && newPhotoURL !== userProfile.photoURL) updatedData.photoURL = newPhotoURL;
+      if (newCoverPhotoURL && newCoverPhotoURL !== userProfile.coverPhotoURL) updatedData.coverPhotoURL = newCoverPhotoURL;
+
+      const profileOrNameChanged = profilePicChanged || (dirtyFields.name && data.name !== auth.currentUser.displayName);
 
       if (Object.keys(updatedData).length > 0) {
         await updateDoc(userRef, updatedData as DocumentData);
-        if (profilePicChanged || (dirtyFields.name && data.name !== auth.currentUser.displayName)) {
+        if (profileOrNameChanged) {
             await updateProfile(auth.currentUser, {
                 displayName: data.name,
                 photoURL: newPhotoURL,
@@ -148,11 +150,10 @@ export default function ProfileEditPage() {
       setProfilePic({ file: null, previewUrl: null });
       setCoverPhoto({ file: null, previewUrl: null });
 
-      if (profilePicChanged) {
-        // Force a reload of server components like the header
-        router.refresh();
+      if (profileOrNameChanged) {
+        // Force a full reload to ensure the auth state is updated everywhere, including the header.
+        window.location.reload();
       }
-
 
     } catch (err: any) {
       toast({
