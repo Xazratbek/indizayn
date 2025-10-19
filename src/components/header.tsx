@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useSession, signOut } from "next-auth/react"
+import { useSession, signIn, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "./ui/skeleton"
 // import NotificationsDropdown from "./notifications-dropdown"
@@ -30,6 +30,10 @@ export function Header() {
   const handleSignOut = async () => {
     await signOut({ redirect: false });
     router.push('/');
+  }
+
+  const handleSignIn = () => {
+    signIn('google');
   }
 
   const navContent = isMobile === undefined ? null : (
@@ -119,11 +123,11 @@ export function Header() {
                 <>
                   {isMobile === false && (
                     <div className="flex items-center gap-2">
-                        <Button variant="ghost" asChild>
-                            <Link href="/auth">Kirish</Link>
+                        <Button variant="ghost" onClick={handleSignIn}>
+                            Kirish
                         </Button>
-                        <Button asChild>
-                            <Link href="/auth">Ro'yxatdan o'tish</Link>
+                        <Button onClick={handleSignIn}>
+                            Ro'yxatdan o'tish
                         </Button>
                     </div>
                   )}
