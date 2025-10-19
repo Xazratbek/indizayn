@@ -20,7 +20,7 @@ import type { Project } from '@/lib/types';
 import PaginationControls from '@/components/pagination-controls';
 import LoadingPage from '../loading';
 
-const PROJECTS_PER_PAGE = 10;
+const PROJECTS_PER_PAGE = 12;
 
 export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,7 +44,6 @@ export default function BrowsePage() {
       q = query(baseQuery, orderBy('viewCount', 'desc'));
     }
 
-    // Apply pagination
     q = query(q, limit(PROJECTS_PER_PAGE));
     if (page > 1 && lastVisible) {
         q = query(q, startAfter(lastVisible));
@@ -95,13 +94,12 @@ export default function BrowsePage() {
     setLastVisible(null);
   };
   
-  // Disable next if the last fetched page had fewer items than the page size
   const isNextDisabled = !snapshot || snapshot.docs.length < PROJECTS_PER_PAGE || isNextPageLoading;
 
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="text-center mb-12">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold">Dizaynlarni O'rganing</h1>
+        <h1 className="font-headline text-4xl md:text-5xl font-bold liquid-text">Dizaynlarni O'rganing</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
           Ijodkorlik dunyosini kashf eting. Keyingi ilhomingizni topish uchun loyihalar, dizaynerlar yoki teglarni qidiring.
         </p>
@@ -122,7 +120,7 @@ export default function BrowsePage() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="h-12">
               <SlidersHorizontal className="mr-2 h-4 w-4" />
-              Filtrlash va Saralash
+              Saralash
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56">

@@ -53,7 +53,7 @@ export default function Home() {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   const featuredProjectsQuery = useMemoFirebase(() =>
-    db ? query(collection(db, 'projects'), orderBy('likeCount', 'desc'), limit(10)) : null
+    db ? query(collection(db, 'projects'), orderBy('viewCount', 'desc'), limit(4)) : null
   , [db]);
   const { data: featuredProjects, isLoading: areProjectsLoading } = useCollection<Project>(featuredProjectsQuery);
 
@@ -118,8 +118,8 @@ export default function Home() {
       >
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="font-headline text-3xl md:text-4xl font-bold">Tavsiya Etilgan Loyihalar</h2>
-            <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan tanlab olingan loyihalar.</p>
+            <h2 className="font-headline text-3xl md:text-4xl font-bold">Trenddagi Loyihalar</h2>
+            <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan eng ko'p ko'rilgan loyihalar.</p>
           </div>
           
           {areProjectsLoading || isUserLoading ? (
@@ -128,7 +128,7 @@ export default function Home() {
              </div>
           ) : featuredProjects && featuredProjects.length > 0 ? (
             <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {featuredProjects.map(project => (
                     <PortfolioCard key={project.id} project={project} />
                 ))}
