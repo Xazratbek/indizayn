@@ -61,7 +61,14 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
-       {!user && !isUserLoading && (
+       {isUserLoading ? (
+         <div className="flex h-[80vh] items-center justify-center">
+            <div className="spinner">
+                <div className="spinner-outer"></div>
+                <div className="spinner-inner"></div>
+            </div>
+         </div>
+       ) : !user ? (
         <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
             <ThreeShowcase />
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
@@ -97,7 +104,7 @@ export default function Home() {
                 </motion.div>
             </div>
         </section>
-      )}
+      ) : null}
 
 
       <motion.section 
