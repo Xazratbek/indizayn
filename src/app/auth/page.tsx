@@ -4,7 +4,6 @@
 import { useEffect, useState } from "react";
 import { 
     GoogleAuthProvider, 
-    signInWithPopup, 
     signInWithRedirect, 
     getRedirectResult 
 } from "firebase/auth";
@@ -99,71 +98,59 @@ export default function AuthPage() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     try {
-      const result = await signInWithPopup(auth, provider);
-      if (result?.user) {
-        await saveUserToDB(result.user);
-        toast({
-            title: "Muvaffaqiyatli kirdingiz!",
-            description: `Xush kelibsiz, ${result.user.displayName}!`,
-        });
-        router.push("/account");
-      }
+      await signInWithRedirect(auth, provider);
     } catch (error: any) {
-        if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-            console.warn("Popup bloklandi, redirect'ga o'tilmoqda...");
-            await signInWithRedirect(auth, provider);
-        } else {
-            console.error("Popup orqali kirishda xatolik:", error);
-            toast({
-                variant: "destructive",
-                title: "Kirishda xatolik",
-                description: "Tizimga kirishda noma'lum xatolik yuz berdi.",
-            });
-            setIsProcessingLogin(false);
-        }
+        console.error("Redirect orqali kirishda xatolik:", error);
+        toast({
+            variant: "destructive",
+            title: "Kirishda xatolik",
+            description: "Tizimga kirishda noma'lum xatolik yuz berdi.",
+        });
+        setIsProcessingLogin(false);
     }
   };
 
   useEffect(() => {
-    if (isUserLoading) {
-        // Still checking auth state, do nothing yet
-        return;
-    }
-
+    // 1. If we are already logged in, redirect
     if (user) {
-        // If user object is available, they are logged in, redirect.
         router.replace("/account");
         return;
     }
 
-    // If we reach here, user is not logged in. Check for redirect result.
-    // Ensure auth object is available before proceeding.
-    if(auth) {
-        getRedirectResult(auth)
-            .then(async (result) => {
-                if (result?.user) {
-                    // User signed in via redirect.
-                    await saveUserToDB(result.user);
-                    toast({
-                        title: "Muvaffaqiyatli kirdingiz!",
-                        description: `Xush kelibsiz, ${result.user.displayName}!`,
-                    });
-                    // router.replace will be handled by the user object becoming available in the next render
-                } else {
-                    // No redirect result, user is not logged in.
-                    setIsProcessingLogin(false);
-                }
-            })
-            .catch((error) => {
-                console.error("Redirect natijasini olishda xatolik: ", error);
-                toast({
-                    variant: "destructive",
-                    title: "Kirishda xatolik",
-                    description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi.",
-                });
-                setIsProcessingLogin(false);
-            });
+    // 2. If auth is not ready, or we are still checking, do nothing
+    if (isUserLoading || !auth) {
+        return;
     }
+    
+    // 3. This is the core logic: check for a redirect result
+    const checkRedirectResult = async () => {
+        try {
+            const result = await getRedirectResult(auth);
+            if (result?.user) {
+                // User signed in via redirect.
+                await saveUserToDB(result.user);
+                toast({
+                    title: "Muvaffaqiyatli kirdingiz!",
+                    description: `Xush kelibsiz, ${result.user.displayName}!`,
+                });
+                // The `user` object will become available in the next render, triggering the redirect above.
+            } else {
+                // No redirect result, user is not logged in.
+                // It's safe to show the login button now.
+                setIsProcessingLogin(false);
+            }
+        } catch (error) {
+            console.error("Redirect natijasini olishda xatolik: ", error);
+            toast({
+                variant: "destructive",
+                title: "Kirishda xatolik",
+                description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi.",
+            });
+            setIsProcessingLogin(false);
+        }
+    };
+    
+    checkRedirectResult();
 
   }, [user, isUserLoading, auth, router, db]);
 
@@ -210,5 +197,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
-    
