@@ -97,6 +97,7 @@ export default function NotificationsDropdown() {
   const getNotificationLink = (notification: Notification) => {
     switch (notification.type) {
       case 'like':
+      case 'comment':
         return `/projects/${notification.projectId}`;
       case 'follow':
         return `/designers/${notification.senderId}`;
@@ -129,6 +130,12 @@ export default function NotificationsDropdown() {
             return <>
                 <span className="font-semibold">{notification.senderName}</span>
                 {` sizga xabar yubordi.`}
+            </>;
+        case 'comment':
+            return <>
+                <span className="font-semibold">{notification.senderName}</span>
+                {` loyihangizga izoh qoldirdi: `}
+                <span className="font-semibold italic">"{notification.projectName}"</span>
             </>;
         default:
             return "Yangi bildirishnoma."
@@ -199,7 +206,8 @@ export default function NotificationsDropdown() {
                     ))}
                 </div>
             ) : (
-                <div className="text-center p-8 text-muted-foreground">
+                <div className="text-center p-12 text-muted-foreground">
+                    <Bell className="mx-auto h-10 w-10 mb-4" />
                     <p>Hozircha bildirishnomalar yo'q.</p>
                 </div>
             )}
