@@ -8,10 +8,10 @@ import { doc, collection, query, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, LayoutDashboard, BarChart2, PlusSquare, Pencil } from 'lucide-react';
+import { Loader2, LayoutDashboard, BarChart2, PlusSquare, Pencil, LogIn } from 'lucide-react';
 import type { Designer, Project } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -33,12 +33,6 @@ export default function AccountDashboardPage() {
   
   const id = user?.id;
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace('/auth');
-    }
-  }, [status, router]);
-
   // Fetch designer's profile
   const designerDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'users', id) : null, [db, id]);
   const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
@@ -49,7 +43,7 @@ export default function AccountDashboardPage() {
 
   const isLoading = isDesignerLoading || areProjectsLoading || isUserLoading;
 
-  if (isLoading || status !== 'authenticated') {
+  if (isUserLoading) {
     return (
         <div className="container mx-auto py-8 px-4">
              <Card className="overflow-hidden mb-8">
@@ -73,8 +67,23 @@ export default function AccountDashboardPage() {
         </div>
     );
   }
+
+  if (status === 'unauthenticated') {
+    return (
+      <div className="flex h-[80vh] items-center justify-center text-center">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Siz tizimga kirmagansiz</h2>
+          <p className="text-muted-foreground mb-6">Akkauntingizni ko'rish uchun, iltimos, tizimga kiring.</p>
+          <Button onClick={() => signIn('google')}>
+            <LogIn className="mr-2 h-4 w-4" />
+            Kirish / Ro'yxatdan o'tish
+          </Button>
+        </div>
+      </div>
+    );
+  }
   
-  if (!designer) {
+  if (!designer && status === 'authenticated') {
     return (
         <div className="flex h-[80vh] items-center justify-center">
             <div className='text-center'>
@@ -84,6 +93,8 @@ export default function AccountDashboardPage() {
         </div>
     );
   }
+  
+  if (!designer) return null;
 
   const totalLikes = designerProjects?.reduce((acc, p) => acc + p.likeCount, 0) || 0;
   const totalViews = designerProjects?.reduce((acc, p) => acc + p.viewCount, 0) || 0;

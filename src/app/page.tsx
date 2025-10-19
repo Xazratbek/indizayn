@@ -84,19 +84,21 @@ export default function Home() {
                 >
                     Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
                 </motion.p>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-                    className="mt-8"
-                >
-                    <div className="animated-border-box">
-                        <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick}>
-                            Boshlash <MoveRight className="ml-2" />
-                        </Button>
-                    </div>
-                </motion.div>
+                
+                {!user && !isUserLoading && (
+                  <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
+                      className="mt-8"
+                  >
+                      <div className="animated-border-box">
+                          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick}>
+                              Boshlash <MoveRight className="ml-2" />
+                          </Button>
+                      </div>
+                  </motion.div>
+                )}
             </div>
         </section>
 
@@ -190,5 +192,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
