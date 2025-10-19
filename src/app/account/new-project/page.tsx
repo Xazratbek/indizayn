@@ -210,12 +210,11 @@ export default function NewProjectPage() {
                                  />
                                 <FormItem>
                                     <FormLabel>Teglar</FormLabel>
-                                     <TagInput 
+                                    <TagInput 
                                         value={tags}
                                         onChange={setTags}
                                         placeholder="Teg qo'shish uchun 'Enter' bosing..."
-                                     />
-                                    <FormMessage />
+                                    />
                                 </FormItem>
                                 <FormItem>
                                     <FormLabel>Foydalanilgan vositalar</FormLabel>
@@ -285,3 +284,5 @@ export default function NewProjectPage() {
     </div>
   );
 }
+
+    
