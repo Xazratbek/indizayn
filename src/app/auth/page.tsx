@@ -111,17 +111,24 @@ export default function AuthPage() {
   };
 
   useEffect(() => {
-    // If auth is not ready, or we are still checking, do nothing
+    // If auth is not ready, do nothing.
     if (isUserLoading || !auth) {
         return;
     }
-    
-    // This is the core logic: check for a redirect result
+
+    // Check if a user is already logged in from a previous session.
+    // If so, redirect them to their account page.
+    if (user) {
+        router.replace("/account");
+        return;
+    }
+
+    // This logic should only run ONCE when the component mounts and auth is ready.
     const checkRedirectResult = async () => {
         try {
             const result = await getRedirectResult(auth);
             if (result?.user) {
-                // User signed in via redirect.
+                // User has just signed in via redirect.
                 await saveUserToDB(result.user);
                 toast({
                     title: "Muvaffaqiyatli kirdingiz!",
@@ -129,12 +136,8 @@ export default function AuthPage() {
                 });
                 router.replace("/account");
             } else {
-                // No redirect result. Check if user is already logged in from a previous session.
-                 if (user) {
-                    router.replace("/account");
-                    return;
-                }
-                // No redirect and no user, so show the login button.
+                // No redirect result, and no user from session.
+                // This means the user needs to log in.
                 setIsProcessingLogin(false);
             }
         } catch (error) {
@@ -148,7 +151,10 @@ export default function AuthPage() {
         }
     };
     
-    checkRedirectResult();
+    // We only run this check if there is no active user session.
+    if (!user) {
+        checkRedirectResult();
+    }
 
   }, [isUserLoading, auth, router, db, user]);
 
@@ -195,3 +201,5 @@ export default function AuthPage() {
     </div>
   );
 }
+
+    
