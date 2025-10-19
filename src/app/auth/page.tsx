@@ -13,7 +13,7 @@ import {
   setDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { useRouter }grom "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth, useFirestore, useUser } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +36,7 @@ export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const saveUserToDB = async (firebaseUser: any) => {
-    if (!firebaseUser) return;
+    if (!firebaseUser || !db) return;
     const userRef = doc(db, "users", firebaseUser.uid);
     const snapshot = await getDoc(userRef);
 
@@ -61,15 +61,27 @@ export default function AuthPage() {
       }
     }
   };
-
+  
   const handleRedirectSignIn = async () => {
+    if (!auth) return;
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    await signInWithRedirect(auth, provider);
+    try {
+        await signInWithRedirect(auth, provider);
+    } catch (error) {
+        console.error("Redirect sign in xatosi:", error);
+        setIsLoading(false);
+        toast({
+            variant: "destructive",
+            title: "Qayta yo'naltirishda xatolik",
+            description: "Kirish sahifasiga yo'naltirib bo'lmadi. Iltimos, qayta urinib ko'ring.",
+        });
+    }
   };
   
   const handlePopupSignIn = async () => {
+    if (!auth) return;
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
@@ -84,55 +96,58 @@ export default function AuthPage() {
         router.push("/account");
       }
     } catch (error: any) {
-        console.warn("Popup xatosi, redirect'ga o'tilmoqda:", error.code);
-        // Popup bloklansa yoki yopilsa, redirect usuliga o'tamiz
-        handleRedirectSignIn();
+        if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+            console.warn("Popup bloklandi yoki yopildi, redirect'ga o'tilmoqda...");
+            handleRedirectSignIn();
+        } else {
+            console.error("Popup orqali kirishda xatolik:", error);
+            toast({
+                variant: "destructive",
+                title: "Kirishda xatolik",
+                description: "Tizimga kirishda noma'lum xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.",
+            });
+            setIsLoading(false);
+        }
     }
   };
 
-  // Redirect natijasini tekshirish
   useEffect(() => {
-    // Agar foydalanuvchi allaqachon kirgan bo'lsa, /account ga o'tkazamiz
     if (!isUserLoading && user) {
         router.replace("/account");
         return;
     }
 
-    // Agar sahifa redirectdan keyin ochilgan bo'lsa, natijani olamiz
-    const checkRedirect = async () => {
-      try {
-        setIsLoading(true);
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-          await saveUserToDB(result.user);
-          toast({
-              title: "Muvaffaqiyatli kirdingiz!",
-              description: `Xush kelibsiz, ${result.user.displayName}!`,
-          });
-          router.replace("/account");
-        } else {
-            // Agar redirect natijasi bo'lmasa, yuklanishni to'xtatamiz
-            setIsLoading(false);
-        }
-      } catch (error: any) {
-        console.error("Redirect natijasini olishda xatolik: ", error);
-        toast({
-            variant: "destructive",
-            title: "Kirishda xatolik",
-            description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
-        });
-        setIsLoading(false);
-      }
-    };
-    
-    // Faqat auth obyekti tayyor bo'lganda tekshiramiz
-    if (auth && !isUserLoading) {
+    if(auth) {
+        const checkRedirect = async () => {
+            try {
+                const result = await getRedirectResult(auth);
+                if (result?.user) {
+                  setIsLoading(true);
+                  await saveUserToDB(result.user);
+                  toast({
+                      title: "Muvaffaqiyatli kirdingiz!",
+                      description: `Xush kelibsiz, ${result.user.displayName}!`,
+                  });
+                  router.replace("/account");
+                } else {
+                    setIsLoading(false);
+                }
+            } catch (error: any) {
+                console.error("Redirect natijasini olishda xatolik: ", error);
+                toast({
+                    variant: "destructive",
+                    title: "Kirishda xatolik",
+                    description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+                });
+                setIsLoading(false);
+            }
+        };
+      
         checkRedirect();
     }
-
   }, [auth, isUserLoading, user, router, db]);
 
-  const loadingOrSignedIn = isLoading || isUserLoading;
+  const loadingOrSignedIn = isLoading || (isUserLoading && !user);
 
   return (
     <div className="flex items-center justify-center min-h-[80vh] bg-background p-4">
@@ -177,5 +192,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
-    
