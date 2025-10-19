@@ -83,7 +83,7 @@ export function Header() {
                   </Button>
                 )}
                 
-                {/* <NotificationsDropdown /> */}
+                <NotificationsDropdown />
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

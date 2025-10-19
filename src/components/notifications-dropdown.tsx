@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, writeBatch, doc } from 'firebase/firestore';
 import {
   Popover,
   PopoverContent,
@@ -32,52 +32,48 @@ function NotificationIcon({ type }: { type: Notification['type'] }) {
 }
 
 export default function NotificationsDropdown() {
-//   const { user } = useUser();
-//   const db = useFirestore();
-//   const { toast } = useToast();
-//   const [isMarkingRead, setIsMarkingRead] = useState(false);
+  const { user } = useUser();
+  const db = useFirestore();
+  const { toast } = useToast();
+  const [isMarkingRead, setIsMarkingRead] = useState(false);
 
-//   const notificationsQuery = useMemoFirebase(() => 
-//     (db && user) 
-//       ? query(
-//           collection(db, 'notifications'), 
-//           where('userId', '==', user.uid),
-//           orderBy('createdAt', 'desc')
-//         )
-//       : null, 
-//     [db, user]
-//   );
+  const notificationsQuery = useMemoFirebase(() => 
+    (db && user) 
+      ? query(
+          collection(db, 'notifications'), 
+          where('userId', '==', user.uid),
+          orderBy('createdAt', 'desc')
+        )
+      : null, 
+    [db, user]
+  );
   
-//   const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
+  const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
   
-//   const unreadNotifications = notifications?.filter(n => !n.isRead) || [];
-  const isLoading = true;
-  const notifications: Notification[] = [];
-  const unreadNotifications: Notification[] = [];
-
+  const unreadNotifications = notifications?.filter(n => !n.isRead) || [];
 
   const handleMarkAllRead = async () => {
-    // if (!db || !user || unreadNotifications.length === 0) return;
+    if (!db || !user || unreadNotifications.length === 0) return;
     
-    // setIsMarkingRead(true);
-    // try {
-    //     const batch = writeBatch(db);
-    //     unreadNotifications.forEach(notif => {
-    //         const notifRef = collection(db, 'notifications');
-    //         batch.update(notifRef.doc(notif.id), { isRead: true });
-    //     });
-    //     await batch.commit();
-    //     toast({ description: "Barcha bildirishnomalar o'qildi." });
-    // } catch (error) {
-    //     console.error("Bildirishnomalarni o'qilgan deb belgilashda xatolik:", error);
-    //     toast({
-    //         variant: "destructive",
-    //         title: "Xatolik",
-    //         description: "Amalni bajarib bo'lmadi.",
-    //     });
-    // } finally {
-    //     setIsMarkingRead(false);
-    // }
+    setIsMarkingRead(true);
+    try {
+        const batch = writeBatch(db);
+        unreadNotifications.forEach(notif => {
+            const notifRef = doc(db, 'notifications', notif.id);
+            batch.update(notifRef, { isRead: true });
+        });
+        await batch.commit();
+        toast({ description: "Barcha bildirishnomalar o'qildi." });
+    } catch (error) {
+        console.error("Bildirishnomalarni o'qilgan deb belgilashda xatolik:", error);
+        toast({
+            variant: "destructive",
+            title: "Xatolik",
+            description: "Amalni bajarib bo'lmadi.",
+        });
+    } finally {
+        setIsMarkingRead(false);
+    }
   };
 
 
@@ -115,10 +111,9 @@ export default function NotificationsDropdown() {
             variant="ghost" 
             size="sm" 
             onClick={handleMarkAllRead}
-            disabled={true}
-            // disabled={isMarkingRead || unreadNotifications.length === 0}
+            disabled={isMarkingRead || unreadNotifications.length === 0}
           >
-            {false ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4 mr-2" />}
+            {isMarkingRead ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4 mr-2" />}
             Barchasini o'qish
           </Button>
         </div>
@@ -130,7 +125,7 @@ export default function NotificationsDropdown() {
             ) : notifications && notifications.length > 0 ? (
                 <div className="divide-y">
                     {notifications.map((notif) => (
-                        <Link key={notif.id} href={getNotificationLink(notif)} legacyBehavior>
+                        <Link key={notif.id} href={getNotificationLink(notif) ?? '#'} legacyBehavior>
                         <a className={`block p-4 hover:bg-secondary/50 ${!notif.isRead ? 'bg-blue-500/5' : ''}`}>
                             <div className="flex items-start gap-3">
                                 <Avatar className="h-8 w-8">
@@ -144,13 +139,13 @@ export default function NotificationsDropdown() {
                                         {notif.type === 'follow' && ` sizga obuna bo'ldi.`}
                                         {notif.type === 'message' && ` sizga xabar yubordi.`}
                                     </p>
-                                    {notif.type === 'message' && (
+                                    {notif.type === 'message' && notif.messageSnippet && (
                                         <p className="text-xs text-muted-foreground mt-1 p-2 bg-secondary rounded-md italic">
                                             "{notif.messageSnippet}"
                                         </p>
                                     )}
                                     <p className="text-xs text-muted-foreground mt-1">
-                                        {formatDistanceToNowStrict(notif.createdAt.toDate(), { addSuffix: true, locale: uz })}
+                                        {notif.createdAt ? formatDistanceToNowStrict(notif.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}
                                     </p>
                                 </div>
                                 {!notif.isRead && (
