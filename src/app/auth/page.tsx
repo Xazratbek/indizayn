@@ -1,31 +1,23 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { initializeApp, getApps } from 'firebase/app';
-import { 
-  getAuth, 
-  signInWithRedirect, 
-  getRedirectResult,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signOut as firebaseSignOut,
-  User
-} from 'firebase/auth';
+import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useAuth, initializeFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 
-// Firebase ni faqat bir marta initialize qilish
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+// Initialize Firebase services
+const { auth } = initializeFirebase();
 
-// Google provider sozlamalari
+const googleProvider = new GoogleAuthProvider();
+googleProvider.addScope('profile');
+googleProvider.addScope('email');
 googleProvider.setCustomParameters({
   prompt: 'select_account',
 });
+
 
 // ============================================
 // XATOLARNI QAYTA ISHLASH
@@ -54,9 +46,8 @@ const getErrorMessage = (error: any): string => {
 // GOOGLE AUTH COMPONENT
 // ============================================
 export default function AuthPage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticating, setIsAuthenticating] = useState(false); // Used for redirect start
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isProcessingLogin, setIsProcessingLogin] = useState(true);
   const db = useFirestore();
   const router = useRouter();
 
@@ -99,75 +90,70 @@ export default function AuthPage() {
   useEffect(() => {
     let mounted = true;
     
-    // Set initial loading state to true to handle redirect
-    setIsAuthenticating(true);
+    if (!auth) {
+        setIsProcessingLogin(false);
+        return;
+    }
 
     const processRedirect = async () => {
       try {
         const result = await getRedirectResult(auth);
         if (result && result.user && mounted) {
-          console.log('✅ Redirect orqali muvaffaqiyatli login:', result.user.email);
           await saveUserToDB(result.user);
           toast({
             title: "Muvaffaqiyatli kirdingiz!",
             description: `Xush kelibsiz, ${result.user.displayName}!`,
           });
           router.replace('/account');
-          // No need to set user state here, onAuthStateChanged will handle it
+        } else {
+             // Agar redirect natijasi bo'lmasa, onAuthStateChanged ni kutamiz
+            setIsProcessingLogin(false);
         }
       } catch (err: any) {
         console.error('❌ Redirect xatosi:', err);
         if (mounted) {
            toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
+           setIsProcessingLogin(false);
         }
-      } finally {
-        if(mounted){
-            setIsAuthenticating(false);
-        }
-      }
+      } 
     };
 
     processRedirect();
 
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!mounted) return;
       
-      if (currentUser) {
-         if(!user){ // Avoid re-setting user if it's already there
-             console.log('👤 User holati o\'zgardi:', currentUser.email);
-             setUser(currentUser);
-         }
-         // if user is on auth page but logged in, redirect them
-         if(window.location.pathname.startsWith('/auth')) {
+      setCurrentUser(user);
+      if(user) {
+        if(window.location.pathname.startsWith('/auth')) {
             router.replace('/account');
-         }
-      } else {
-        setUser(null);
+        }
       }
-      setLoading(false);
-      setIsAuthenticating(false); // Also stop authenticating indicator here
+      setIsProcessingLogin(false);
     });
 
     return () => {
       mounted = false;
       unsubscribe();
     };
-  }, [router, db, user]);
+  }, [router, db, auth]);
 
 
   // ============================================
   // GOOGLE SIGN IN (REDIRECT)
   // ============================================
   const handleSignIn = async () => {
-    setIsAuthenticating(true);
+    if (!auth) {
+        toast({ variant: "destructive", title: "Xatolik", description: "Autentifikatsiya xizmati tayyor emas." });
+        return;
+    }
+    setIsProcessingLogin(true);
     try {
-      console.log('🚀 Google login boshlanyapti (redirect usuli)...');
       await signInWithRedirect(auth, googleProvider);
-      // After this line, the page will redirect, so no more code will execute.
     } catch (err: any) {
       console.error('❌ Sign in xatosi:', err);
       toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
-      setIsAuthenticating(false);
+      setIsProcessingLogin(false);
     }
   };
 
@@ -175,7 +161,7 @@ export default function AuthPage() {
   // ============================================
   // LOADING STATE
   // ============================================
-  if (loading || isAuthenticating) {
+  if (isProcessingLogin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
@@ -187,14 +173,22 @@ export default function AuthPage() {
             Yuklanmoqda...
           </h2>
           <p className="text-gray-600">
-            {isAuthenticating 
-              ? 'Google bilan autentifikatsiya qilinmoqda...' 
-              : 'Iltimos kuting...'}
+             Iltimos kuting...
           </p>
         </div>
       </div>
     );
   }
+  
+  if (currentUser) {
+    // Already logged in, redirecting...
+    return (
+         <div className="min-h-screen flex items-center justify-center">
+             <p>Tizimga kirilgansiz, yo'naltirilmoqda...</p>
+         </div>
+    );
+  }
+
 
   // ============================================
   // LOGIN PAGE
@@ -219,7 +213,7 @@ export default function AuthPage() {
           
           <button
             onClick={handleSignIn}
-            disabled={isAuthenticating}
+            disabled={isProcessingLogin}
             className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white border-2 border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 hover:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24">
@@ -250,3 +244,4 @@ export default function AuthPage() {
     </div>
   );
 }
+    
