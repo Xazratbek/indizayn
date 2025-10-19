@@ -71,44 +71,46 @@ export default function Home() {
         <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
             <ThreeShowcase />
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-                <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                    className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
-                >
-                    inDizayn-ga Xush Kelibsiz!
-                </motion.h1>
-
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-                    className="mt-4 max-w-2xl text-lg text-muted-foreground"
-                >
-                    Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
-                </motion.p>
-                
-                {!user && !isUserLoading && (
-                  <motion.div
+              {!user && !isUserLoading && (
+                <>
+                  <motion.h1
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-                      className="mt-8"
+                      transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                      className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
                   >
-                      {isSigningIn ? (
-                          <div className="flex flex-col items-center gap-4">
-                              <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                              <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
-                          </div>
-                      ) : (
-                          <div className="animated-border-box">
-                              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={handleStartClick} disabled={isSigningIn}>
-                                  Boshlash <MoveRight className="ml-2" />
-                              </Button>
-                          </div>
-                      )}
-                  </motion.div>
+                      inDizayn-ga Xush Kelibsiz!
+                  </motion.h1>
+
+                  <motion.p
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+                      className="mt-4 max-w-2xl text-lg text-muted-foreground"
+                  >
+                      Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
+                  </motion.p>
+                  
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
+                        className="mt-8"
+                    >
+                        {isSigningIn ? (
+                            <div className="flex flex-col items-center gap-4">
+                                <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                                <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
+                            </div>
+                        ) : (
+                            <div className="animated-border-box">
+                                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={handleStartClick} disabled={isSigningIn}>
+                                    Boshlash <MoveRight className="ml-2" />
+                                </Button>
+                            </div>
+                        )}
+                    </motion.div>
+                  </>
                 )}
             </div>
         </section>
