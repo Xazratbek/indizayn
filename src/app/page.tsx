@@ -69,41 +69,43 @@ export default function Home() {
             </div>
          </div>
        ) : !user ? (
-        <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
-            <ThreeShowcase />
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-                <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                    className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
-                >
-                    inDizayn-ga Xush Kelibsiz!
-                </motion.h1>
+        <>
+            <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
+                <ThreeShowcase />
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
+                    <motion.h1
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                        className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
+                    >
+                        inDizayn-ga Xush Kelibsiz!
+                    </motion.h1>
 
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-                    className="mt-4 max-w-2xl text-lg text-muted-foreground"
-                >
-                    Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
-                </motion.p>
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+                        className="mt-4 max-w-2xl text-lg text-muted-foreground"
+                    >
+                        Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
+                    </motion.p>
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-                    className="mt-8"
-                >
-                    <div className="animated-border-box">
-                        <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick}>
-                            Boshlash <MoveRight className="ml-2" />
-                        </Button>
-                    </div>
-                </motion.div>
-            </div>
-        </section>
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
+                        className="mt-8"
+                    >
+                        <div className="animated-border-box">
+                            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick}>
+                                Boshlash <MoveRight className="ml-2" />
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+        </>
       ) : null}
 
 
@@ -145,52 +147,54 @@ export default function Home() {
           )}
         </div>
       </motion.section>
-
-      <motion.section 
-        className="py-16 md:py-24 bg-background"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.3 }}
-        variants={sectionVariants}
-      >
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-headline text-3xl md:text-4xl font-bold">Platformaning afzalliklari</h2>
-            <p className="text-muted-foreground mt-2">Nima uchun dizaynerlar bizni tanlashadi?</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {advantages.map((adv, index) => (
-                <motion.div
-                  key={index}
-                  custom={index}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, amount: 0.5 }}
-                  variants={{
-                    hidden: { opacity: 0, y: 50 },
-                    visible: { 
-                      opacity: 1, 
-                      y: 0,
-                      transition: { duration: 0.5, delay: index * 0.1 }
-                    }
-                  }}
-                  whileHover={{ y: -8, boxShadow: "0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <Card className="text-center p-6 h-full">
-                      <CardHeader className="items-center">
-                          <div className="p-4 bg-primary/10 rounded-full mb-4">
-                              {adv.icon}
-                          </div>
-                          <CardTitle className="font-headline text-xl">{adv.title}</CardTitle>
-                          <CardDescription className="pt-2">{adv.description}</CardDescription>
-                      </CardHeader>
-                  </Card>
-                </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
+      
+      {!user && (
+        <motion.section 
+            className="py-16 md:py-24 bg-background"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+            variants={sectionVariants}
+        >
+            <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+                <h2 className="font-headline text-3xl md:text-4xl font-bold">Platformaning afzalliklari</h2>
+                <p className="text-muted-foreground mt-2">Nima uchun dizaynerlar bizni tanlashadi?</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {advantages.map((adv, index) => (
+                    <motion.div
+                    key={index}
+                    custom={index}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.5 }}
+                    variants={{
+                        hidden: { opacity: 0, y: 50 },
+                        visible: { 
+                        opacity: 1, 
+                        y: 0,
+                        transition: { duration: 0.5, delay: index * 0.1 }
+                        }
+                    }}
+                    whileHover={{ y: -8, boxShadow: "0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
+                    transition={{ duration: 0.3 }}
+                    >
+                    <Card className="text-center p-6 h-full">
+                        <CardHeader className="items-center">
+                            <div className="p-4 bg-primary/10 rounded-full mb-4">
+                                {adv.icon}
+                            </div>
+                            <CardTitle className="font-headline text-xl">{adv.title}</CardTitle>
+                            <CardDescription className="pt-2">{adv.description}</CardDescription>
+                        </CardHeader>
+                    </Card>
+                    </motion.div>
+                ))}
+            </div>
+            </div>
+        </motion.section>
+      )}
 
     </div>
   );

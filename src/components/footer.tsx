@@ -1,8 +1,14 @@
+
+"use client";
+
 import Link from "next/link";
 import { Logo } from "./icons";
 import { Button } from "./ui/button";
+import { useUser } from "@/firebase";
 
 export function Footer() {
+  const { user } = useUser();
+
   return (
     <footer className="w-full border-t bg-background">
       <div className="container mx-auto py-8 px-4 md:px-6">
@@ -26,13 +32,15 @@ export function Footer() {
                          <Link href="/about" className="text-muted-foreground hover:text-foreground">Haqida</Link>
                     </nav>
                 </div>
-                 <div>
-                    <h4 className="font-semibold mb-2 font-headline">Dizayner bo'ling</h4>
-                    <p className="text-muted-foreground mb-4">Hamjamiyatimizga qo'shiling va ijodingizni namoyish eting.</p>
-                    <Button asChild>
-                        <Link href="/auth">Boshlash</Link>
-                    </Button>
-                </div>
+                 {!user && (
+                    <div>
+                        <h4 className="font-semibold mb-2 font-headline">Dizayner bo'ling</h4>
+                        <p className="text-muted-foreground mb-4">Hamjamiyatimizga qo'shiling va ijodingizni namoyish eting.</p>
+                        <Button asChild>
+                            <Link href="/auth">Boshlash</Link>
+                        </Button>
+                    </div>
+                 )}
             </div>
         </div>
          <div className="mt-8 border-t pt-6 text-center text-sm text-muted-foreground">
