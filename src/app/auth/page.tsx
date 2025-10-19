@@ -138,36 +138,36 @@ export default function AuthPage() {
 
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        if (window.location.pathname.includes('/auth')) {
-           router.replace('/account');
-        } else {
-            setIsLoading(false);
-        }
-      } else {
-        setIsLoading(false);
-      }
-    });
+    setIsProcessing(true); // Assume we might be handling a redirect
 
-    // Check for redirect result on component mount
     getRedirectResult(auth)
       .then((result) => {
         if (result && result.user) {
-          setIsProcessing(true);
+          // A user has successfully signed in via redirect.
           handleAuthSuccess(result.user);
+        } else {
+          // No redirect result, so proceed with checking the current auth state.
+          const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+              // User is already logged in, redirect them away from the auth page.
+              router.replace('/account');
+            } else {
+              // No user logged in, and no redirect result. Safe to show the auth page.
+              setIsLoading(false);
+              setIsProcessing(false);
+            }
+          });
+          // Return the unsubscribe function for cleanup.
+          return unsubscribe;
         }
       })
       .catch((error) => {
         console.error('Redirect result error:', error);
         toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(error) });
-      })
-      .finally(() => {
-          setIsLoading(false);
+        setIsLoading(false);
+        setIsProcessing(false);
       });
-
-    return () => unsubscribe();
-  }, [router, handleAuthSuccess]);
+  }, [handleAuthSuccess, router, toast]);
 
   const handleGoogleSignIn = async () => {
     setIsProcessing(true);
