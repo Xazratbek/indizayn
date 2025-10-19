@@ -1,14 +1,10 @@
 /**
- * @fileOverview Firestore Security Rules for the design portfolio application.
- *
- * Core Philosophy:
- * This ruleset is in prototyping mode and uses a permissive security posture, granting read and write access to all documents.
- *
- * Data Structure:
- * The database contains collections for users, projects, messages and notifications.
- *
- * Key Security Decisions:
- * All collections are accessible for both reading and writing. This is acceptable for early prototyping.
+ * @file Firestore Security Rules
+ * @core-philosophy This ruleset allows open read and write access to all documents and collections.
+ * This is intended for rapid prototyping and should NOT be used in a production environment.
+ * @data-structure All data resides in top-level collections: /users, /projects, /messages, and /notifications.
+ * Each document ID is explicitly specified to be distinct from autoIDs (but such integrity is NOT validated).
+ * @key-security-decisions Open access is granted for all read and write operations, without authentication or authorization checks.
  */
 rules_version = '2';
 service cloud.firestore {
