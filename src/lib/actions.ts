@@ -5,8 +5,8 @@ import { revalidatePath } from 'next/cache';
 
 cloudinary.config({
   cloud_name: 'studioproject',
-  api_key: '534665423858783',
-  api_secret: 'R-p_4mHmbpI1y725LeVvN2FGjGg'
+  api_key: '115763963239979',
+  api_secret: 'X6yWl3txXKzJr_V318UhyyCdcGQ'
 });
 
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; url?: string; error?: string; publicId?: string }> {
