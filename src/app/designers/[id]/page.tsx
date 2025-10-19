@@ -8,13 +8,14 @@ import { doc, collection, query, where, updateDoc, increment, arrayUnion, arrayR
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserPlus, Mail, Loader2, UserCheck } from 'lucide-react';
+import { UserPlus, Mail, UserCheck } from 'lucide-react';
 import PortfolioCard from '@/components/portfolio-card';
 import { useState, useEffect } from 'react';
 import type { Designer, Project } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import SendMessageDialog from '@/components/send-message-dialog';
 import { useSession } from 'next-auth/react';
+import { LoadingPage } from '@/app/loading';
 
 export default function DesignerProfilePage() {
   const params = useParams();
@@ -112,7 +113,7 @@ export default function DesignerProfilePage() {
   const isLoading = isDesignerLoading || areProjectsLoading || isUserLoading;
 
   if (isLoading) {
-    return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin" /></div>;
+    return <div className="flex h-[80vh] items-center justify-center"><LoadingPage /></div>;
   }
   
   if (!designer) {
@@ -154,7 +155,7 @@ export default function DesignerProfilePage() {
             { user && user.id !== id && (
               <div className="flex gap-2">
                 <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading}>
-                  {isFollowLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                  {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
                 </Button>
                 <Button variant="outline" onClick={() => setIsMessageDialogOpen(true)}>

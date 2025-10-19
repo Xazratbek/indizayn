@@ -5,10 +5,10 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import PortfolioCard from '@/components/portfolio-card';
-import { Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { LoadingPage } from '@/app/loading';
 
 export default function MyProjectsPage() {
     const { data: session, status } = useSession();
@@ -40,7 +40,7 @@ export default function MyProjectsPage() {
     if (isLoading || status !== 'authenticated') {
         return (
             <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <LoadingPage />
             </div>
         );
     }

@@ -5,9 +5,10 @@ import type { Designer } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Loader2 } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import Link from "next/link";
 import { collection, query, orderBy } from 'firebase/firestore';
+import { LoadingPage } from "../loading";
 
 export default function DesignersPage() {
   const db = useFirestore();
@@ -27,7 +28,7 @@ export default function DesignersPage() {
       
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <LoadingPage />
         </div>
       ) : designers && designers.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">

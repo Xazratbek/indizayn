@@ -6,12 +6,13 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Project, Designer } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Loader2, Eye, Heart, Users } from 'lucide-react';
+import { Eye, Heart, Users } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { LoadingPage } from '@/app/loading';
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
     <Card>
@@ -55,7 +56,7 @@ export default function MyStatsPage() {
     if (isLoading || status !== 'authenticated') {
         return (
             <div className="flex items-center justify-center h-screen">
-                <Loader2 className="animate-spin h-10 w-10" />
+                <LoadingPage />
             </div>
         );
     }

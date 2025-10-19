@@ -6,7 +6,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import PortfolioCard from '@/components/portfolio-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,7 @@ import {
 import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import PaginationControls from '@/components/pagination-controls';
+import { LoadingPage } from '../loading';
 
 const PROJECTS_PER_PAGE = 10;
 
@@ -151,7 +152,7 @@ export default function BrowsePage() {
 
       {isLoading && page === 1 ? (
         <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <LoadingPage />
         </div>
       ) : error ? (
         <div className="text-center py-16">
@@ -173,7 +174,7 @@ export default function BrowsePage() {
             />
              {isNextPageLoading && (
                 <div className="flex justify-center items-center mt-4">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <LoadingPage />
                 </div>
              )}
         </>

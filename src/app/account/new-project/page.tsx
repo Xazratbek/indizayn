@@ -11,15 +11,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, X } from "lucide-react";
+import { UploadCloud, X } from "lucide-react";
 import { useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { uploadImage } from "@/lib/actions";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { LoadingPage } from "@/app/loading";
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: "Loyiha nomi kamida 3 belgidan iborat bo'lishi kerak." }),
@@ -87,6 +87,22 @@ export default function NewProjectPage() {
     setImagePreviews(newImagePreviews);
   }
 
+  const uploadImageWithApi = async (file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success || !result.url) {
+      throw new Error(result.error || "Rasm yuklashda xatolik yuz berdi.");
+    }
+    return result.url;
+  };
+
   const onSubmit = async (data: ProjectFormValues) => {
     if (!user) {
       toast({ variant: "destructive", title: "Xatolik", description: "Loyiha yuklash uchun tizimga kiring." });
@@ -103,14 +119,8 @@ export default function NewProjectPage() {
       // --- 1. Upload Images to Cloudinary ---
       const imageUrls: string[] = [];
       for (const file of imageFiles) {
-        const formData = new FormData();
-        formData.append('image', file);
-        const imageResult = await uploadImage(formData);
-        
-        if (!imageResult.success || !imageResult.url) {
-          throw new Error(imageResult.error || `Rasm yuklab bo'lmadi.`);
-        }
-        imageUrls.push(imageResult.url);
+        const url = await uploadImageWithApi(file);
+        imageUrls.push(url);
       }
 
       // --- 2. Save Project to Firestore ---
@@ -155,7 +165,7 @@ export default function NewProjectPage() {
   };
 
   if (status !== 'authenticated') {
-    return <div className="flex items-center justify-center h-screen"><Loader2 className="animate-spin h-10 w-10" /></div>;
+    return <div className="flex items-center justify-center h-screen"><LoadingPage /></div>;
   }
 
   return (
@@ -271,7 +281,7 @@ export default function NewProjectPage() {
                                  Bekor qilish
                              </Button>
                              <Button type="submit" disabled={isSubmitting}>
-                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                 {isSubmitting && <LoadingPage />}
                                  Saqlash va Yuklash
                              </Button>
                          </div>

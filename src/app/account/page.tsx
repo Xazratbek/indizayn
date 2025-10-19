@@ -8,12 +8,13 @@ import { doc, collection, query, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, LayoutDashboard, BarChart2, PlusSquare, Pencil, LogIn } from 'lucide-react';
+import { LayoutDashboard, BarChart2, PlusSquare, Pencil, LogIn } from 'lucide-react';
 import type { Designer, Project } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { LoadingPage } from '../loading';
 
 const StatCard = ({ label, value }: { label: string; value: number | string }) => (
     <div className="text-center bg-secondary p-4 rounded-lg">
@@ -81,7 +82,7 @@ export default function AccountDashboardPage() {
           <h2 className="text-2xl font-bold mb-2">Siz tizimga kirmagansiz</h2>
           <p className="text-muted-foreground mb-6">Akkauntingizni ko'rish uchun, iltimos, tizimga kiring.</p>
           <Button onClick={handleSignIn} disabled={isSigningIn}>
-            {isSigningIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+            {isSigningIn ? <LoadingPage /> : <LogIn className="mr-2 h-4 w-4" />}
             {isSigningIn ? 'Yo\'naltirilmoqda...' : 'Kirish / Ro\'yxatdan o\'tish'}
           </Button>
         </div>
@@ -94,7 +95,7 @@ export default function AccountDashboardPage() {
         <div className="flex h-[80vh] items-center justify-center">
             <div className='text-center'>
                 <p>Profil topilmadi. Ma'lumotlar sinxronlanmoqda...</p>
-                 <Loader2 className="mx-auto mt-4 h-8 w-8 animate-spin" />
+                 <LoadingPage />
             </div>
         </div>
     );

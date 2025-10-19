@@ -2,7 +2,7 @@
 "use client"
 
 import Link from 'next/link';
-import { MoveRight, Palette, UserCheck, ThumbsUp, Loader2 } from 'lucide-react';
+import { MoveRight, Palette, UserCheck, ThumbsUp } from 'lucide-react';
 import ThreeShowcase from '@/components/three-showcase';
 import { Button } from '@/components/ui/button';
 import PortfolioCard from '@/components/portfolio-card';
@@ -14,6 +14,7 @@ import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import { useSession, signIn } from 'next-auth/react';
 import { useState } from 'react';
+import { LoadingPage } from './loading';
 
 
 const advantages = [
@@ -93,7 +94,7 @@ export default function Home() {
                   >
                       {isSigningIn ? (
                           <div className="flex flex-col items-center gap-4">
-                              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                              <LoadingPage />
                               <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
                           </div>
                       ) : (
@@ -123,7 +124,7 @@ export default function Home() {
           
           {areProjectsLoading || isUserLoading ? (
              <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-10 w-10 animate-spin" />
+                <LoadingPage />
              </div>
           ) : featuredProjects && featuredProjects.length > 0 ? (
             <>

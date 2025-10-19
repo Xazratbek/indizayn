@@ -17,9 +17,9 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
 import type { Designer } from '@/lib/types';
 import type { Session } from 'next-auth';
+import { LoadingPage } from '@/app/loading';
 
 interface SendMessageDialogProps {
   isOpen: boolean;
@@ -116,7 +116,7 @@ export default function SendMessageDialog({ isOpen, onOpenChange, recipient, cur
             </Button>
           </DialogClose>
           <Button onClick={handleSendMessage} disabled={isSending}>
-            {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSending && <LoadingPage />}
             Yuborish
           </Button>
         </DialogFooter>

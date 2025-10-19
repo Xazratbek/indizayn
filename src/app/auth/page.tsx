@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { LoadingPage } from "../loading";
 
 export default function AuthPage() {
   const { data: session, status } = useSession();
@@ -27,7 +27,7 @@ export default function AuthPage() {
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <LoadingPage />
       </div>
     );
   }
@@ -36,7 +36,7 @@ export default function AuthPage() {
   if (status === "authenticated") {
      return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <LoadingPage />
         <p className="ml-4">Hisobingizga yo'naltirilmoqda...</p>
       </div>
     );

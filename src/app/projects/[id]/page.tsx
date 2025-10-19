@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Eye, Heart, Calendar, Wrench, Loader2 } from 'lucide-react';
+import { Eye, Heart, Calendar, Wrench } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -20,6 +20,7 @@ import { toast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Lightbox from '@/components/lightbox';
 import { useSession } from 'next-auth/react';
+import { LoadingPage } from '@/app/loading';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -129,7 +130,7 @@ export default function ProjectDetailsPage() {
   const isLoading = isProjectLoading || isDesignerLoading;
 
   if (isLoading) {
-    return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin" /></div>;
+    return <div className="flex h-[80vh] items-center justify-center"><LoadingPage /></div>;
   }
   
   if (!project || !designer) {

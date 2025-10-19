@@ -13,11 +13,12 @@ import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc, DocumentData } from "firebase/firestore";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Upload } from "lucide-react";
+import { Upload } from "lucide-react";
 import type { Designer } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
+import { LoadingPage } from "@/app/loading";
 
 export default function ProfileEditPage() {
   const { data: session, status, update: updateSession } = useSession();
@@ -182,7 +183,7 @@ export default function ProfileEditPage() {
   if (isLoading || status !== 'authenticated') {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="animate-spin h-10 w-10" />
+        <LoadingPage />
       </div>
     );
   }
@@ -263,7 +264,7 @@ export default function ProfileEditPage() {
               <Textarea id="bio" {...register("bio")} placeholder="O‘zingiz haqingizda qisqacha yozing..." />
             </div>
             <Button type="submit" disabled={isSaving}>
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSaving && <LoadingPage />}
               Profilni yangilash
             </Button>
           </form>

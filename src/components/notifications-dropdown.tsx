@@ -11,13 +11,14 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, UserPlus, MessageSquare, CheckCheck, Loader2 } from 'lucide-react';
+import { Bell, Heart, UserPlus, MessageSquare, CheckCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Notification } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { LoadingPage } from '@/app/loading';
 
 function NotificationIcon({ type }: { type: Notification['type'] }) {
     switch (type) {
@@ -142,14 +143,14 @@ export default function NotificationsDropdown() {
             onClick={handleMarkAllRead}
             disabled={isMarkingRead || unreadNotifications.length === 0}
           >
-            {isMarkingRead ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4 mr-2" />}
+            {isMarkingRead ? <LoadingPage /> : <CheckCheck className="h-4 w-4 mr-2" />}
             Barchasini o'qish
           </Button>
         </div>
         <ScrollArea className="h-96">
             {isLoading ? (
                 <div className="flex items-center justify-center p-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    <LoadingPage />
                 </div>
             ) : notifications && notifications.length > 0 ? (
                 <div className="divide-y">
