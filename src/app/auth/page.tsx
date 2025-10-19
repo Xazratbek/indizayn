@@ -34,16 +34,23 @@ export default function AuthPage() {
     // Handle redirect result on component mount
     useEffect(() => {
         if (isUserLoading || !auth || user) return;
-
+        
+        // This is the crucial part for handling the redirect result.
+        // It should run whenever the auth page loads.
         getRedirectResult(auth)
             .then((result) => {
                 if (result) {
                     // This means the user has just signed in via redirect.
-                    router.push('/account');
+                    // The onAuthStateChanged listener will handle the user state update,
+                    // and the useEffect above will redirect to /account.
+                    toast({
+                      title: "Muvaffaqiyatli kirdingiz!",
+                      description: `Xush kelibsiz, ${result.user.displayName}!`,
+                    });
                 }
             })
             .catch((error) => {
-                console.error("Error getting redirect result: ", error);
+                console.error("Redirect natijasini olishda xatolik: ", error);
                 if (error.code !== 'auth/operation-not-allowed') {
                   toast({
                       variant: "destructive",
@@ -75,6 +82,7 @@ export default function AuthPage() {
                 setStatus('popup_closed');
                 setErrorCode(error.code);
             } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+                // If popup is blocked, immediately try the redirect method as a fallback.
                 handleRedirectSignIn();
             } else if (error.code === 'auth/operation-not-allowed') {
                 setStatus('error');
@@ -88,7 +96,7 @@ export default function AuthPage() {
             else {
                 setStatus('error');
                 setErrorCode(error.code);
-                console.error("Error signing in with Google Popup: ", error);
+                console.error("Google Popup bilan kirishda xatolik: ", error);
                 toast({
                     variant: "destructive",
                     title: "Kirishda xatolik",
@@ -109,7 +117,7 @@ export default function AuthPage() {
         } catch (error: any) {
             setStatus('error');
             setErrorCode(error.code);
-            console.error("Error signing in with Google Redirect: ", error);
+            console.error("Google Redirect bilan kirishda xatolik: ", error);
              if (error.code === 'auth/operation-not-allowed') {
                  toast({
                     variant: "destructive",
