@@ -102,7 +102,7 @@ export default function ProfileEditPage() {
     if (!user || !userProfile) return;
 
     if (!isDirty && !profilePic.file && !coverPhoto.file) {
-      toast({ description: "O'zgarish kiritilmadi." });
+      toast({ description: "O'zgarish kiritilmadi.", variant: "warning" });
       return;
     }
     
@@ -159,7 +159,7 @@ export default function ProfileEditPage() {
         }
       });
       
-      toast({ title: "Muvaffaqiyatli!", description: "Profil yangilandi!" });
+      toast({ variant: "success", title: "Muvaffaqiyatli!", description: "Profil yangilandi!" });
       setProfilePic({ file: null, previewUrl: null });
       setCoverPhoto({ file: null, previewUrl: null });
       router.refresh();

@@ -182,6 +182,7 @@ export default function NewProjectPage() {
       });
       
       toast({
+        variant: "success",
         title: "Muvaffaqiyatli!",
         description: "Yangi loyihangiz platformaga qo'shildi.",
       });
@@ -252,24 +253,20 @@ export default function NewProjectPage() {
                                  />
                                 <FormItem>
                                     <FormLabel>Teglar</FormLabel>
-                                    <FormControl>
-                                         <TagInput 
-                                            value={tags}
-                                            onChange={setTags}
-                                            placeholder="Teg qo'shish uchun 'Enter' bosing..."
-                                         />
-                                    </FormControl>
+                                     <TagInput 
+                                        value={tags}
+                                        onChange={setTags}
+                                        placeholder="Teg qo'shish uchun 'Enter' bosing..."
+                                     />
                                     <FormMessage />
                                 </FormItem>
                                 <FormItem>
                                     <FormLabel>Foydalanilgan vositalar</FormLabel>
-                                    <FormControl>
-                                         <TagInput 
-                                            value={tools}
-                                            onChange={setTools}
-                                            placeholder="Vosita qo'shish uchun 'Enter' bosing..."
-                                         />
-                                    </FormControl>
+                                     <TagInput 
+                                        value={tools}
+                                        onChange={setTools}
+                                        placeholder="Vosita qo'shish uchun 'Enter' bosing..."
+                                     />
                                     <FormMessage />
                                 </FormItem>
 
@@ -331,5 +328,3 @@ export default function NewProjectPage() {
     </div>
   );
 }
-
-    

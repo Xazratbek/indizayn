@@ -12,7 +12,7 @@ import { UserPlus, Mail, UserCheck, Palmtree } from 'lucide-react';
 import PortfolioCard from '@/components/portfolio-card';
 import { useState, useEffect } from 'react';
 import type { Designer, Project } from '@/lib/types';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import SendMessageDialog from '@/components/send-message-dialog';
 import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
@@ -49,7 +49,7 @@ export default function DesignerProfilePage() {
   const handleFollowToggle = async () => {
     if (!user || !designer || !db) {
       toast({
-        variant: "destructive",
+        variant: "warning",
         title: "Xatolik",
         description: "Obuna bo'lish uchun tizimga kiring.",
       });
@@ -85,7 +85,7 @@ export default function DesignerProfilePage() {
                 subscriberCount: increment(1)
             });
             setIsFollowing(true);
-            toast({ description: `${designer?.name} ga obuna bo'ldingiz.` });
+            toast({ variant: "success", description: `${designer?.name} ga obuna bo'ldingiz.` });
 
             // Create notification for the followed user
             if (designer.id !== user.id) { // Don't notify self

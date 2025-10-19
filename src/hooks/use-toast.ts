@@ -1,3 +1,4 @@
+
 "use client"
 
 // Inspired by react-hot-toast library
@@ -8,8 +9,9 @@ import type {
   ToastProps,
 } from "@/components/ui/toast"
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_LIMIT = 3
+const TOAST_REMOVE_DELAY = 5000 // 5 seconds
+const TOAST_DURATION = 3000; // 3 seconds
 
 type ToasterToast = ToastProps & {
   id: string
@@ -163,6 +165,12 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+
+  // Automatically dismiss after a duration
+  setTimeout(() => {
+    dismiss();
+  }, props.duration || TOAST_DURATION);
+
 
   return {
     id: id,

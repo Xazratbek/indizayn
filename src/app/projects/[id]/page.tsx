@@ -16,7 +16,7 @@ import { useState, useEffect } from 'react';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Project, Designer, Comment } from '@/lib/types';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Lightbox from '@/components/lightbox';
 import { useSession } from 'next-auth/react';
@@ -60,6 +60,7 @@ export default function ProjectDetailsPage() {
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const { toast } = useToast();
 
 
   // Fetch project details and increment view count
@@ -108,14 +109,14 @@ export default function ProjectDetailsPage() {
     const handleCommentSubmit = async () => {
         if (!user || !project || !db) {
             toast({
-                variant: "destructive",
+                variant: "warning",
                 title: "Xatolik!",
                 description: "Izoh qoldirish uchun tizimga kiring.",
             });
             return;
         }
         if (!newComment.trim()) {
-            toast({ description: "Izoh matni bo'sh bo'lishi mumkin emas." });
+            toast({ variant: "warning", description: "Izoh matni bo'sh bo'lishi mumkin emas." });
             return;
         }
     
@@ -149,7 +150,7 @@ export default function ProjectDetailsPage() {
             }
     
             setNewComment("");
-            toast({ title: "Muvaffaqiyatli!", description: "Izohingiz qo'shildi." });
+            toast({ variant: "success", title: "Muvaffaqiyatli!", description: "Izohingiz qo'shildi." });
         } catch (error) {
             console.error("Izoh qo'shishda xatolik:", error);
             toast({
@@ -166,7 +167,7 @@ export default function ProjectDetailsPage() {
   const handleLikeToggle = async () => {
     if (!user || !project || !designer || !db) {
       toast({
-        variant: "destructive",
+        variant: "warning",
         title: "Xatolik!",
         description: "Loyiha yoqishi uchun tizimga kiring.",
       });
@@ -174,7 +175,7 @@ export default function ProjectDetailsPage() {
     }
 
     if(user.id === project.designerId) {
-      toast({ description: "O'z loyihangizga like bosa olmaysiz." });
+      toast({ variant: "warning", description: "O'z loyihangizga like bosa olmaysiz." });
       return;
     }
 
@@ -196,6 +197,7 @@ export default function ProjectDetailsPage() {
                 likeCount: increment(1)
             });
             setIsLiked(true);
+             toast({ variant: "success", description: "Loyiha yoqtirilganlarga qo'shildi!"});
 
              // Create notification for the project owner
             if (project.designerId !== user.id) { // Don't notify self
@@ -456,5 +458,3 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
-
-    

@@ -37,7 +37,7 @@ export default function SendMessageDialog({ isOpen, onOpenChange, recipient, cur
   const handleSendMessage = async () => {
     if (!message.trim()) {
       toast({
-        variant: 'destructive',
+        variant: 'warning',
         title: 'Xatolik',
         description: 'Xabar matni bo‘sh bo‘lishi mumkin emas.',
       });
@@ -79,6 +79,7 @@ export default function SendMessageDialog({ isOpen, onOpenChange, recipient, cur
       });
 
       toast({
+        variant: 'success',
         title: 'Muvaffaqiyatli!',
         description: `${recipient.name}ga xabaringiz yuborildi.`,
       });
