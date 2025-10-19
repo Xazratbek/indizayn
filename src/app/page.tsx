@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -60,41 +61,75 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
-      <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
-        <ThreeShowcase />
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-            className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
-          >
-            inDizayn-ga Xush Kelibsiz!
-          </motion.h1>
+       {!user && !isUserLoading && (
+        <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
+            <ThreeShowcase />
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
+                <motion.h1
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                    className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
+                >
+                    inDizayn-ga Xush Kelibsiz!
+                </motion.h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-            className="mt-4 max-w-2xl text-lg text-muted-foreground"
-          >
-            Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
-          </motion.p>
-          
-          <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-             className="mt-8"
-          >
-            <div className="animated-border-box">
-               <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick} disabled={isUserLoading}>
-                {isUserLoading ? 'Yuklanmoqda...' : 'Boshlash'} <MoveRight className="ml-2" />
-              </Button>
+                <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+                    className="mt-4 max-w-2xl text-lg text-muted-foreground"
+                >
+                    Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
+                </motion.p>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
+                    className="mt-8"
+                >
+                    <div className="animated-border-box">
+                        <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick}>
+                            Boshlash <MoveRight className="ml-2" />
+                        </Button>
+                    </div>
+                </motion.div>
             </div>
-          </motion.div>
+        </section>
+      )}
+
+
+      <motion.section 
+        className="py-16 md:py-24 bg-secondary/50"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={sectionVariants}
+      >
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-headline text-3xl md:text-4xl font-bold">Tavsiya Etilgan Loyihalar</h2>
+            <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan tanlab olingan loyihalar.</p>
+          </div>
+          {areProjectsLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-10 w-10 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredProjects?.map(project => (
+                <PortfolioCard key={project.id} project={project} />
+              ))}
+            </div>
+          )}
+           <div className="text-center mt-12">
+            <Button asChild variant="outline">
+              <Link href="/browse">Barcha Loyihalarni Ko'rish</Link>
+            </Button>
+          </div>
         </div>
-      </section>
+      </motion.section>
 
       <motion.section 
         className="py-16 md:py-24 bg-background"
@@ -142,38 +177,6 @@ export default function Home() {
         </div>
       </motion.section>
 
-      <motion.section 
-        className="py-16 md:py-24 bg-secondary/50"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={sectionVariants}
-      >
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-headline text-3xl md:text-4xl font-bold">Tavsiya Etilgan Loyihalar</h2>
-            <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan tanlab olingan loyihalar.</p>
-          </div>
-          {areProjectsLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-10 w-10 animate-spin" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredProjects?.map(project => (
-                <PortfolioCard key={project.id} project={project} />
-              ))}
-            </div>
-          )}
-           <div className="text-center mt-12">
-            <Button asChild variant="outline">
-              <Link href="/browse">Barcha Loyihalarni Ko'rish</Link>
-            </Button>
-          </div>
-        </div>
-      </motion.section>
     </div>
   );
 }
-
-    

@@ -27,8 +27,8 @@ function AnimatedNumber({ value }: { value: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const motionValue = useMotionValue(0);
   const springValue = useSpring(motionValue, {
-    damping: 100,
-    stiffness: 400,
+    damping: 40,
+    stiffness: 200,
   });
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -114,7 +114,6 @@ export default function AccountPage() {
     if (newImage.file) {
       setUploadProgress(0);
       
-      // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev === null) return 0;
@@ -179,10 +178,7 @@ export default function AccountPage() {
     }
   };
 
-
-  const isLoading = isUserLoading || isProfileLoading;
-
-  if (isLoading) {
+  if (isUserLoading) {
       return (
         <div className="flex h-[80vh] items-center justify-center">
             <Loader2 className="h-10 w-10 animate-spin" />
@@ -190,11 +186,11 @@ export default function AccountPage() {
       )
   }
   
-  if (!user || !userProfile) {
+  if (!user) {
       return (
         <div className="flex h-[80vh] items-center justify-center">
             <div className="text-center">
-                <p className="text-lg font-semibold">Yuklanmoqda...</p>
+                <p className="text-lg font-semibold">Kirilmagan</p>
                 <p className="text-muted-foreground">Iltimos, hisob ma'lumotlarini ko'rish uchun kiring.</p>
             </div>
         </div>
@@ -305,13 +301,14 @@ export default function AccountPage() {
               <CardDescription>Saytda boshqalar sizni shunday ko'radilar.</CardDescription>
             </CardHeader>
             <CardContent>
+             {isProfileLoading ? <div className="flex items-center justify-center p-10"><Loader2 className="animate-spin" /></div> : (
               <form onSubmit={handleSubmit(onProfileUpdate)} className="space-y-6">
                  <div className="space-y-4">
                   <Label>Profil Rasmi</Label>
                   <div className="flex items-center gap-4">
                       <Avatar className="h-20 w-20">
                           <AvatarImage src={newImage.previewUrl ?? user.photoURL ?? ''} />
-                          <AvatarFallback>{userProfile.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                          <AvatarFallback>{userProfile?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <Input 
                         type="file" 
@@ -345,6 +342,7 @@ export default function AccountPage() {
                     Profilni Yangilash
                  </Button>
               </form>
+             )}
             </CardContent>
           </Card>
         </TabsContent>
