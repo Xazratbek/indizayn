@@ -95,13 +95,19 @@ export default function EditProjectPage() {
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectSchema),
+    defaultValues: {
+        name: '',
+        description: '',
+    }
   });
 
   // Populate form and state with project data once loaded
   useEffect(() => {
     if (project) {
-        form.setValue('name', project.name);
-        form.setValue('description', project.description);
+        form.reset({
+            name: project.name,
+            description: project.description
+        });
         setTags(project.tags || []);
         setTools(project.tools || []);
         setImagePreviews(project.imageUrls || [project.imageUrl]);
@@ -367,3 +373,5 @@ export default function EditProjectPage() {
     </div>
   );
 }
+
+    
