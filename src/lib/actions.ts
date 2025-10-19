@@ -5,9 +5,9 @@ import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import { revalidatePath } from 'next/cache';
 
 cloudinary.config({
-  cloud_name: 'studioproject',
-  api_key: '115763963239979',
-  api_secret: 'X6yWl3txXKzJr_V318UhyyCdcGQ'
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; url?: string; error?: string; publicId?: string }> {
@@ -23,7 +23,7 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
     const result: UploadApiResponse = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          tags: ['nextjs-server-actions-upload-sneakers'],
+          tags: ['nextjs-server-actions-upload'],
         },
         (error, result) => {
           if (error) {
