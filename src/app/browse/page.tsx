@@ -15,39 +15,78 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, limit, startAfter, endBefore, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
+import PaginationControls from '@/components/pagination-controls';
 
+const PROJECTS_PER_PAGE = 10;
 
 export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('trending');
+  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [firstVisible, setFirstVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [page, setPage] = useState(1);
+  
   const db = useFirestore();
 
   const projectsQuery = useMemoFirebase(() => {
     if (!db) return null;
     const baseQuery = collection(db, 'projects');
-    if (sortBy === 'latest') {
-      return query(baseQuery, orderBy('createdAt', 'desc'));
-    }
-    if (sortBy === 'popular') {
-      return query(baseQuery, orderBy('likeCount', 'desc'));
-    }
-    // "trending" is more complex, for now, we'll sort by views.
-    return query(baseQuery, orderBy('viewCount', 'desc'));
-  }, [db, sortBy]);
+    
+    let q = query(baseQuery, limit(PROJECTS_PER_PAGE));
 
-  const { data: allProjects, isLoading, error } = useCollection<Project>(projectsQuery);
+    if (sortBy === 'latest') {
+      q = query(baseQuery, orderBy('createdAt', 'desc'), limit(PROJECTS_PER_PAGE));
+    } else if (sortBy === 'popular') {
+      q = query(baseQuery, orderBy('likeCount', 'desc'), limit(PROJECTS_PER_PAGE));
+    } else { // trending
+      q = query(baseQuery, orderBy('viewCount', 'desc'), limit(PROJECTS_PER_PAGE));
+    }
+
+    if (page > 1 && lastVisible) {
+        q = query(q, startAfter(lastVisible));
+    }
+
+    return q;
+  }, [db, sortBy, page, lastVisible]);
+
+
+  const { data: allProjects, isLoading, error, snapshot } = useCollection<Project>(projectsQuery);
 
   const filteredProjects = useMemo(() => {
     if (!allProjects) return [];
+    
+    // Update visible docs for pagination
+    if(snapshot && snapshot.docs.length > 0) {
+        if(page === 1) setFirstVisible(snapshot.docs[0]);
+        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+    }
+
     if (!searchTerm) return allProjects;
 
     return allProjects.filter(project =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
     );
-  }, [allProjects, searchTerm]);
+  }, [allProjects, searchTerm, snapshot, page]);
+
+  const handleNextPage = () => {
+    setPage(p => p + 1);
+  };
+  
+  const handlePrevPage = () => {
+    // This is more complex, requires `limitToLast` and reversing order, which can be tricky.
+    // For simplicity, we will just go back to page 1 for this implementation.
+    setPage(p => Math.max(1, p - 1));
+    if (page === 2) {
+      setLastVisible(null);
+    }
+    // A more robust solution would involve storing snapshots for previous pages.
+  };
+
+  const isNextDisabled = allProjects ? allProjects.length < PROJECTS_PER_PAGE : true;
+
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -81,19 +120,19 @@ export default function BrowsePage() {
             <DropdownMenuSeparator />
             <DropdownMenuCheckboxItem
               checked={sortBy === 'trending'}
-              onCheckedChange={() => setSortBy('trending')}
+              onCheckedChange={() => { setSortBy('trending'); setPage(1); setLastVisible(null); }}
             >
               Trenddagilar
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={sortBy === 'latest'}
-              onCheckedChange={() => setSortBy('latest')}
+              onCheckedChange={() => { setSortBy('latest'); setPage(1); setLastVisible(null); }}
             >
               Eng so'nggilari
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={sortBy === 'popular'}
-              onCheckedChange={() => setSortBy('popular')}
+              onCheckedChange={() => { setSortBy('popular'); setPage(1); setLastVisible(null); }}
             >
               Eng mashhurlari
             </DropdownMenuCheckboxItem>
@@ -110,11 +149,20 @@ export default function BrowsePage() {
             <p className="text-destructive">Ma'lumotlarni yuklashda xatolik yuz berdi.</p>
         </div>
       ) : filteredProjects.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredProjects.map(project => (
-            <PortfolioCard key={project.id} project={project} />
-          ))}
-        </div>
+        <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {filteredProjects.map(project => (
+                <PortfolioCard key={project.id} project={project} />
+            ))}
+            </div>
+            <PaginationControls 
+                currentPage={page}
+                onNext={handleNextPage}
+                onPrev={handlePrevPage}
+                isNextDisabled={isNextDisabled}
+                isPrevDisabled={page === 1}
+            />
+        </>
       ) : (
         <div className="text-center py-20">
             <p className="floating-text text-2xl">Hech qanday loyiha topilmadi.</p>

@@ -24,6 +24,7 @@ export interface UseCollectionResult<T> {
   data: WithId<T>[] | null; // Document data with ID, or null.
   isLoading: boolean;       // True if loading.
   error: FirestoreError | Error | null; // Error object, or null.
+  snapshot: QuerySnapshot<DocumentData> | null;
 }
 
 /* Internal implementation of Query:
@@ -61,6 +62,7 @@ export function useCollection<T = any>(
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true); // Start as true
   const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const [snapshot, setSnapshot] = useState<QuerySnapshot<DocumentData> | null>(null);
 
   useEffect(() => {
     if (memoizedTargetRefOrQuery && !(memoizedTargetRefOrQuery as any).__memo) {
@@ -69,6 +71,7 @@ export function useCollection<T = any>(
     
     if (!memoizedTargetRefOrQuery) {
       setData(null);
+      setSnapshot(null);
       setIsLoading(false); // Not loading if there's no query
       setError(null);
       return;
@@ -79,9 +82,10 @@ export function useCollection<T = any>(
 
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
-      (snapshot: QuerySnapshot<DocumentData>) => {
+      (snap: QuerySnapshot<DocumentData>) => {
+        setSnapshot(snap);
         const results: ResultItemType[] = [];
-        for (const doc of snapshot.docs) {
+        for (const doc of snap.docs) {
           results.push({ ...(doc.data() as T), id: doc.id });
         }
         setData(results);
@@ -101,6 +105,7 @@ export function useCollection<T = any>(
 
         setError(contextualError)
         setData(null)
+        setSnapshot(null);
         setIsLoading(false)
 
         errorEmitter.emit('permission-error', contextualError);
@@ -110,5 +115,5 @@ export function useCollection<T = any>(
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]);
   
-  return { data, isLoading, error };
+  return { data, isLoading, error, snapshot };
 }
