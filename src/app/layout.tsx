@@ -6,6 +6,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 import AuthProvider from '@/components/AuthProvider';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'inDizayn',
@@ -26,13 +27,15 @@ export default function RootLayout({
       </head>
       <body className={cn('min-h-screen font-body antialiased')}>
         <AuthProvider>
-          <div className="relative flex min-h-dvh flex-col bg-background">
-            <Header />
-            <main className="flex-1 pb-20 md:pb-0">{children}</main>
-            <Footer />
-            <MobileBottomNav />
-          </div>
-          <Toaster />
+          <FirebaseClientProvider>
+            <div className="relative flex min-h-dvh flex-col bg-background">
+              <Header />
+              <main className="flex-1 pb-20 md:pb-0">{children}</main>
+              <Footer />
+              <MobileBottomNav />
+            </div>
+            <Toaster />
+          </FirebaseClientProvider>
         </AuthProvider>
       </body>
     </html>
