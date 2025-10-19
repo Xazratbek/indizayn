@@ -20,6 +20,7 @@ import type { Designer } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { uploadImage } from '@/lib/actions';
+import { Progress } from "@/components/ui/progress";
 
 
 function AnimatedNumber({ value }: { value: number }) {
@@ -59,8 +60,9 @@ export default function AccountPage() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newImage, setNewImage] = useState<{file: File | null, previewUrl: string | null}>({ file: null, previewUrl: null });
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
-  const { register, handleSubmit, setValue, watch, formState: {isDirty} } = useForm<{
+  const { register, handleSubmit, setValue, watch, formState: {isDirty, dirtyFields} } = useForm<{
     name: string;
     specialization: string;
     bio: string;
@@ -106,27 +108,56 @@ export default function AccountPage() {
     }
 
     setIsSaving(true);
-    try {
-      const userRef = doc(db, "users", user.uid);
-      let newPhotoURL = userProfile.photoURL;
+    let newPhotoURL = userProfile.photoURL;
 
-      if (newImage.file) {
-        const formData = new FormData();
-        formData.append('image', newImage.file);
+    // Handle Image Upload
+    if (newImage.file) {
+      setUploadProgress(0);
+      
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev === null) return 0;
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      const formData = new FormData();
+      formData.append('image', newImage.file);
+      
+      try {
         const result = await uploadImage(formData);
+        clearInterval(progressInterval);
         if (result.success && result.url) {
           newPhotoURL = result.url;
+          setUploadProgress(100);
+           setTimeout(() => setUploadProgress(null), 1000);
         } else {
           throw new Error(result.error || "Rasmni yuklab bo'lmadi.");
         }
+      } catch (uploadError: any) {
+        clearInterval(progressInterval);
+        setUploadProgress(null);
+        toast({ variant: "destructive", title: "Rasm yuklashda xatolik", description: uploadError.message });
+        setIsSaving(false);
+        return;
       }
+    }
+    
+    // Handle Text Fields Update
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const updatedData: Partial<Designer> = { photoURL: newPhotoURL };
       
-      await updateDoc(userRef, {
-        name: data.name,
-        specialization: data.specialization,
-        bio: data.bio,
-        photoURL: newPhotoURL,
-      });
+      if (dirtyFields.name) updatedData.name = data.name;
+      if (dirtyFields.specialization) updatedData.specialization = data.specialization;
+      if (dirtyFields.bio) updatedData.bio = data.bio;
+      
+      await updateDoc(userRef, updatedData);
 
       setNewImage({ file: null, previewUrl: null });
       toast({
@@ -142,6 +173,9 @@ export default function AccountPage() {
       });
     } finally {
       setIsSaving(false);
+      if(uploadProgress !== null) {
+          setTimeout(() => setUploadProgress(null), 1500);
+      }
     }
   };
 
@@ -272,21 +306,25 @@ export default function AccountPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onProfileUpdate)} className="space-y-6">
-                <div className="flex items-center gap-4">
-                    <Avatar className="h-20 w-20">
-                        <AvatarImage src={newImage.previewUrl ?? user.photoURL ?? ''} />
-                        <AvatarFallback>{userProfile.name?.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <Input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleImageChange}
-                      className="hidden"
-                      accept="image/png, image/jpeg, image/gif"
-                    />
-                    <Button variant="outline" type="button" onClick={() => fileInputRef.current?.click()}>
-                       <Upload className="mr-2 h-4 w-4"/> Rasmni O'zgartirish
-                    </Button>
+                 <div className="space-y-4">
+                  <Label>Profil Rasmi</Label>
+                  <div className="flex items-center gap-4">
+                      <Avatar className="h-20 w-20">
+                          <AvatarImage src={newImage.previewUrl ?? user.photoURL ?? ''} />
+                          <AvatarFallback>{userProfile.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <Input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleImageChange}
+                        className="hidden"
+                        accept="image/png, image/jpeg, image/gif"
+                      />
+                      <Button variant="outline" type="button" onClick={() => fileInputRef.current?.click()} disabled={isSaving}>
+                         <Upload className="mr-2 h-4 w-4"/> Rasmni O'zgartirish
+                      </Button>
+                  </div>
+                  {uploadProgress !== null && <Progress value={uploadProgress} className="w-full mt-2" />}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">

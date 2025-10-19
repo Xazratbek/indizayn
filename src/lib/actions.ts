@@ -37,7 +37,7 @@ export async function uploadImage(formData: FormData) {
         .end(buffer);
     });
 
-    revalidatePath('/');
+    revalidatePath('/account');
     
     return {
       url: (results as any)?.secure_url,
@@ -49,3 +49,4 @@ export async function uploadImage(formData: FormData) {
     return { error: error.message };
   }
 }
+
