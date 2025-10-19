@@ -1,3 +1,4 @@
+
 import { Timestamp } from "firebase/firestore";
 
 // Corresponds to the 'users' collection in Firestore
