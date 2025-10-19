@@ -57,17 +57,31 @@
       "description": "Represents a notification for a user.",
       "properties": {
         "userId": { "type": "string", "description": "UID of the user who receives the notification." },
-        "type": { "type": "string", "enum": ["like", "follow", "message"], "description": "The type of notification." },
+        "type": { "type": "string", "enum": ["like", "follow", "message", "comment"], "description": "The type of notification." },
         "senderId": { "type": "string", "description": "UID of the user who triggered the notification." },
         "senderName": { "type": "string", "description": "Display name of the sender." },
         "senderPhotoURL": { "type": "string", "format": "uri", "description": "Profile picture URL of the sender." },
         "isRead": { "type": "boolean", "description": "Whether the notification has been read." },
-        "projectId": { "type": "string", "description": "Optional ID of the relevant project (for likes)." },
+        "projectId": { "type": "string", "description": "Optional ID of the relevant project (for likes and comments)." },
         "projectName": { "type": "string", "description": "Optional name of the relevant project." },
-        "messageSnippet": { "type": "string", "description": "A short snippet of the message." },
+        "messageSnippet": { "type": "string", "description": "A short snippet of the message or comment." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of notification creation." }
       },
       "required": ["userId", "type", "senderId", "senderName", "isRead", "createdAt"]
+    },
+    "Comment": {
+        "title": "Comment",
+        "type": "object",
+        "description": "Represents a comment on a project.",
+        "properties": {
+            "projectId": { "type": "string", "description": "ID of the project being commented on." },
+            "userId": { "type": "string", "description": "UID of the user who wrote the comment." },
+            "userName": { "type": "string", "description": "Display name of the commenter." },
+            "userPhotoURL": { "type": "string", "format": "uri", "description": "Profile picture URL of the commenter." },
+            "content": { "type": "string", "description": "The text content of the comment." },
+            "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of comment creation." }
+        },
+        "required": ["projectId", "userId", "userName", "content", "createdAt"]
     }
   },
   "auth": {
@@ -82,6 +96,10 @@
       "schema": { "$ref": "#/entities/Project" },
       "description": "Stores all portfolio projects created by users."
     },
+    "/projects/{projectId}/comments/{commentId}": {
+        "schema": { "$ref": "#/entities/Comment"},
+        "description": "Stores all comments for a specific project."
+    },
     "/messages/{messageId}": {
       "schema": { "$ref": "#/entities/Message" },
       "description": "Stores all direct messages between users."
@@ -92,5 +110,6 @@
     }
   }
 }
+    
 
     

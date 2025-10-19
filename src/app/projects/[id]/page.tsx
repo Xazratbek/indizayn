@@ -5,24 +5,42 @@ import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp, collection, query, orderBy } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Eye, Heart, Calendar, Wrench, ArrowLeft } from 'lucide-react';
+import { Eye, Heart, Calendar, Wrench, ArrowLeft, MessageSquare, Send } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
-import type { Project, Designer } from '@/lib/types';
+import type { Project, Designer, Comment } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Lightbox from '@/components/lightbox';
 import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
 import { useModalContext } from '@/components/project-detail-modal';
+import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 
+
+function CommentSkeleton() {
+    return (
+        <div className="flex items-start gap-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="h-8 w-full" />
+            </div>
+        </div>
+    )
+}
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -40,6 +58,9 @@ export default function ProjectDetailsPage() {
   const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
+  const [newComment, setNewComment] = useState("");
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
 
   // Fetch project details and increment view count
   const projectDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'projects', id) : null, [db, id]);
@@ -68,12 +89,79 @@ export default function ProjectDetailsPage() {
   , [db, project]);
   const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
 
+  // Fetch comments for the project
+  const commentsQuery = useMemoFirebase(() => 
+      (db && id) 
+          ? query(collection(db, `projects/${id}/comments`), orderBy('createdAt', 'asc')) 
+          : null,
+      [db, id]
+  );
+  const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+
   // Check if current user has liked this project
   useEffect(() => {
     if (user && project?.likes) {
       setIsLiked(project.likes.includes(user.id));
     }
   }, [user, project]);
+
+    const handleCommentSubmit = async () => {
+        if (!user || !project || !db) {
+            toast({
+                variant: "destructive",
+                title: "Xatolik!",
+                description: "Izoh qoldirish uchun tizimga kiring.",
+            });
+            return;
+        }
+        if (!newComment.trim()) {
+            toast({ description: "Izoh matni bo'sh bo'lishi mumkin emas." });
+            return;
+        }
+    
+        setIsSubmittingComment(true);
+        try {
+            const commentsCollectionRef = collection(db, `projects/${id}/comments`);
+            await addDoc(commentsCollectionRef, {
+                projectId: id,
+                userId: user.id,
+                userName: user.name,
+                userPhotoURL: user.image || '',
+                content: newComment,
+                createdAt: serverTimestamp(),
+            });
+    
+            // Create notification for the project owner
+            if (project.designerId !== user.id) {
+                const notificationsRef = collection(db, "notifications");
+                await addDoc(notificationsRef, {
+                    userId: project.designerId,
+                    type: 'comment',
+                    senderId: user.id,
+                    senderName: user.name || 'Anonim',
+                    senderPhotoURL: user.image || '',
+                    isRead: false,
+                    projectId: project.id,
+                    projectName: project.name,
+                    messageSnippet: newComment.substring(0, 50) + (newComment.length > 50 ? '...' : ''),
+                    createdAt: serverTimestamp(),
+                });
+            }
+    
+            setNewComment("");
+            toast({ title: "Muvaffaqiyatli!", description: "Izohingiz qo'shildi." });
+        } catch (error) {
+            console.error("Izoh qo'shishda xatolik:", error);
+            toast({
+                variant: "destructive",
+                title: "Xatolik!",
+                description: "Izohni yuborishda muammo yuz berdi.",
+            });
+        } finally {
+            setIsSubmittingComment(false);
+        }
+    };
+
 
   const handleLikeToggle = async () => {
     if (!user || !project || !designer || !db) {
@@ -142,9 +230,9 @@ export default function ProjectDetailsPage() {
     setLightboxOpen(true);
   };
 
-  const isLoading = isProjectLoading || isDesignerLoading;
+  const isLoading = isProjectLoading || isDesignerLoading || areCommentsLoading;
 
-  if (isLoading) {
+  if (isLoading && !project) { // Show full page loader only on initial load
     return <LoadingPage />;
   }
   
@@ -177,7 +265,7 @@ export default function ProjectDetailsPage() {
         )}
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
-          <div className="w-full lg:w-3/4">
+          <div className="w-full lg:w-3/4 space-y-8">
             <Card>
               <CardHeader>
                 <h1 className="font-headline text-3xl md:text-4xl font-bold">{project.name}</h1>
@@ -211,6 +299,71 @@ export default function ProjectDetailsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+                <CardHeader>
+                    <h2 className="font-headline text-2xl font-bold flex items-center gap-2">
+                        <MessageSquare className="w-6 h-6" />
+                        Izohlar ({comments?.length || 0})
+                    </h2>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    {user && (
+                         <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10">
+                                <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
+                                <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 space-y-2">
+                                <Textarea 
+                                    placeholder="Izohingizni yozing..."
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    disabled={isSubmittingComment}
+                                />
+                                <div className="flex justify-end">
+                                    <Button onClick={handleCommentSubmit} disabled={isSubmittingComment || !newComment.trim()}>
+                                        {isSubmittingComment ? <LoadingPage /> : <Send className="mr-2 h-4 w-4"/>}
+                                        Yuborish
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                   
+                    <Separator />
+
+                    <div className="space-y-6">
+                        {areCommentsLoading ? (
+                            <div className="space-y-6">
+                                <CommentSkeleton />
+                                <CommentSkeleton />
+                            </div>
+                        ) : comments && comments.length > 0 ? (
+                           comments.map(comment => (
+                               <div key={comment.id} className="flex items-start gap-3">
+                                   <Avatar className="h-10 w-10">
+                                       <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
+                                       <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
+                                   </Avatar>
+                                   <div className="flex-1">
+                                       <div className="flex items-center gap-2">
+                                           <p className="font-semibold">{comment.userName}</p>
+                                           <p className="text-xs text-muted-foreground">
+                                               {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}
+                                           </p>
+                                       </div>
+                                       <p className="text-muted-foreground">{comment.content}</p>
+                                   </div>
+                               </div>
+                           ))
+                        ) : (
+                            <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+
           </div>
 
           {/* Sidebar */}
@@ -303,3 +456,5 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
+
+    

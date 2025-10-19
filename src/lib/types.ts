@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from "firebase/firestore";
 
 // Corresponds to the 'users' collection in Firestore
@@ -46,14 +47,25 @@ export interface Message {
 export interface Notification {
     id: string;
     userId: string; // User who receives the notification
-    type: 'like' | 'follow' | 'message';
+    type: 'like' | 'follow' | 'message' | 'comment';
     senderId: string; // User who triggered the notification
     senderName: string;
     senderPhotoURL?: string;
     isRead: boolean;
     projectId?: string; // For 'like' and 'comment' on a project
     projectName?: string;
-    messageSnippet?: string; // For 'message'
+    messageSnippet?: string; // For 'message' or 'comment'
+    createdAt: Timestamp;
+}
+
+// Corresponds to the 'comments' subcollection
+export interface Comment {
+    id: string;
+    projectId: string;
+    userId: string;
+    userName: string;
+    userPhotoURL?: string;
+    content: string;
     createdAt: Timestamp;
 }
 
@@ -65,6 +77,8 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
+      photoURL?: string;
+      specialization?: string;
     } & DefaultSession['user'];
   }
 }
@@ -74,3 +88,5 @@ declare module 'next-auth/jwt' {
     id: string;
   }
 }
+
+    
