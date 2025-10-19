@@ -172,8 +172,7 @@ export default function NotificationsDropdown() {
             ) : notifications && notifications.length > 0 ? (
                 <div className="divide-y">
                     {notifications.map((notif) => (
-                        <Link key={notif.id} href={getNotificationLink(notif) ?? '#'} legacyBehavior>
-                        <a className={`block p-4 hover:bg-secondary/50 ${!notif.isRead ? 'bg-blue-500/5' : ''}`}>
+                        <Link key={notif.id} href={getNotificationLink(notif) ?? '#'} className={`block p-4 hover:bg-secondary/50 ${!notif.isRead ? 'bg-blue-500/5' : ''}`}>
                             <div className="flex items-start gap-3">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src={notif.senderPhotoURL} alt={notif.senderName} />
@@ -196,7 +195,6 @@ export default function NotificationsDropdown() {
                                      <div className="w-2 h-2 rounded-full bg-primary mt-1"></div>
                                 )}
                             </div>
-                        </a>
                         </Link>
                     ))}
                 </div>
