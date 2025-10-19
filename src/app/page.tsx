@@ -8,10 +8,8 @@ import { designers, projects as allProjects } from '@/lib/mock-data';
 import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { useAuth, useUser } from '@/firebase';
-import { GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { toast } from '@/hooks/use-toast';
 
 const featuredProjects = allProjects.sort((a, b) => b.likes - a.likes).slice(0, 4);
 
@@ -44,26 +42,15 @@ const sectionVariants = {
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
-  const auth = useAuth();
   const router = useRouter();
 
-  const handleStartClick = async () => {
+  const handleStartClick = () => {
     if (isUserLoading) return;
 
     if (user) {
       router.push('/browse');
     } else {
-        try {
-            const provider = new GoogleAuthProvider();
-            await signInWithRedirect(auth, provider);
-        } catch (error: any) {
-             console.error("Error initiating sign in with redirect: ", error);
-             toast({
-                variant: "destructive",
-                title: "Kirishda xatolik",
-                description: "Tizimga kirishda kutilmagan muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
-            });
-        }
+      router.push('/auth');
     }
   };
 

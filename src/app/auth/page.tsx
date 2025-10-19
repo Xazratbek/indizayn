@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth, useUser } from "@/firebase";
-import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult, signInWithPopup } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -22,7 +22,8 @@ export default function AuthPage() {
     const auth = useAuth();
     const { user, isUserLoading } = useUser();
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
+    const [status, setStatus] = useState<'idle' | 'loading' | 'popup_closed' | 'error'>('idle');
+    const [errorCode, setErrorCode] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) {
@@ -30,52 +31,77 @@ export default function AuthPage() {
         }
     }, [user, router]);
 
+    // Handle redirect result on component mount
     useEffect(() => {
-        // This effect runs when the component mounts after a redirect.
-        const checkRedirectResult = async () => {
-            if (isUserLoading || !auth) return;
-            setIsLoading(true);
-            try {
-                const result = await getRedirectResult(auth);
+        if (isUserLoading || !auth || user) return;
+
+        getRedirectResult(auth)
+            .then((result) => {
                 if (result) {
                     // This means the user has just signed in via redirect.
                     router.push('/account');
-                } else {
-                    // No redirect result, maybe the user landed here directly.
-                    setIsLoading(false);
                 }
-            } catch (error: any) {
+            })
+            .catch((error) => {
                 console.error("Error getting redirect result: ", error);
                 toast({
                     variant: "destructive",
                     title: "Kirishda xatolik",
-                    description: "Google orqali kirishda muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
+                    description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
                 });
-                setIsLoading(false);
-            }
-        };
-
-        checkRedirectResult();
-    }, [auth, router, isUserLoading]);
+            });
+    }, [auth, router, isUserLoading, user]);
 
 
-    const handleGoogleSignIn = async () => {
-        if (isLoading || isUserLoading) return;
-        setIsLoading(true);
+    const handlePopupSignIn = async () => {
+        if (isUserLoading) return;
+        setStatus('loading');
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
+
+        try {
+            await signInWithPopup(auth, provider);
+            // On success, the useEffect hook will redirect to /account
+        } catch (error: any) {
+            if (error.code === 'auth/popup-closed-by-user') {
+                setStatus('popup_closed');
+                setErrorCode(error.code);
+            } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+                handleRedirectSignIn();
+            } else {
+                setStatus('error');
+                setErrorCode(error.code);
+                console.error("Error signing in with Google Popup: ", error);
+                toast({
+                    variant: "destructive",
+                    title: "Kirishda xatolik",
+                    description: error.message || "Google orqali kirishda noma'lum muammo yuz berdi.",
+                });
+            }
+        }
+    };
+
+    const handleRedirectSignIn = async () => {
+        if (isUserLoading) return;
+        setStatus('loading');
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
         try {
             await signInWithRedirect(auth, provider);
-            // The page will redirect, and the result will be handled by the useEffect hook.
+            // The page will redirect, and the result will be handled by the useEffect hook on return.
         } catch (error: any) {
-            console.error("Error signing in with Google: ", error);
+            setStatus('error');
+            setErrorCode(error.code);
+            console.error("Error signing in with Google Redirect: ", error);
             toast({
                 variant: "destructive",
                 title: "Kirishda xatolik",
-                description: "Google orqali kirishda muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
+                description: "Google'ga yo'naltirishda muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
             });
-            setIsLoading(false);
         }
     };
+
+    const isLoading = status === 'loading' || isUserLoading;
 
     return (
         <div className="flex items-center justify-center min-h-[80vh] bg-background p-4">
@@ -88,7 +114,7 @@ export default function AuthPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        <Button variant="outline" className="w-full h-12 text-base" onClick={handleGoogleSignIn} disabled={isLoading || isUserLoading}>
+                        <Button variant="outline" className="w-full h-12 text-base" onClick={handlePopupSignIn} disabled={isLoading}>
                            {isLoading ? (
                                 <div className="spinner-sm" role="status">
                                     <span className="sr-only">Yuklanmoqda...</span>
@@ -101,6 +127,22 @@ export default function AuthPage() {
                            )}
                         </Button>
                     </div>
+
+                    {status === 'popup_closed' && (
+                        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-center">
+                            <p className="text-sm text-yellow-800 mb-3">Kirish oynasi yopildi. Qayta urinib ko'rasizmi yoki boshqa usulni sinab ko'rasizmi?</p>
+                            <div className="flex justify-center gap-2">
+                                <Button size="sm" onClick={handlePopupSignIn}>Qayta urinish (Popup)</Button>
+                                <Button size="sm" variant="secondary" onClick={handleRedirectSignIn}>Boshqa usul (Redirect)</Button>
+                            </div>
+                        </div>
+                    )}
+                    {status === 'error' && (
+                         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-center">
+                             <p className="text-sm text-red-800">Xatolik kodi: {errorCode}</p>
+                         </div>
+                    )}
+
                     <div className="mt-6 text-center text-sm text-muted-foreground">
                         Davom etish orqali siz bizning{' '}
                         <a href="#" className="underline hover:text-primary">
