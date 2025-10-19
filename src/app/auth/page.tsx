@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -19,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,8 +101,10 @@ export default function AuthPage() {
           name: firebaseUser.displayName,
           email: firebaseUser.email,
           photoURL: firebaseUser.photoURL,
+          coverPhotoURL: '',
           createdAt: serverTimestamp(),
           specialization: 'Yangi dizayner',
+          bio: '',
           subscriberCount: 0,
           followers: [],
         });
@@ -147,7 +148,10 @@ export default function AuthPage() {
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        router.replace('/account');
+        // Redirect if user is already logged in, but don't show loading screen indefinitely
+        if (router.pathname === '/auth') {
+           router.replace('/account');
+        }
       } else {
         setIsLoading(false);
       }
@@ -187,13 +191,10 @@ export default function AuthPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
         await updateProfile(userCredential.user, { displayName: data.name });
 
-        // Firestore'ga saqlash uchun Firebase User obyektini yangilaymiz
-        const updatedUser = {
-            ...userCredential.user,
-            displayName: data.name,
-            photoURL: userCredential.user.photoURL, // default photo
-        };
+        const updatedUser = { ...userCredential.user, displayName: data.name };
+        
         await saveUserToDB(updatedUser as User);
+
         toast({
             title: "Muvaffaqiyatli ro'yxatdan o'tdingiz!",
             description: `Xush kelibsiz, ${data.name}!`,
