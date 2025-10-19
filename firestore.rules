@@ -1,109 +1,77 @@
 /**
- * @fileoverview Firestore Security Rules for the DesignFlow application.
+ * @fileoverview Firestore Security Rules for the Design Portfolio App.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user profiles and portfolios.
- * Likes and Follows are stored in separate collections with create-only access, to avoid unintended modifications.
+ * This ruleset prioritizes security by enforcing a strict user-ownership model
+ * for user profiles and allows public read access to projects while restricting
+ * write access to the project owner.
  *
  * Data Structure:
- * - User profiles and portfolios are nested under /users/{userId}.
- * - Likes are stored in the /likes/{likeId} collection.
- * - Follows are stored in the /follows/{followId} collection.
+ * - /users/{userId}: Stores individual user profiles, with the document ID
+ *   matching the Firebase Auth UID.
+ * - /projects/{projectId}: Stores portfolio projects created by users.
  *
  * Key Security Decisions:
- * - Users can only create, update, and delete their own profiles and portfolios.
- * - Users can create "Like" and "Follow" documents. Update and delete operations on these are disallowed.
- * - Listing of user profiles and portfolio items is restricted to the owning user.
+ * - User profiles are strictly private and only accessible to the owning user.
+ * - Project listing is public, but project creation, modification, and deletion
+ *   are restricted to the project's designer/owner.
  *
  * Denormalization for Authorization:
- * - The `userProfileId` field within Portfolio documents is used for ownership checks.
+ * The 'Project' entity contains a 'designerId' field to enable simple and
+ * performant ownership checks for project write operations. This avoids the
+ * need for complex queries or additional reads to determine project ownership.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secures user profile documents under a user-specific path.
-     * @path /users/{userId}/userProfiles/{userProfileId}
-     * @allow (create) Authenticated user with UID 'user123' creates a profile with id 'user123'.
-     * @allow (get) Authenticated user with UID 'user123' gets their own profile at /users/user123/userProfiles/profile456.
-     * @allow (update) Authenticated user with UID 'user123' updates their own profile at /users/user123/userProfiles/profile456.
-     * @allow (delete) Authenticated user with UID 'user123' deletes their own profile at /users/user123/userProfiles/profile456.
-     * @deny (create) Authenticated user with UID 'user456' attempts to create a profile for user 'user123'.
-     * @deny (get) Authenticated user with UID 'user456' attempts to get user 'user123's profile.
-     * @deny (update) Authenticated user with UID 'user456' attempts to update user 'user123's profile.
-     * @deny (delete) Authenticated user with UID 'user456' attempts to delete user 'user123's profile.
-     * @principle Enforces document ownership for all operations.
+     * @description Controls access to user profile documents.
+     * @path /users/{userId}
+     * @allow (get, update, delete) User with matching UID can access their own profile.
+     * @allow (create) User with matching UID can create their own profile.
+     * @deny (get, list, create, update, delete) Any other user cannot access another user's profile.
+     * @principle Enforces document ownership for user profiles.
      */
-    match /users/{userId}/userProfiles/{userProfileId} {
+    match /users/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
       allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && resource.data.id == userId;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
+      allow delete: if isSignedIn() && isOwner(userId);
     }
 
     /**
-     * @description Secures portfolio documents under a user-specific path.
-     * @path /users/{userId}/portfolios/{portfolioId}
-     * @allow (create) Authenticated user with UID 'user123' creates a portfolio item with userProfileId 'user123'.
-     * @allow (get) Authenticated user with UID 'user123' gets their own portfolio item at /users/user123/portfolios/portfolio456.
-     * @allow (update) Authenticated user with UID 'user123' updates their own portfolio item at /users/user123/portfolios/portfolio456.
-     * @allow (delete) Authenticated user with UID 'user123' deletes their own portfolio item at /users/user123/portfolios/portfolio456.
-     * @deny (create) Authenticated user with UID 'user456' attempts to create a portfolio item for user 'user123'.
-     * @deny (get) Authenticated user with UID 'user456' attempts to get user 'user123's portfolio item.
-     * @deny (update) Authenticated user with UID 'user456' attempts to update user 'user123's portfolio item.
-     * @deny (delete) Authenticated user with UID 'user456' attempts to delete user 'user123's portfolio item.
-     * @principle Enforces document ownership for all operations.
+     * @description Controls access to project documents.
+     * @path /projects/{projectId}
+     * @allow (get, list) Any user can view the project.
+     * @allow (create) Only the authenticated designer can create a project with their designerId.
+     * @allow (update, delete) Only the project's designer can modify or delete it.
+     * @deny (create, update, delete) If not the project owner.
+     * @principle Allows public read access but restricts write access to the project owner.
      */
-    match /users/{userId}/portfolios/{portfolioId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userProfileId == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && resource.data.userProfileId == userId;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
+    match /projects/{projectId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-    /**
-     * @description Allows creating like documents.  Updates and deletes are not allowed.
-     * @path /likes/{likeId}
-     * @allow (create) Authenticated user can create a like.
-     * @deny (update) Any user attempts to update a like.
-     * @deny (delete) Any user attempts to delete a like.
-     * @principle  Likes are create-only to simplify management and prevent abuse.
-     */
-    match /likes/{likeId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
-    }
+      function isOwner() {
+        return resource.data.designerId == request.auth.uid;
+      }
 
-    /**
-     * @description Allows creating follow documents. Updates and deletes are not allowed.
-     * @path /follows/{followId}
-     * @allow (create) Authenticated user can create a follow.
-     * @deny (update) Any user attempts to update a follow.
-     * @deny (delete) Any user attempts to delete a follow.
-     * @principle Follows are create-only to simplify management and prevent abuse.
-     */
-    match /follows/{followId} {
-      allow get, list: if true;
-      allow create: if isSignedIn();
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn() && request.resource.data.designerId == request.auth.uid;
+      allow update: if isSignedIn() && isOwner();
+      allow delete: if isSignedIn() && isOwner();
     }
   }
 }
