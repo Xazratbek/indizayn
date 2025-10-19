@@ -1,8 +1,7 @@
-
 'use server';
 
 import 'dotenv/config';
-import { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import { revalidatePath } from 'next/cache';
 
 cloudinary.config({
@@ -11,42 +10,42 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function uploadImage(formData: FormData) {
+export async function uploadImage(formData: FormData): Promise<{ success: boolean; url?: string; error?: string; publicId?: string }> {
   const file = formData.get('image') as File;
   if (!file) {
-    return { error: 'Rasm topilmadi.' };
+    return { success: false, error: 'Rasm topilmadi.' };
   }
 
   try {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const results = await new Promise((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          {
-            tags: ['nextjs-server-actions-upload-sneakers'],
-          },
-          function (error, result) {
-            if (error) {
-              reject(error);
-              return;
-            }
-            resolve(result);
+    const result: UploadApiResponse = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          tags: ['nextjs-server-actions-upload-sneakers'],
+        },
+        (error, result) => {
+          if (error) {
+            return reject(error);
           }
-        )
-        .end(buffer);
+          if (result) {
+            return resolve(result);
+          }
+        }
+      );
+      uploadStream.end(buffer);
     });
 
     revalidatePath('/account');
     
     return {
-      url: (results as any)?.secure_url,
-      publicId: (results as any)?.public_id,
-      success: true
+      success: true,
+      url: result.secure_url,
+      publicId: result.public_id,
     };
   } catch (error: any) {
     console.error('Cloudinary yuklashda xatolik:', error);
-    return { error: error.message };
+    return { success: false, error: error.message || "Rasm yuklashda noma'lum xatolik." };
   }
 }
