@@ -18,7 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { useAuth, useUser } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
-import NotificationsDropdown from "./notifications-dropdown"
+// import NotificationsDropdown from "./notifications-dropdown"
 
 export function Header() {
   const isMobile = useIsMobile();
@@ -83,7 +83,7 @@ export function Header() {
                   </Button>
                 )}
                 
-                <NotificationsDropdown />
+                {/* <NotificationsDropdown /> */}
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
