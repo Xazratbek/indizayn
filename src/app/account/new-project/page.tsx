@@ -29,6 +29,7 @@ const projectSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
 
+// Custom TagInput component specifically for this page
 const TagInput = ({ value, onChange, placeholder }: { value: string[], onChange: (value: string[]) => void, placeholder: string }) => {
     const [inputValue, setInputValue] = useState("");
 
@@ -48,7 +49,7 @@ const TagInput = ({ value, onChange, placeholder }: { value: string[], onChange:
 
     return (
         <div>
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="flex flex-wrap gap-2 mb-2 min-h-[2.5rem]">
                 {value.map((tag, index) => (
                     <Badge key={index} variant="secondary" className="pl-3 pr-1 py-1 text-sm">
                         {tag}
@@ -324,5 +325,6 @@ export default function NewProjectPage() {
     </div>
   );
 }
+
 
     
