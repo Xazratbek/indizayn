@@ -18,7 +18,9 @@ import { uz } from 'date-fns/locale';
 const allImages = imageData.placeholderImages;
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
-  const projectDetails = getFullProjectDetails(params.id);
+  const { id } = params;
+  const projectDetails = getFullProjectDetails(id);
+  
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(projectDetails?.likes ?? 0);
   const [isClient, setIsClient] = useState(false);
@@ -26,6 +28,12 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (projectDetails) {
+        setLikes(projectDetails.likes);
+    }
+  }, [projectDetails]);
 
   if (!projectDetails || !projectDetails.designer) {
     notFound();
@@ -109,11 +117,11 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                 <div className="flex justify-around text-sm text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <Heart className="w-4 h-4" />
-                    <span>{isClient ? likes.toLocaleString() : likes} Likes</span>
+                    <span>{isClient ? likes : project.likes} Likes</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Eye className="w-4 h-4" />
-                    <span>{isClient ? projectViews.toLocaleString() : projectViews} Ko'rishlar</span>
+                    <span>{isClient ? projectViews : project.views} Ko'rishlar</span>
                   </div>
                 </div>
               </CardContent>

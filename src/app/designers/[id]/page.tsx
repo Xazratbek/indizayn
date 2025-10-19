@@ -14,7 +14,8 @@ import { useState, useEffect } from 'react';
 const allImages = imageData.placeholderImages;
 
 export default function DesignerProfilePage({ params }: { params: { id: string } }) {
-  const designer = allDesigners.find(d => d.id === params.id);
+  const { id } = params;
+  const designer = allDesigners.find(d => d.id === id);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
@@ -70,7 +71,7 @@ export default function DesignerProfilePage({ params }: { params: { id: string }
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t">
               <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{isClient ? subscribers.toLocaleString() : subscribers}</p>
+                  <p className="text-2xl font-bold font-headline">{isClient ? subscribers : designer.subscribers}</p>
                   <p className="text-sm text-muted-foreground">Obunachilar</p>
               </div>
               <div className="text-center">
@@ -78,11 +79,11 @@ export default function DesignerProfilePage({ params }: { params: { id: string }
                   <p className="text-sm text-muted-foreground">Loyihalar</p>
               </div>
               <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{isClient ? totalLikes.toLocaleString() : totalLikes}</p>
+                  <p className="text-2xl font-bold font-headline">{isClient ? totalLikes : 0}</p>
                   <p className="text-sm text-muted-foreground">Jami Likelar</p>
               </div>
               <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{isClient ? totalViews.toLocaleString() : totalViews}</p>
+                  <p className="text-2xl font-bold font-headline">{isClient ? totalViews : 0}</p>
                   <p className="text-sm text-muted-foreground">Jami ko'rishlar</p>
               </div>
           </div>
