@@ -2,7 +2,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Eye, Heart, Calendar, Wrench } from 'lucide-react';
+import { Eye, Heart, Calendar, Wrench, ArrowLeft } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -26,9 +26,11 @@ import { useModalContext } from '@/components/project-detail-modal';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const modalContext = useModalContext();
 
   const id = modalContext.projectId || (typeof params.id === 'string' ? params.id : '');
+  const isModal = !!modalContext.projectId;
 
   const db = useFirestore();
   const { data: session } = useSession();
@@ -160,12 +162,19 @@ export default function ProjectDetailsPage() {
         transition={{ duration: 0.3 }}
       >
       <div className="container mx-auto max-w-6xl py-8 px-4">
+        { !isModal && (
+            <div className="relative mb-4 md:hidden">
+                <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute -left-2 top-0">
+                    <ArrowLeft />
+                </Button>
+            </div>
+        )}
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <div className="w-full lg:w-3/4">
             <Card>
               <CardHeader>
-                <h1 className="font-headline text-4xl font-bold">{project.name}</h1>
+                <h1 className="font-headline text-3xl md:text-4xl font-bold">{project.name}</h1>
               </CardHeader>
               <CardContent>
                 {projectImages && projectImages.length > 0 && (
@@ -286,3 +295,5 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
+
+    

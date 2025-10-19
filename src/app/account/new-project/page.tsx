@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { UploadCloud, X } from "lucide-react";
+import { UploadCloud, X, ArrowLeft } from "lucide-react";
 import { useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import Image from "next/image";
@@ -207,6 +207,11 @@ export default function NewProjectPage() {
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
+         <div className="relative mb-4 md:hidden">
+              <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute -left-2 top-0">
+                  <ArrowLeft />
+              </Button>
+          </div>
          <Card>
              <CardHeader>
                  <CardTitle>Yangi loyiha yuklash</CardTitle>
@@ -326,3 +331,5 @@ export default function NewProjectPage() {
     </div>
   );
 }
+
+    
