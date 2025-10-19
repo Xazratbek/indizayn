@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, writeBatch, doc } from 'firebase/firestore';
 import {
   Popover,
@@ -18,7 +18,9 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Notification } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import LoadingPage from '@/app/loading';
+import { useSession } from 'next-auth/react';
+import { Skeleton } from './ui/skeleton';
+
 
 function NotificationIcon({ type }: { type: Notification['type'] }) {
     switch (type) {
@@ -33,21 +35,34 @@ function NotificationIcon({ type }: { type: Notification['type'] }) {
     }
 }
 
+function NotificationSkeleton() {
+    return (
+        <div className="flex items-start gap-3 p-4">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <div className="text-sm flex-1 space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-1/3" />
+            </div>
+        </div>
+    )
+}
+
 export default function NotificationsDropdown() {
-  const { user } = useUser();
+  const { data: session } = useSession();
+  const user = session?.user;
   const db = useFirestore();
   const { toast } = useToast();
   const [isMarkingRead, setIsMarkingRead] = useState(false);
 
   const notificationsQuery = useMemoFirebase(() => 
-    (db && user?.uid) // Ensure user and user.uid exist before creating the query
+    (db && user?.id)
       ? query(
           collection(db, 'notifications'), 
-          where('userId', '==', user.uid),
+          where('userId', '==', user.id),
           orderBy('createdAt', 'desc')
         )
       : null, 
-    [db, user?.uid] // Depend on user.uid to re-run when the user logs in
+    [db, user?.id]
   );
   
   const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
@@ -143,14 +158,16 @@ export default function NotificationsDropdown() {
             onClick={handleMarkAllRead}
             disabled={isMarkingRead || unreadNotifications.length === 0}
           >
-            {isMarkingRead ? <LoadingPage /> : <CheckCheck className="h-4 w-4 mr-2" />}
+            <CheckCheck className="h-4 w-4 mr-2" />
             Barchasini o'qish
           </Button>
         </div>
         <ScrollArea className="h-96">
             {isLoading ? (
-                <div className="flex items-center justify-center p-8">
-                    <LoadingPage />
+                <div className="p-2">
+                    <NotificationSkeleton />
+                    <NotificationSkeleton />
+                    <NotificationSkeleton />
                 </div>
             ) : notifications && notifications.length > 0 ? (
                 <div className="divide-y">
@@ -160,7 +177,7 @@ export default function NotificationsDropdown() {
                             <div className="flex items-start gap-3">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src={notif.senderPhotoURL} alt={notif.senderName} />
-                                    <AvatarFallback>{notif.senderName.charAt(0)}</AvatarFallback>
+                                    <AvatarFallback>{notif.senderName?.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div className="text-sm flex-1">
                                     <p>

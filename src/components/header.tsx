@@ -18,7 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Skeleton } from "./ui/skeleton"
-// import NotificationsDropdown from "./notifications-dropdown"
+import NotificationsDropdown from "./notifications-dropdown"
 
 export function Header() {
   const isMobile = useIsMobile();
@@ -89,7 +89,7 @@ export function Header() {
                   </Button>
                 )}
                 
-                {/* <NotificationsDropdown /> */}
+                <NotificationsDropdown />
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
