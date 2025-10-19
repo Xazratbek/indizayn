@@ -33,7 +33,7 @@ export default function AuthPage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true); // Start as true to handle redirect check
+  const [isProcessingLogin, setIsProcessingLogin] = useState(true);
 
   // This function saves user data to Firestore if they don't exist
   const saveUserToDB = async (firebaseUser: any) => {
@@ -50,7 +50,8 @@ export default function AuthPage() {
           photoURL: firebaseUser.photoURL,
           createdAt: serverTimestamp(),
           specialization: 'Yangi dizayner',
-          subscribers: 0,
+          subscriberCount: 0,
+          followers: [],
         });
       } catch (error) {
         console.error("Foydalanuvchini Firestorega saqlashda xatolik:", error);
@@ -63,34 +64,12 @@ export default function AuthPage() {
     }
   };
   
-  // This function handles sign in via a redirect. It's the fallback.
-  const handleRedirectSignIn = async () => {
-    if (!auth) return;
-    setIsLoading(true);
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-    try {
-        await signInWithRedirect(auth, provider);
-        // The page will redirect, and the result is handled by getRedirectResult in useEffect
-    } catch (error) {
-        console.error("Redirect sign in xatosi:", error);
-        setIsLoading(false);
-        toast({
-            variant: "destructive",
-            title: "Qayta yo'naltirishda xatolik",
-            description: "Kirish sahifasiga yo'naltirib bo'lmadi. Iltimos, qayta urinib ko'ring.",
-        });
-    }
-  };
-  
-  // This is the primary sign-in function, attempting a popup first.
   const handleSignIn = async () => {
     if (!auth) return;
-    setIsLoading(true);
+    setIsProcessingLogin(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     try {
-      // Try signing in with a popup
       const result = await signInWithPopup(auth, provider);
       if (result?.user) {
         await saveUserToDB(result.user);
@@ -101,65 +80,63 @@ export default function AuthPage() {
         router.push("/account");
       }
     } catch (error: any) {
-        // If popup is blocked or closed, fall back to redirect method
         if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-            console.warn("Popup bloklandi yoki yopildi, redirect'ga o'tilmoqda...");
-            await handleRedirectSignIn();
+            console.warn("Popup bloklandi, redirect'ga o'tilmoqda...");
+            await signInWithRedirect(auth, provider);
         } else {
             console.error("Popup orqali kirishda xatolik:", error);
             toast({
                 variant: "destructive",
                 title: "Kirishda xatolik",
-                description: "Tizimga kirishda noma'lum xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring.",
+                description: "Tizimga kirishda noma'lum xatolik yuz berdi.",
             });
-            setIsLoading(false);
+            setIsProcessingLogin(false);
         }
     }
   };
 
-  // This effect runs on page load to check for a redirect result
   useEffect(() => {
-    // If the user is already logged in, redirect them
-    if (!isUserLoading && user) {
+    if (isUserLoading) {
+        // Still checking auth state, do nothing yet
+        return;
+    }
+
+    if (user) {
+        // If user object is available, they are logged in, redirect.
         router.replace("/account");
         return;
     }
 
-    // Only run the redirect check if auth is available and we are not in the initial user loading state
-    if(auth && !isUserLoading) {
-        const checkRedirect = async () => {
-            try {
-                const result = await getRedirectResult(auth);
+    // If we reach here, user is not logged in. Check for redirect result.
+    // Ensure auth object is available before proceeding.
+    if(auth) {
+        getRedirectResult(auth)
+            .then(async (result) => {
                 if (result?.user) {
-                  // Don't set loading to true, as it's already true from the start
-                  await saveUserToDB(result.user);
-                  toast({
-                      title: "Muvaffaqiyatli kirdingiz!",
-                      description: `Xush kelibsiz, ${result.user.displayName}!`,
-                  });
-                  // Redirect result is available, sign-in is complete
-                  router.replace("/account");
+                    // User signed in via redirect.
+                    await saveUserToDB(result.user);
+                    toast({
+                        title: "Muvaffaqiyatli kirdingiz!",
+                        description: `Xush kelibsiz, ${result.user.displayName}!`,
+                    });
+                    // router.replace will be handled by the user object becoming available in the next render
                 } else {
-                    // No redirect result, so we can stop loading
-                    setIsLoading(false);
+                    // No redirect result, user is not logged in.
+                    setIsProcessingLogin(false);
                 }
-            } catch (error: any) {
+            })
+            .catch((error) => {
                 console.error("Redirect natijasini olishda xatolik: ", error);
                 toast({
                     variant: "destructive",
                     title: "Kirishda xatolik",
-                    description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+                    description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi.",
                 });
-                setIsLoading(false);
-            }
-        };
-      
-        checkRedirect();
+                setIsProcessingLogin(false);
+            });
     }
-  }, [auth, isUserLoading, user, router, db]);
 
-  // Combined loading state
-  const isProcessing = isLoading || isUserLoading;
+  }, [user, isUserLoading, auth, router, db]);
 
   return (
     <div className="flex items-center justify-center min-h-[80vh] bg-background p-4">
@@ -167,14 +144,14 @@ export default function AuthPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-headline">Hisobingizga kiring</CardTitle>
           <CardDescription>
-            {isProcessing 
+            {isProcessingLogin 
                 ? "Bir lahza kutib turing..." 
                 : "Boshlash uchun Google orqali kiring yoki ro'yxatdan o'ting."
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isProcessing ? (
+          {isProcessingLogin ? (
              <div className="flex justify-center items-center h-24">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" role="status">
                     <span className="sr-only">Yuklanmoqda...</span>
