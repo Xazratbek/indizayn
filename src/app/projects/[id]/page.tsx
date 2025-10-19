@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Eye, Heart, Calendar, Wrench, ArrowLeft, MessageSquare, Send } from 'lucide-react';
+import { Eye, Heart, Calendar, Wrench, ArrowLeft, MessageSquare, Send, Tag } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -435,9 +435,13 @@ export default function ProjectDetailsPage() {
                   )}
                   {project.tags && project.tags.length > 0 && (
                     <div className="flex items-start">
-                       <div className="flex flex-wrap gap-1 mt-1">
-                         {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
-                       </div>
+                      <Tag className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                      <div>
+                        <h4 className="font-semibold">Teglar</h4>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </CardContent>

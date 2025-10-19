@@ -13,15 +13,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { UploadCloud, X, ArrowLeft, ShieldAlert } from "lucide-react";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { collection, doc, updateDoc, DocumentData } from "firebase/firestore";
+import { doc, updateDoc, DocumentData } from "firebase/firestore";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoadingPage from "@/app/loading";
-import { Badge } from "@/components/ui/badge";
+import { TagInput } from "@/components/tag-input";
 import type { Project } from "@/lib/types";
+import Link from 'next/link';
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: "Loyiha nomi kamida 3 belgidan iborat bo'lishi kerak." }),
@@ -29,47 +30,6 @@ const projectSchema = z.object({
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
-
-const TagInput = ({ value, onChange, placeholder }: { value: string[], onChange: (value: string[]) => void, placeholder: string }) => {
-    const [inputValue, setInputValue] = useState("");
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
-            if (inputValue.trim() && !value.includes(inputValue.trim())) {
-                onChange([...value, inputValue.trim()]);
-            }
-            setInputValue("");
-        }
-    };
-
-    const removeTag = (tagToRemove: string) => {
-        onChange(value.filter(tag => tag !== tagToRemove));
-    };
-
-    return (
-        <div>
-            <div className="flex flex-wrap gap-2 mb-2 min-h-[2.5rem]">
-                {value.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="pl-3 pr-1 py-1 text-sm">
-                        {tag}
-                        <button type="button" onClick={() => removeTag(tag)} className="ml-2 rounded-full hover:bg-muted-foreground/20 p-0.5">
-                            <X className="h-3 w-3" />
-                        </button>
-                    </Badge>
-                ))}
-            </div>
-            <Input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={placeholder}
-            />
-        </div>
-    );
-};
 
 
 export default function EditProjectPage() {
