@@ -209,7 +209,7 @@ export default function NewProjectPage() {
     <div className="max-w-4xl mx-auto py-10 px-4">
          <div className="relative mb-4 md:hidden">
               <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute -left-2 top-0">
-                  <ArrowLeft />
+                  <ArrowLeft className="h-5 w-5" />
               </Button>
           </div>
          <Card>

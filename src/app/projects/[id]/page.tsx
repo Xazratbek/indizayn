@@ -165,7 +165,7 @@ export default function ProjectDetailsPage() {
         { !isModal && (
             <div className="relative mb-4 md:hidden">
                 <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute -left-2 top-0">
-                    <ArrowLeft />
+                    <ArrowLeft className="h-5 w-5" />
                 </Button>
             </div>
         )}
