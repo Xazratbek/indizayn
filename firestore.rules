@@ -1,15 +1,6 @@
-/**
- * @file Firestore Security Rules
- * @core-philosophy This ruleset allows open read and write access to all documents and collections.
- * This is intended for rapid prototyping and should NOT be used in a production environment.
- * @data-structure All data resides in top-level collections: /users, /projects, /messages, and /notifications.
- * Each document ID is explicitly specified to be distinct from autoIDs (but such integrity is NOT validated).
- * @key-security-decisions Open access is granted for all read and write operations, without authentication or authorization checks.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     // Barcha kolleksiyalar va hujjatlar uchun
     match /{document=**} {
       allow read, write: if true;
