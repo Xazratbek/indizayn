@@ -13,7 +13,7 @@ import type { Designer, Project } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const StatCard = ({ label, value }: { label: string; value: number | string }) => (
     <div className="text-center bg-secondary p-4 rounded-lg">
@@ -28,6 +28,7 @@ export default function AccountDashboardPage() {
   const user = session?.user;
   const isUserLoading = status === 'loading';
   const router = useRouter();
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const db = useFirestore();
   
@@ -42,6 +43,11 @@ export default function AccountDashboardPage() {
   const { data: designerProjects, isLoading: areProjectsLoading } = useCollection<Project>(projectsQuery);
 
   const isLoading = isDesignerLoading || areProjectsLoading || isUserLoading;
+
+  const handleSignIn = () => {
+    setIsSigningIn(true);
+    signIn('google');
+  }
 
   if (isUserLoading) {
     return (
@@ -74,9 +80,9 @@ export default function AccountDashboardPage() {
         <div>
           <h2 className="text-2xl font-bold mb-2">Siz tizimga kirmagansiz</h2>
           <p className="text-muted-foreground mb-6">Akkauntingizni ko'rish uchun, iltimos, tizimga kiring.</p>
-          <Button onClick={() => signIn('google')}>
-            <LogIn className="mr-2 h-4 w-4" />
-            Kirish / Ro'yxatdan o'tish
+          <Button onClick={handleSignIn} disabled={isSigningIn}>
+            {isSigningIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogIn className="mr-2 h-4 w-4" />}
+            {isSigningIn ? 'Yo\'naltirilmoqda...' : 'Kirish / Ro\'yxatdan o\'tish'}
           </Button>
         </div>
       </div>
