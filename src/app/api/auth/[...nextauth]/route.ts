@@ -18,7 +18,11 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      if (account?.provider === "google" && profile?.email) {
+      if (account?.provider === "google") {
+        if (!db) {
+          console.error("Firestore instance (db) is not available in next-auth route.");
+          return false; // Prevent sign-in if db is not initialized
+        }
         try {
           const userRef = doc(db, "users", user.id);
           const userSnap = await getDoc(userRef);
@@ -39,24 +43,24 @@ export const authOptions: NextAuthOptions = {
           }
           return true;
         } catch (error) {
-          console.error("Error saving user to Firestore on sign-in:", error);
-          return false; // Prevent sign-in if database operation fails
+          console.error("Error in signIn callback:", error);
+          return false;
         }
       }
-      return true; // Allow other sign-in methods
-    },
-    async session({ session, token }) {
-      if (session?.user) {
-        session.user.id = token.sub!;
-      }
-      return session;
+      return true;
     },
     async jwt({ token, user }) {
         if (user) {
             token.id = user.id;
         }
         return token;
-    }
+    },
+    async session({ session, token }) {
+      if (session?.user) {
+        session.user.id = token.id as string;
+      }
+      return session;
+    },
   },
 };
 
