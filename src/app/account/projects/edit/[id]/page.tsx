@@ -234,8 +234,10 @@ export default function EditProjectPage() {
                         className="space-y-6"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                                // Prevent form submission on Enter key press in any input
-                                e.preventDefault();
+                                 const target = e.target as HTMLElement;
+                                if (target.tagName.toLowerCase() !== 'textarea') {
+                                    e.preventDefault();
+                                }
                             }
                         }}
                     >

@@ -185,7 +185,10 @@ export default function NewProjectPage() {
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 // Prevent form submission on Enter key press in any input
-                                e.preventDefault();
+                                const target = e.target as HTMLElement;
+                                if (target.tagName.toLowerCase() !== 'textarea') {
+                                    e.preventDefault();
+                                }
                             }
                         }}
                      >
@@ -232,7 +235,6 @@ export default function NewProjectPage() {
                                         onChange={setTools}
                                         placeholder="Vosita qo'shish uchun 'Enter' bosing..."
                                      />
-                                    <FormMessage />
                                 </FormItem>
 
                              </div>
