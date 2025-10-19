@@ -22,6 +22,9 @@ import LoadingPage from '../loading';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import ProjectDetailModal from '@/components/project-detail-modal';
 import { AnimatePresence } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 const PROJECTS_PER_PAGE = 12;
 
@@ -178,7 +181,7 @@ export default function BrowsePage() {
                 <Card key={i} className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full")}>
                   <CardContent className="p-0">
                     <Skeleton className="aspect-[4/3] w-full" />
-                    <div className="p-4 space-y-2">
+                    <div className="p-4 space-y-3">
                       <Skeleton className="h-5 w-3/4" />
                       <div className="flex items-center gap-2">
                         <Skeleton className="h-6 w-6 rounded-full" />

@@ -6,7 +6,7 @@ import { MoveRight, Palette, UserCheck, ThumbsUp, Loader2, ImageOff } from 'luci
 import ThreeShowcase from '@/components/three-showcase';
 import { Button } from '@/components/ui/button';
 import PortfolioCard from '@/components/portfolio-card';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,8 @@ import type { Project } from '@/lib/types';
 import { useSession, signIn } from 'next-auth/react';
 import { useState } from 'react';
 import LoadingPage from './loading';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 
 const advantages = [
@@ -61,6 +63,8 @@ export default function Home() {
     setIsSigningIn(true);
     signIn('google');
   };
+
+  const isLoading = areProjectsLoading || isUserLoading;
 
   return (
     <div className="flex flex-col">
@@ -122,9 +126,22 @@ export default function Home() {
             <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan eng ko'p ko'rilgan loyihalar.</p>
           </div>
           
-          {areProjectsLoading || isUserLoading ? (
-             <div className="flex justify-center items-center h-64">
-                <LoadingPage />
+          {isLoading ? (
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <Card key={i} className="overflow-hidden w-full h-full">
+                      <CardContent className="p-0">
+                        <Skeleton className="aspect-[4/3] w-full" />
+                        <div className="p-4 space-y-3">
+                          <Skeleton className="h-5 w-3/4" />
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-6 w-6 rounded-full" />
+                            <Skeleton className="h-4 w-1/2" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                ))}
              </div>
           ) : featuredProjects && featuredProjects.length > 0 ? (
             <>

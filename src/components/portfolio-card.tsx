@@ -21,6 +21,23 @@ interface PortfolioCardProps {
   className?: string;
 }
 
+function PortfolioCardSkeleton({ className }: { className?: string }) {
+    return (
+        <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full", className)}>
+            <CardContent className="p-0">
+                <Skeleton className="aspect-[4/3] w-full" />
+                <div className="p-4 space-y-3">
+                    <Skeleton className="h-5 w-3/4" />
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-6 rounded-full" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function PortfolioCard({ project, className }: PortfolioCardProps) {
   const db = useFirestore();
   const pathname = usePathname();
@@ -78,20 +95,7 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
   };
 
   if (isDesignerLoading) {
-    return (
-       <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full", className)}>
-        <CardContent className="p-0">
-          <Skeleton className="aspect-[4/3] w-full" />
-          <div className="p-4 space-y-2">
-            <Skeleton className="h-5 w-3/4" />
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-6 w-6 rounded-full" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )
+    return <PortfolioCardSkeleton className={className} />;
   }
 
   if (!designer || !project) {

@@ -13,7 +13,7 @@ import type { Designer, Project } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import LoadingPage from '../loading';
 
 const StatCard = ({ label, value }: { label: string; value: number | string }) => (
@@ -58,9 +58,9 @@ export default function AccountDashboardPage() {
                 <CardContent className="p-6 relative">
                     <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-20">
                          <Skeleton className="w-32 h-32 rounded-full border-4 border-background ring-2 ring-primary"/>
-                         <div className="flex-1 text-center md:text-left space-y-2">
-                            <Skeleton className="h-10 w-48"/>
-                            <Skeleton className="h-6 w-32"/>
+                         <div className="flex-1 mt-4 md:mt-0 text-center md:text-left space-y-3">
+                            <Skeleton className="h-10 w-48 mx-auto md:mx-0"/>
+                            <Skeleton className="h-6 w-32 mx-auto md:mx-0"/>
                          </div>
                     </div>
                 </CardContent>
