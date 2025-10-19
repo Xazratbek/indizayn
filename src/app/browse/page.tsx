@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import PortfolioCard from '@/components/portfolio-card';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { collection, query, orderBy, limit, startAfter, endBefore, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import PaginationControls from '@/components/pagination-controls';
 
@@ -25,25 +25,26 @@ export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('trending');
   const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [firstVisible, setFirstVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [page, setPage] = useState(1);
-  
+  const [isNextPageLoading, setIsNextPageLoading] = useState(false);
+
   const db = useFirestore();
 
   const projectsQuery = useMemoFirebase(() => {
     if (!db) return null;
-    const baseQuery = collection(db, 'projects');
+    let baseQuery = collection(db, 'projects');
     
-    let q = query(baseQuery, limit(PROJECTS_PER_PAGE));
-
+    let q;
     if (sortBy === 'latest') {
-      q = query(baseQuery, orderBy('createdAt', 'desc'), limit(PROJECTS_PER_PAGE));
+      q = query(baseQuery, orderBy('createdAt', 'desc'));
     } else if (sortBy === 'popular') {
-      q = query(baseQuery, orderBy('likeCount', 'desc'), limit(PROJECTS_PER_PAGE));
+      q = query(baseQuery, orderBy('likeCount', 'desc'));
     } else { // trending
-      q = query(baseQuery, orderBy('viewCount', 'desc'), limit(PROJECTS_PER_PAGE));
+      q = query(baseQuery, orderBy('viewCount', 'desc'));
     }
 
+    // Apply pagination
+    q = query(q, limit(PROJECTS_PER_PAGE));
     if (page > 1 && lastVisible) {
         q = query(q, startAfter(lastVisible));
     }
@@ -52,41 +53,49 @@ export default function BrowsePage() {
   }, [db, sortBy, page, lastVisible]);
 
 
-  const { data: allProjects, isLoading, error, snapshot } = useCollection<Project>(projectsQuery);
+  const { data: projects, isLoading, error, snapshot } = useCollection<Project>(projectsQuery);
+
+  useEffect(() => {
+      if (!isLoading && snapshot) {
+          const hasMore = snapshot.docs.length === PROJECTS_PER_PAGE;
+          if (!hasMore && page > 1) {
+              // We are on the last page
+          }
+      }
+      if (!isLoading) {
+          setIsNextPageLoading(false);
+      }
+  }, [isLoading, snapshot, page]);
+
 
   const filteredProjects = useMemo(() => {
-    if (!allProjects) return [];
-    
-    // Update visible docs for pagination
-    if(snapshot && snapshot.docs.length > 0) {
-        if(page === 1) setFirstVisible(snapshot.docs[0]);
-        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
-    }
+    if (!projects) return [];
+    if (!searchTerm) return projects;
 
-    if (!searchTerm) return allProjects;
-
-    return allProjects.filter(project =>
+    return projects.filter(project =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
     );
-  }, [allProjects, searchTerm, snapshot, page]);
+  }, [projects, searchTerm]);
 
   const handleNextPage = () => {
-    setPage(p => p + 1);
+    if (snapshot && snapshot.docs.length > 0) {
+      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      setLastVisible(lastDoc);
+      setPage(p => p + 1);
+      setIsNextPageLoading(true);
+    }
   };
   
   const handlePrevPage = () => {
-    // This is more complex, requires `limitToLast` and reversing order, which can be tricky.
-    // For simplicity, we will just go back to page 1 for this implementation.
-    setPage(p => Math.max(1, p - 1));
-    if (page === 2) {
-      setLastVisible(null);
-    }
-    // A more robust solution would involve storing snapshots for previous pages.
+    // This is a simplified previous page logic. For a true "prev", we'd need to query backwards
+    // which is more complex. Resetting to page 1 is a common simple approach.
+    setPage(1);
+    setLastVisible(null);
   };
-
-  const isNextDisabled = allProjects ? allProjects.length < PROJECTS_PER_PAGE : true;
-
+  
+  // Disable next if the last fetched page had fewer items than the page size
+  const isNextDisabled = !snapshot || snapshot.docs.length < PROJECTS_PER_PAGE || isNextPageLoading;
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -140,7 +149,7 @@ export default function BrowsePage() {
         </DropdownMenu>
       </div>
 
-      {isLoading ? (
+      {isLoading && page === 1 ? (
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
@@ -162,6 +171,11 @@ export default function BrowsePage() {
                 isNextDisabled={isNextDisabled}
                 isPrevDisabled={page === 1}
             />
+             {isNextPageLoading && (
+                <div className="flex justify-center items-center mt-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+             )}
         </>
       ) : (
         <div className="text-center py-20">
