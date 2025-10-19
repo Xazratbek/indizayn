@@ -17,7 +17,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === "google") {
         if (!db) {
           console.error("Firestore instance (db) is not available in next-auth route.");
@@ -56,7 +56,7 @@ export const authOptions: NextAuthOptions = {
         return token;
     },
     async session({ session, token }) {
-      if (session?.user) {
+      if (session?.user && token?.id) {
         session.user.id = token.id as string;
       }
       return session;
