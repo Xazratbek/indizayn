@@ -6,13 +6,15 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Project, Designer } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Eye, Heart, Users } from 'lucide-react';
+import { Eye, Heart, Users, BarChart3, PieChart } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import LoadingPage from '@/app/loading';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
     <Card>
@@ -121,8 +123,12 @@ export default function MyStatsPage() {
                         </div>
                     ) : (
                          <div className="text-center py-20">
-                            <p className="floating-text text-2xl">Statistika uchun hali loyihalar mavjud emas.</p>
-                            <p className="text-muted-foreground mt-2">Birinchi loyihangizni yuklang va natijalarni kuzating!</p>
+                            <BarChart3 className="mx-auto h-16 w-16 text-muted-foreground/50" />
+                            <p className="floating-text text-2xl mt-4">Statistika uchun hali loyihalar mavjud emas.</p>
+                            <p className="text-muted-foreground mt-2 mb-6">Birinchi loyihangizni yuklang va natijalarni kuzating!</p>
+                             <Button asChild>
+                                <Link href="/account/new-project">Loyiha Yuklash</Link>
+                            </Button>
                         </div>
                     )}
                 </CardContent>

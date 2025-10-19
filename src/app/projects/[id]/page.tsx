@@ -1,6 +1,7 @@
 
 "use client";
 
+import { motion } from 'framer-motion';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -142,6 +143,12 @@ export default function ProjectDetailsPage() {
 
   return (
     <>
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ duration: 0.3 }}
+      >
       <div className="container mx-auto max-w-6xl py-8 px-4">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
@@ -258,6 +265,7 @@ export default function ProjectDetailsPage() {
           </div>
         </div>
       </div>
+      </motion.div>
       {lightboxOpen && (
         <Lightbox 
           imageUrls={projectImages} 

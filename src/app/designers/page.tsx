@@ -5,7 +5,7 @@ import type { Designer } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Users2 } from "lucide-react";
 import Link from "next/link";
 import { collection, query, orderBy } from 'firebase/firestore';
 import LoadingPage from "../loading";
@@ -51,9 +51,13 @@ export default function DesignersPage() {
           ))}
         </div>
       ) : (
-         <div className="text-center py-20">
-            <p className="floating-text text-2xl">Hozircha dizaynerlar yo'q.</p>
-            <p className="text-muted-foreground mt-2">Balki siz birinchisi bo'larsiz?</p>
+         <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
+            <Users2 className="mx-auto h-16 w-16 text-muted-foreground/50" />
+            <p className="floating-text text-2xl mt-4">Hozircha dizaynerlar yo'q.</p>
+            <p className="text-muted-foreground mt-2 mb-6">Balki siz birinchisi bo'larsiz?</p>
+            <Button asChild>
+                <Link href="/auth">Hamjamiyatga Qo'shilish</Link>
+            </Button>
         </div>
       )}
     </div>

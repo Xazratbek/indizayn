@@ -6,7 +6,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import PortfolioCard from '@/components/portfolio-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, PackageSearch } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,9 @@ import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocum
 import type { Project } from '@/lib/types';
 import PaginationControls from '@/components/pagination-controls';
 import LoadingPage from '../loading';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import ProjectDetailModal from '@/components/project-detail-modal';
+import { AnimatePresence } from 'framer-motion';
 
 const PROJECTS_PER_PAGE = 12;
 
@@ -28,6 +31,12 @@ export default function BrowsePage() {
   const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [page, setPage] = useState(1);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const selectedProjectId = searchParams.get('projectId');
 
   const db = useFirestore();
 
@@ -96,7 +105,22 @@ export default function BrowsePage() {
   
   const isNextDisabled = !snapshot || snapshot.docs.length < PROJECTS_PER_PAGE || isNextPageLoading;
 
+  const handleModalClose = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete('projectId');
+    router.replace(`${pathname}?${params.toString()}`);
+  }
+
   return (
+    <>
+    <AnimatePresence>
+        {selectedProjectId && (
+          <ProjectDetailModal 
+            projectId={selectedProjectId} 
+            onClose={handleModalClose}
+          />
+        )}
+      </AnimatePresence>
     <div className="container mx-auto py-8 px-4">
       <div className="text-center mb-12">
         <h1 className="font-headline text-4xl md:text-5xl font-bold liquid-text">Dizaynlarni O'rganing</h1>
@@ -153,8 +177,8 @@ export default function BrowsePage() {
           <LoadingPage />
         </div>
       ) : error ? (
-        <div className="text-center py-16">
-            <p className="text-destructive">Ma'lumotlarni yuklashda xatolik yuz berdi.</p>
+        <div className="text-center py-16 text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-lg">
+            <p>Ma'lumotlarni yuklashda xatolik yuz berdi.</p>
         </div>
       ) : filteredProjects && filteredProjects.length > 0 ? (
         <>
@@ -177,11 +201,13 @@ export default function BrowsePage() {
              )}
         </>
       ) : (
-        <div className="text-center py-20">
-            <p className="floating-text text-2xl">Hech qanday loyiha topilmadi.</p>
+        <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
+            <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground/50" />
+            <p className="floating-text text-2xl mt-4">Hech qanday loyiha topilmadi.</p>
             <p className="text-muted-foreground mt-2">Boshqa qidiruv so'zini sinab ko'ring yoki filtrlarni o'zgartiring.</p>
         </div>
       )}
     </div>
+    </>
   );
 }

@@ -8,7 +8,7 @@ import { doc, collection, query, where, updateDoc, increment, arrayUnion, arrayR
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserPlus, Mail, UserCheck } from 'lucide-react';
+import { UserPlus, Mail, UserCheck, Palmtree } from 'lucide-react';
 import PortfolioCard from '@/components/portfolio-card';
 import { useState, useEffect } from 'react';
 import type { Designer, Project } from '@/lib/types';
@@ -133,7 +133,7 @@ export default function DesignerProfilePage() {
             <Image 
               src={designer.coverPhotoURL}
               alt={`${designer.name}ning muqova surati`}
-              layout="fill"
+              fill
               className="w-full h-full object-cover"
               priority
             />
@@ -194,8 +194,10 @@ export default function DesignerProfilePage() {
           ))}
         </div>
       ) : (
-         <div className="text-center py-16 border rounded-lg bg-card">
-            <p className="text-muted-foreground">{designer.name} hali hech qanday loyiha yuklamagan.</p>
+         <div className="text-center py-20 border rounded-lg bg-card shadow-sm">
+            <Palmtree className="mx-auto h-16 w-16 text-muted-foreground/50" />
+            <p className="floating-text text-2xl mt-4">{designer.name} hali hech qanday loyiha yuklamagan.</p>
+             <p className="text-muted-foreground mt-2">Balki siz unga birinchi bo'lib ilhom berarsiz?</p>
         </div>
       )}
     </div>

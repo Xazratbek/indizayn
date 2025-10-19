@@ -2,7 +2,7 @@
 "use client"
 
 import Link from 'next/link';
-import { MoveRight, Palette, UserCheck, ThumbsUp, Loader2 } from 'lucide-react';
+import { MoveRight, Palette, UserCheck, ThumbsUp, Loader2, ImageOff } from 'lucide-react';
 import ThreeShowcase from '@/components/three-showcase';
 import { Button } from '@/components/ui/button';
 import PortfolioCard from '@/components/portfolio-card';
@@ -140,9 +140,13 @@ export default function Home() {
                 </div>
             </>
           ) : (
-            <div className="text-center py-20">
-                <p className="floating-text text-2xl">Hozircha loyihalar yo'q.</p>
-                <p className="text-muted-foreground mt-2">Birinchi loyihani yuklagan siz bo'ling!</p>
+            <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
+                <ImageOff className="mx-auto h-16 w-16 text-muted-foreground/50" />
+                <p className="floating-text text-2xl mt-4">Hozircha loyihalar yo'q.</p>
+                <p className="text-muted-foreground mt-2 mb-6">Birinchi loyihani yuklagan siz bo'ling!</p>
+                 <Button asChild>
+                    <Link href="/account/new-project">Loyiha Yuklash</Link>
+                </Button>
             </div>
           )}
         </div>

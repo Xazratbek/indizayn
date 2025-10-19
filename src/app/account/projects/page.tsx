@@ -9,6 +9,9 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import LoadingPage from '@/app/loading';
+import { Button } from '@/components/ui/button';
+import { FolderKanban } from 'lucide-react';
+import Link from 'next/link';
 
 export default function MyProjectsPage() {
     const { data: session, status } = useSession();
@@ -61,9 +64,13 @@ export default function MyProjectsPage() {
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-20">
-                    <p className="floating-text text-2xl">Siz hali hech qanday loyiha yuklamagansiz.</p>
-                    <p className="text-muted-foreground mt-2">Ijodingizni namoyish etish vaqti keldi!</p>
+                <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
+                    <FolderKanban className="mx-auto h-16 w-16 text-muted-foreground/50" />
+                    <p className="floating-text text-2xl mt-4">Siz hali hech qanday loyiha yuklamagansiz.</p>
+                    <p className="text-muted-foreground mt-2 mb-6">Ijodingizni namoyish etish vaqti keldi!</p>
+                    <Button asChild>
+                        <Link href="/account/new-project">Birinchi Loyihani Yuklash</Link>
+                    </Button>
                 </div>
             )}
         </div>
