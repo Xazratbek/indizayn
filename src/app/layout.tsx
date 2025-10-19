@@ -1,5 +1,6 @@
 
 import type { Metadata } from 'next';
+import { Roboto, Montserrat } from 'next/font/google';
 import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
@@ -8,6 +9,18 @@ import { Footer } from '@/components/footer';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 import AuthProvider from '@/components/AuthProvider';
 import { FirebaseClientProvider } from '@/firebase';
+
+const roboto = Roboto({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-roboto',
+});
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['700'],
+  variable: '--font-montserrat',
+});
 
 export const metadata: Metadata = {
   title: 'inDizayn',
@@ -21,12 +34,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="uz" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet" />
-      </head>
-      <body className={cn('min-h-screen font-body antialiased')}>
+      <body className={cn(
+          'min-h-screen font-body antialiased',
+          roboto.variable,
+          montserrat.variable
+        )}>
         <AuthProvider>
           <FirebaseClientProvider>
             <div className="relative flex min-h-dvh flex-col bg-background">
