@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Skeleton } from './ui/skeleton';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 interface PortfolioCardProps {
   project: Project;
@@ -37,7 +38,7 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
   const mouseYSpring = useSpring(y, { stiffness: 300, damping: 20 });
 
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ['7.5deg', '-7.5deg']);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ['-7.5deg', '7.5deg']);
+  const rotateY = useTransform(mouseXSpring, [-0-5, 0.5], ['-7.5deg', '7.5deg']);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (!ref.current) return;
@@ -76,6 +77,8 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
   if (!designer || !project) {
     return null;
   }
+  
+  const projectImages = project.imageUrls && project.imageUrls.length > 0 ? project.imageUrls : [project.imageUrl];
 
   return (
      <motion.div
@@ -91,26 +94,42 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
     >
       <Card className={cn("overflow-hidden group transition-shadow duration-300 hover:shadow-xl w-full h-full", className)} style={{transform: 'translateZ(75px)', transformStyle: 'preserve-3d'}}>
         <CardContent className="p-0">
-          <Link href={`/projects/${project.id}`} className="block">
-            <div className="aspect-[4/3] relative overflow-hidden">
-              <motion.div
-                style={{
-                  transform: 'translateZ(50px)',
-                  transformStyle: 'preserve-3d',
-                }}
-                className="absolute inset-0"
-              >
-                  <Image
-                    src={project.imageUrl || `https://picsum.photos/seed/${project.id}/400/300`}
-                    alt={project.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
-                    data-ai-hint="project image"
-                  />
-              </motion.div>
-            </div>
-          </Link>
+          <Carousel 
+            opts={{
+              loop: true,
+            }}
+            className="w-full relative group/carousel"
+          >
+            <CarouselContent>
+              {projectImages.map((url, index) => (
+                <CarouselItem key={index}>
+                   <Link href={`/projects/${project.id}`} className="block">
+                    <div className="aspect-[4/3] relative overflow-hidden">
+                      <motion.div
+                        style={{
+                          transform: 'translateZ(50px)',
+                          transformStyle: 'preserve-3d',
+                        }}
+                        className="absolute inset-0"
+                      >
+                          <Image
+                            src={url || `https://picsum.photos/seed/${project.id}/400/300`}
+                            alt={project.name}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            className="object-cover transition-transform duration-300 group-hover:scale-110"
+                            data-ai-hint="project image"
+                          />
+                      </motion.div>
+                    </div>
+                  </Link>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+             <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/carousel:opacity-100 transition-opacity" />
+            <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/carousel:opacity-100 transition-opacity" />
+          </Carousel>
+
           <div className="p-4" style={{transform: 'translateZ(40px)'}}>
             <div className="flex items-center justify-between">
               <Link href={`/projects/${project.id}`}>

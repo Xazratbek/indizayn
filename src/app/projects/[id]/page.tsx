@@ -18,6 +18,7 @@ import { uz } from 'date-fns/locale';
 import type { Project, Designer } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Lightbox from '@/components/lightbox';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -26,6 +27,8 @@ export default function ProjectDetailsPage() {
   const { user } = useUser();
 
   const [isLiked, setIsLiked] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Fetch project details and increment view count
   const projectDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'projects', id) : null, [db, id]);
@@ -97,6 +100,10 @@ export default function ProjectDetailsPage() {
     }
   };
 
+  const openLightbox = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setLightboxOpen(true);
+  };
 
   const isLoading = isProjectLoading || isDesignerLoading;
 
@@ -112,127 +119,122 @@ export default function ProjectDetailsPage() {
 
 
   return (
-    <div className="container mx-auto max-w-6xl py-8 px-4">
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Main Content */}
-        <div className="w-full lg:w-3/4">
-          <Card>
-            <CardHeader>
-              <h1 className="font-headline text-4xl font-bold">{project.name}</h1>
-            </CardHeader>
-            <CardContent>
-              {projectImages && projectImages.length > 0 && (
-                 <Carousel className="w-full mb-6">
-                    <CarouselContent>
-                    {projectImages.map((url, index) => (
-                        <CarouselItem key={index}>
-                        <div className="aspect-[4/3] relative overflow-hidden rounded-lg">
-                            <Image
-                            src={url}
-                            alt={`${project.name} - ${index + 1}`}
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 66vw"
-                            className="object-cover"
-                            data-ai-hint="project image"
-                            priority={index === 0}
-                            />
-                        </div>
-                        </CarouselItem>
-                    ))}
-                    </CarouselContent>
-                    <CarouselPrevious className="left-4" />
-                    <CarouselNext className="right-4"/>
-                </Carousel>
-              )}
-              <p className="text-lg text-muted-foreground leading-relaxed">{project.description}</p>
-              
-              <Separator className="my-6" />
-
-              <div className="prose prose-lg dark:prose-invert max-w-none">
-                <p>Ushbu loyiha muayyan dizayn muammosini hal qilish uchun yaratilgan. Biz ham chiroyli, ham funktsional mahsulotni taqdim etish uchun foydalanuvchi tajribasi va zamonaviy estetikaga e'tibor qaratdik. Jarayon keng qamrovli tadqiqotlar, simli chizmalar, prototiplash va foydalanuvchi sinovlarini o'z ichiga oldi.</p>
-                <p>Loyiha davomida biz o'z qarashlarimizni hayotga tatbiq etish uchun turli xil vositalardan foydalandik. Yakuniy natija jamoaning birgalikdagi sa'y-harakatlari va ijodiy sinergiyasining isbotidir.</p>
-              </div>
-
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="w-full lg:w-1/4">
-          <div className="sticky top-20 space-y-6">
+    <>
+      <div className="container mx-auto max-w-6xl py-8 px-4">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Main Content */}
+          <div className="w-full lg:w-3/4">
             <Card>
-              <CardContent className="p-4">
-                <Link href={`/designers/${designer.id}`} className="flex items-center gap-3 group">
-                  <Avatar className="h-12 w-12">
-                    {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                    <AvatarFallback>{designer.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-semibold group-hover:underline">{designer.name}</p>
-                    <p className="text-sm text-muted-foreground">{designer.specialization}</p>
-                  </div>
-                </Link>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 space-y-4">
-                <div className="flex gap-2">
-                  <Button onClick={handleLikeToggle} className="w-full" variant={isLiked ? "secondary" : "default"}>
-                    <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
-                    {isLiked ? 'Yoqdi' : 'Yoqdi'}
-                  </Button>
-                </div>
-                <div className="flex justify-around text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                    <Heart className="w-4 h-4" />
-                    <span>{project.likeCount || 0} Likes</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Eye className="w-4 h-4" />
-                    <span>{project.viewCount || 0} Ko'rishlar</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 space-y-3 text-sm">
-                 {project.createdAt && (
-                  <div className="flex items-start">
-                    <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                    <div>
-                      <h4 className="font-semibold">Chop etilgan</h4>
-                      <p className="text-muted-foreground">
-                        {/* Firestore timestamp requires .toDate() conversion */}
-                        {format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
-                      </p>
-                    </div>
-                  </div>
-                 )}
-                {project.tools && project.tools.length > 0 && (
-                  <div className="flex items-start">
-                    <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                    <div>
-                      <h4 className="font-semibold">Foydalanilgan vositalar</h4>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
-                      </div>
-                    </div>
-                  </div>
+              <CardHeader>
+                <h1 className="font-headline text-4xl font-bold">{project.name}</h1>
+              </CardHeader>
+              <CardContent>
+                {projectImages && projectImages.length > 0 && (
+                  <Carousel className="w-full mb-6">
+                      <CarouselContent>
+                      {projectImages.map((url, index) => (
+                          <CarouselItem key={index}>
+                          <div className="aspect-[4/3] relative overflow-hidden rounded-lg bg-secondary/30 cursor-pointer" onClick={() => openLightbox(url)}>
+                              <Image
+                              src={url}
+                              alt={`${project.name} - ${index + 1}`}
+                              fill
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 66vw"
+                              className="object-contain"
+                              data-ai-hint="project image"
+                              priority={index === 0}
+                              />
+                          </div>
+                          </CarouselItem>
+                      ))}
+                      </CarouselContent>
+                      <CarouselPrevious className="left-4" />
+                      <CarouselNext className="right-4"/>
+                  </Carousel>
                 )}
-                {project.tags && project.tags.length > 0 && (
-                  <div className="flex items-start">
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
-                    </div>
-                  </div>
-                )}
+                <p className="text-lg text-muted-foreground leading-relaxed">{project.description}</p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Sidebar */}
+          <div className="w-full lg:w-1/4">
+            <div className="sticky top-20 space-y-6">
+              <Card>
+                <CardContent className="p-4">
+                  <Link href={`/designers/${designer.id}`} className="flex items-center gap-3 group">
+                    <Avatar className="h-12 w-12">
+                      {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                      <AvatarFallback>{designer.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold group-hover:underline">{designer.name}</p>
+                      <p className="text-sm text-muted-foreground">{designer.specialization}</p>
+                    </div>
+                  </Link>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex gap-2">
+                    <Button onClick={handleLikeToggle} className="w-full" variant={isLiked ? "secondary" : "default"}>
+                      <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
+                      {isLiked ? 'Yoqdi' : 'Yoqdi'}
+                    </Button>
+                  </div>
+                  <div className="flex justify-around text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <Heart className="w-4 h-4" />
+                      <span>{project.likeCount || 0} Likes</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Eye className="w-4 h-4" />
+                      <span>{project.viewCount || 0} Ko'rishlar</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-4 space-y-3 text-sm">
+                  {project.createdAt && (
+                    <div className="flex items-start">
+                      <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                      <div>
+                        <h4 className="font-semibold">Chop etilgan</h4>
+                        <p className="text-muted-foreground">
+                          {/* Firestore timestamp requires .toDate() conversion */}
+                          {format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {project.tools && project.tools.length > 0 && (
+                    <div className="flex items-start">
+                      <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                      <div>
+                        <h4 className="font-semibold">Foydalanilgan vositalar</h4>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {project.tags && project.tags.length > 0 && (
+                    <div className="flex items-start">
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+      {selectedImage && <Lightbox imageUrl={selectedImage} open={lightboxOpen} onOpenChange={setLightboxOpen} />}
+    </>
   );
 }
