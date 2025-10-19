@@ -1,26 +1,19 @@
 /**
- * @fileoverview Firestore Security Rules for the design portfolio application.
+ * @fileOverview Firestore Security Rules for the design portfolio application.
  *
  * Core Philosophy:
- * This ruleset is in prototyping mode, so it prioritizes strict authorization
- * over comprehensive data validation. It enforces ownership and shared access
- * patterns while allowing flexible data shapes for rapid iteration.
+ * This ruleset is in prototyping mode and uses a permissive security posture, granting read and write access to all documents.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles, where {userId} matches the Firebase Auth UID.
- * - /projects/{projectId}: Stores portfolio projects. Each project has a designerId field indicating ownership.
- * - /messages/{messageId}: Stores direct messages between users.
- * - /notifications/{notificationId}: Stores notifications for users.
+ * The database contains collections for users, projects, messages and notifications.
  *
  * Key Security Decisions:
- * - User-owned resources (users, projects, messages, notifications) are primarily secured using the isOwner(resource.data.ownerId) pattern.
- * - Data validation is minimal, focusing on relational integrity and ownership checks.
- * - List operations are generally restricted to owners for user-scoped subcollections.
- * - Public listing is enabled where appropriate, but write access is strictly controlled.
+ * All collections are accessible for both reading and writing. This is acceptable for early prototyping.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     // Barcha kolleksiyalar va hujjatlar uchun
     match /{document=**} {
       allow read, write: if true;
