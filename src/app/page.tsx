@@ -8,6 +8,9 @@ import { designers, projects as allProjects } from '@/lib/mock-data';
 import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { useAuth, useUser } from '@/firebase';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 const featuredProjects = allProjects.sort((a, b) => b.likes - a.likes).slice(0, 4);
 
@@ -39,6 +42,28 @@ const sectionVariants = {
 };
 
 export default function Home() {
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+        await signInWithPopup(auth, provider);
+        router.push('/browse');
+    } catch (error) {
+        console.error("Error signing in with Google: ", error);
+    }
+  };
+
+  const handleStartClick = () => {
+    if (user) {
+      router.push('/browse');
+    } else {
+      handleGoogleSignIn();
+    }
+  };
+
   return (
     <div className="flex flex-col">
       <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
@@ -70,8 +95,8 @@ export default function Home() {
              className="mt-8"
           >
             <div className="animated-border-box">
-              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                <Link href="/browse">Boshlash <MoveRight className="ml-2" /></Link>
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick} disabled={isUserLoading}>
+                Boshlash <MoveRight className="ml-2" />
               </Button>
             </div>
           </motion.div>
