@@ -47,8 +47,8 @@ export default function Home() {
   const db = useFirestore();
 
   const featuredProjectsQuery = useMemoFirebase(() =>
-    (db && user) ? query(collection(db, 'projects'), orderBy('likeCount', 'desc'), limit(10)) : null
-  , [db, user]);
+    db ? query(collection(db, 'projects'), orderBy('likeCount', 'desc'), limit(10)) : null
+  , [db]);
   const { data: featuredProjects, isLoading: areProjectsLoading } = useCollection<Project>(featuredProjectsQuery);
 
   const handleStartClick = () => {
@@ -120,43 +120,27 @@ export default function Home() {
             <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan tanlab olingan loyihalar.</p>
           </div>
           
-          {isUserLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-10 w-10 animate-spin" />
-            </div>
-          ) : user ? (
+          {areProjectsLoading || isUserLoading ? (
+             <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-10 w-10 animate-spin" />
+             </div>
+          ) : featuredProjects && featuredProjects.length > 0 ? (
             <>
-              {areProjectsLoading ? (
-                 <div className="flex justify-center items-center h-64">
-                    <Loader2 className="h-10 w-10 animate-spin" />
-                 </div>
-              ) : featuredProjects && featuredProjects.length > 0 ? (
-                <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
-                    {featuredProjects.map(project => (
-                        <PortfolioCard key={project.id} project={project} />
-                    ))}
-                    </div>
-                     <div className="text-center mt-12">
-                        <Button asChild variant="outline">
-                        <Link href="/browse">Barcha Loyihalarni Ko'rish</Link>
-                        </Button>
-                    </div>
-                </>
-              ) : (
-                <div className="text-center py-20">
-                    <p className="floating-text text-2xl">Hozircha loyihalar yo'q.</p>
-                    <p className="text-muted-foreground mt-2">Birinchi loyihani yuklagan siz bo'ling!</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+                {featuredProjects.map(project => (
+                    <PortfolioCard key={project.id} project={project} />
+                ))}
                 </div>
-              )}
+                 <div className="text-center mt-12">
+                    <Button asChild variant="outline">
+                    <Link href="/browse">Barcha Loyihalarni Ko'rish</Link>
+                    </Button>
+                </div>
             </>
           ) : (
-             <div className="text-center py-20 bg-card rounded-lg">
-                <p className="text-xl font-medium">Loyihalarni ko'rish uchun tizimga kiring.</p>
-                <p className="text-muted-foreground mt-2 mb-6">Hamjamiyatimizga qo'shiling va ijodingizni namoyish eting.</p>
-                <Button asChild>
-                    <Link href="/auth">Kirish / Ro'yxatdan o'tish</Link>
-                </Button>
+            <div className="text-center py-20">
+                <p className="floating-text text-2xl">Hozircha loyihalar yo'q.</p>
+                <p className="text-muted-foreground mt-2">Birinchi loyihani yuklagan siz bo'ling!</p>
             </div>
           )}
         </div>

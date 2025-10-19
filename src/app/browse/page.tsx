@@ -157,7 +157,7 @@ export default function BrowsePage() {
         <div className="text-center py-16">
             <p className="text-destructive">Ma'lumotlarni yuklashda xatolik yuz berdi.</p>
         </div>
-      ) : filteredProjects.length > 0 ? (
+      ) : filteredProjects && filteredProjects.length > 0 ? (
         <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredProjects.map(project => (
