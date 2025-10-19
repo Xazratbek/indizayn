@@ -7,6 +7,7 @@ import { db } from "@/firebase/firestore-config";
 import type { Designer } from "@/lib/types";
 
 const isProduction = process.env.NODE_ENV === 'production';
+const ONE_WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,6 +19,10 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
+    maxAge: ONE_WEEK_IN_SECONDS,
+  },
+  jwt: {
+    maxAge: ONE_WEEK_IN_SECONDS,
   },
   ...(isProduction && {
     cookies: {
