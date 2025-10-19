@@ -138,7 +138,9 @@ export default function AuthPage() {
 
 
   useEffect(() => {
-    setIsProcessing(true); // Assume we might be handling a redirect
+    // This effect runs once on component mount.
+    // It's responsible for handling both redirect results and the initial auth state.
+    setIsProcessing(true); // Indicate that we are checking auth status.
 
     getRedirectResult(auth)
       .then((result) => {
@@ -146,19 +148,20 @@ export default function AuthPage() {
           // A user has successfully signed in via redirect.
           handleAuthSuccess(result.user);
         } else {
-          // No redirect result, so proceed with checking the current auth state.
+          // No redirect result, so we check the current auth state.
+          // This handles cases where the user is already logged in and revisits the auth page.
           const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
               // User is already logged in, redirect them away from the auth page.
               router.replace('/account');
             } else {
-              // No user logged in, and no redirect result. Safe to show the auth page.
+              // No user logged in, and no redirect result. It's safe to show the auth page.
               setIsLoading(false);
               setIsProcessing(false);
             }
           });
-          // Return the unsubscribe function for cleanup.
-          return unsubscribe;
+          // Return the unsubscribe function for cleanup when the component unmounts.
+          return () => unsubscribe();
         }
       })
       .catch((error) => {
@@ -171,25 +174,8 @@ export default function AuthPage() {
 
   const handleGoogleSignIn = async () => {
     setIsProcessing(true);
-    try {
-      // First, try with popup
-      await signInWithPopup(auth, googleProvider).then(result => {
-        if(result && result.user) {
-            handleAuthSuccess(result.user);
-        }
-      }).catch(async (err: any) => {
-        // If popup is closed or blocked, fallback to redirect method
-        if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request') {
-          await signInWithRedirect(auth, googleProvider);
-        } else {
-          toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
-          setIsProcessing(false);
-        }
-      });
-    } catch (err: any) {
-        toast({ variant: "destructive", title: "Kutilmagan xatolik", description: getErrorMessage(err) });
-        setIsProcessing(false);
-    } 
+    // Use redirect method for a more robust authentication flow that avoids popup blocker issues.
+    await signInWithRedirect(auth, googleProvider);
   };
 
   const onLoginSubmit = async (data: LoginFormValues) => {
