@@ -229,7 +229,16 @@ export default function EditProjectPage() {
              </CardHeader>
              <CardContent>
                  <Form {...form}>
-                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                     <form 
+                        onSubmit={form.handleSubmit(onSubmit)} 
+                        className="space-y-6"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                // Prevent form submission on Enter key press in any input
+                                e.preventDefault();
+                            }
+                        }}
+                    >
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                              <div className="space-y-4">
                                  <FormField
@@ -333,5 +342,3 @@ export default function EditProjectPage() {
     </div>
   );
 }
-
-    
