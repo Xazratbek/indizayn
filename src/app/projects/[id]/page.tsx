@@ -18,7 +18,7 @@ import { uz } from 'date-fns/locale';
 const allImages = imageData.placeholderImages;
 
 export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const id = params.id;
   const projectDetails = getFullProjectDetails(id);
   
   const [isLiked, setIsLiked] = useState(false);
@@ -70,6 +70,7 @@ export default function ProjectDetailsPage({ params }: { params: { id: string } 
                     src={projectImage.imageUrl}
                     alt={project.name}
                     fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 66vw"
                     className="object-cover"
                     data-ai-hint={projectImage.imageHint}
                   />
