@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { uploadImage } from '@/lib/actions';
 import { Progress } from "@/components/ui/progress";
+import UploadProjectDialog from "@/components/upload-project-dialog";
 
 
 function AnimatedNumber({ value }: { value: number }) {
@@ -266,7 +266,7 @@ export default function AccountPage() {
                 <CardDescription>Bu yerda sizning faoliyatingiz tahlili ko'rsatiladi.</CardDescription>
               </CardHeader>
               <CardContent className="text-center text-muted-foreground py-10">
-                <p>Statistika funksiyasi tez kunda qo'shiladi.</p>
+                 <div className="floating-text text-xl">Tez kunda...</div>
               </CardContent>
             </Card>
           </div>
@@ -274,7 +274,7 @@ export default function AccountPage() {
         <TabsContent value="projects">
             <div className="flex justify-between items-center mt-6 mb-6">
                 <h2 className="text-2xl font-bold font-headline">Mening Loyihalarim ({designerProjects?.length || 0})</h2>
-                <Button>Loyiha Yuklash</Button>
+                <UploadProjectDialog />
             </div>
             {areProjectsLoading ? (
               <div className="flex justify-center items-center h-64">
@@ -287,8 +287,9 @@ export default function AccountPage() {
                           <PortfolioCard key={project.id} project={project} />
                       ))
                   ) : (
-                    <div className="text-center py-16 border rounded-lg bg-card col-span-full">
-                       <p className="text-muted-foreground">Hali loyihalaringiz yo'q. Birinchisini yuklang!</p>
+                    <div className="text-center py-16 col-span-full">
+                       <div className="floating-text text-2xl">Hali loyihalaringiz yo'q.</div>
+                       <p className="text-muted-foreground mt-2">Birinchisini yuklang!</p>
                     </div>
                   )}
               </div>

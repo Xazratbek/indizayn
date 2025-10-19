@@ -44,10 +44,7 @@ export default function BrowsePage() {
 
     return allProjects.filter(project =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      // Searching by designer name would require fetching designer data for each project,
-      // which is inefficient here. A better approach would be to denormalize designer name
-      // onto the project document or use a search service like Algolia.
+      (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
     );
   }, [allProjects, searchTerm]);
 
@@ -118,8 +115,9 @@ export default function BrowsePage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16">
-            <p className="text-muted-foreground">"{searchTerm}" uchun hech qanday loyiha topilmadi. Boshqa qidiruvni sinab ko'ring.</p>
+        <div className="text-center py-20">
+            <p className="floating-text text-2xl">Hech qanday loyiha topilmadi.</p>
+            <p className="text-muted-foreground mt-2">Boshqa qidiruv so'zini sinab ko'ring yoki filtrlarni o'zgartiring.</p>
         </div>
       )}
     </div>

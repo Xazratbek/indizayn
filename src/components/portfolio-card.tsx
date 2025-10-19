@@ -134,7 +134,7 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
                 </Avatar>
                 <span className="text-sm font-medium hover:underline">{designer.name}</span>
               </Link>
-              <Badge variant="secondary">{designer.specialization}</Badge>
+              {designer.specialization && <Badge variant="secondary">{designer.specialization}</Badge>}
             </div>
           </div>
         </CardContent>

@@ -91,6 +91,26 @@
     animation: liquid-flow 3s linear infinite;
   }
 
+  .floating-text {
+    color: hsl(var(--accent));
+    animation: float 4s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0% {
+      transform: translateY(0px);
+      text-shadow: 0px 5px 15px hsla(var(--accent) / 0.3);
+    }
+    50% {
+      transform: translateY(-10px);
+       text-shadow: 0px 25px 15px hsla(var(--accent) / 0.1);
+    }
+    100% {
+      transform: translateY(0px);
+       text-shadow: 0px 5px 15px hsla(var(--accent) / 0.3);
+    }
+  }
+
   @keyframes liquid-flow {
     from {
       background-position: 200% center;

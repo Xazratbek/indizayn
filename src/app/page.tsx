@@ -116,11 +116,16 @@ export default function Home() {
             <div className="flex justify-center items-center h-64">
               <Loader2 className="h-10 w-10 animate-spin" />
             </div>
-          ) : (
+          ) : featuredProjects && featuredProjects.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredProjects?.map(project => (
+              {featuredProjects.map(project => (
                 <PortfolioCard key={project.id} project={project} />
               ))}
+            </div>
+          ) : (
+            <div className="text-center py-20">
+                <p className="floating-text text-2xl">Hozircha loyihalar yo'q.</p>
+                <p className="text-muted-foreground mt-2">Birinchi loyihani yuklagan siz bo'ling!</p>
             </div>
           )}
            <div className="text-center mt-12">
