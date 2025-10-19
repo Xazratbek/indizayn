@@ -4,9 +4,9 @@ import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import { revalidatePath } from 'next/cache';
 
 cloudinary.config({
-  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: 'studioproject',
+  api_key: '534665423858783',
+  api_secret: 'R-p_4mHmbpI1y725LeVvN2FGjGg'
 });
 
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; url?: string; error?: string; publicId?: string }> {
