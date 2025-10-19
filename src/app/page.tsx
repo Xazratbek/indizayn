@@ -14,7 +14,6 @@ import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import { useSession, signIn } from 'next-auth/react';
 import { useState } from 'react';
-import LoadingSpinner from '@/app/loading';
 
 
 const advantages = [
@@ -94,7 +93,7 @@ export default function Home() {
                   >
                       {isSigningIn ? (
                           <div className="flex flex-col items-center gap-4">
-                              <LoadingSpinner />
+                              <Loader2 className="h-12 w-12 animate-spin text-primary" />
                               <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
                           </div>
                       ) : (
