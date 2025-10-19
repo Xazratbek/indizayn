@@ -9,7 +9,6 @@ import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 
-const featuredDesigners = designers.slice(0, 5);
 const featuredProjects = allProjects.sort((a, b) => b.likes - a.likes).slice(0, 4);
 
 const advantages = [
