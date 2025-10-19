@@ -17,8 +17,7 @@ import { uz } from 'date-fns/locale';
 
 const allImages = imageData.placeholderImages;
 
-export default function ProjectDetailsPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function ProjectDetailsPage({ params: { id } }: { params: { id: string } }) {
   const projectDetails = getFullProjectDetails(id);
   
   const [isLiked, setIsLiked] = useState(false);
