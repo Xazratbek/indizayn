@@ -1,10 +1,10 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { 
   getAuth, 
-  signInWithRedirect, 
-  getRedirectResult, 
+  signInWithPopup, 
   GoogleAuthProvider, 
   onAuthStateChanged, 
   User,
@@ -55,6 +55,7 @@ export default function AuthPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const db = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -124,31 +125,8 @@ export default function AuthPage() {
   };
 
   useEffect(() => {
-    const processRedirect = async () => {
-      setIsProcessing(true);
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          await saveUserToDB(result.user);
-          toast({
-            title: "Muvaffaqiyatli kirdingiz!",
-            description: `Xush kelibsiz, ${result.user.displayName}!`,
-          });
-          router.replace('/account');
-          return; 
-        }
-      } catch (err) {
-        console.error('getRedirectResult xatosi:', err);
-        toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
-      }
-      setIsProcessing(false);
-    };
-
-    processRedirect();
-
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Redirect if user is already logged in, but don't show loading screen indefinitely
         if (router.pathname === '/auth') {
            router.replace('/account');
         }
@@ -158,13 +136,22 @@ export default function AuthPage() {
     });
 
     return () => unsubscribe();
-  }, [router, db]);
+  }, [router]);
 
   const handleGoogleSignIn = async () => {
     setIsProcessing(true);
     try {
-      await signInWithRedirect(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      if (result && result.user) {
+        await saveUserToDB(result.user);
+        toast({
+          title: "Muvaffaqiyatli kirdingiz!",
+          description: `Xush kelibsiz, ${result.user.displayName}!`,
+        });
+        router.replace('/account');
+      }
     } catch (err: any) {
+      console.error('Google sign-in xatosi:', err);
       toast({ variant: "destructive", title: "Kirishda xatolik", description: getErrorMessage(err) });
       setIsProcessing(false);
     }
@@ -207,7 +194,7 @@ export default function AuthPage() {
   };
 
 
-  if (isLoading || isProcessing) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -297,5 +284,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
-    
