@@ -11,7 +11,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Eye, Heart, Calendar, Wrench } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
@@ -22,10 +21,15 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import Lightbox from '@/components/lightbox';
 import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
+import { useModalContext } from '@/components/project-detail-modal';
+
 
 export default function ProjectDetailsPage() {
   const params = useParams();
-  const id = typeof params.id === 'string' ? params.id : '';
+  const modalContext = useModalContext();
+
+  const id = modalContext.projectId || (typeof params.id === 'string' ? params.id : '');
+
   const db = useFirestore();
   const { data: session } = useSession();
   const user = session?.user;
@@ -39,15 +43,17 @@ export default function ProjectDetailsPage() {
   const { data: project, isLoading: isProjectLoading, error } = useDoc<Project>(projectDocRef);
   
   useEffect(() => {
-    // Increment view count only once per page load
+    // Increment view count only once per page load/modal open
     if (id && db) {
         const projectRef = doc(db, 'projects', id);
-        const viewed = sessionStorage.getItem(`viewed_${id}`);
+        const viewedKey = `viewed_${id}`;
+        // Use sessionStorage to prevent incrementing on re-renders within the same session
+        const viewed = sessionStorage.getItem(viewedKey);
         if (!viewed) {
           updateDoc(projectRef, {
               viewCount: increment(1)
           }).catch(err => console.error("Failed to increment view count: ", err));
-          sessionStorage.setItem(`viewed_${id}`, 'true');
+          sessionStorage.setItem(viewedKey, 'true');
         }
     }
   }, [id, db]);
@@ -134,8 +140,12 @@ export default function ProjectDetailsPage() {
     return <LoadingPage />;
   }
   
-  if (!project || !designer) {
-    return <div className="flex h-[80vh] items-center justify-center"><p>Loyiha topilmadi.</p></div>;
+  if (error || !project) {
+    return <div className="flex h-[80vh] items-center justify-center"><p>Loyiha topilmadi yoki yuklashda xatolik yuz berdi.</p></div>;
+  }
+
+  if (!designer) {
+     return <div className="flex h-[80vh] items-center justify-center"><p>Dizayner ma'lumotlari topilmadi.</p></div>;
   }
   
   const projectImages = project.imageUrls && project.imageUrls.length > 0 ? project.imageUrls : [project.imageUrl];
@@ -235,8 +245,7 @@ export default function ProjectDetailsPage() {
                       <div>
                         <h4 className="font-semibold">Chop etilgan</h4>
                         <p className="text-muted-foreground">
-                          {/* Firestore timestamp requires .toDate() conversion */}
-                          {format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
+                          {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
                         </p>
                       </div>
                     </div>
@@ -254,9 +263,9 @@ export default function ProjectDetailsPage() {
                   )}
                   {project.tags && project.tags.length > 0 && (
                     <div className="flex items-start">
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
-                      </div>
+                       <div className="flex flex-wrap gap-1 mt-1">
+                         {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
+                       </div>
                     </div>
                   )}
                 </CardContent>

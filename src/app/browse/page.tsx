@@ -108,7 +108,7 @@ export default function BrowsePage() {
   const handleModalClose = () => {
     const params = new URLSearchParams(searchParams);
     params.delete('projectId');
-    router.replace(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   return (
@@ -173,8 +173,21 @@ export default function BrowsePage() {
       </div>
 
       {isLoading && page === 1 ? (
-        <div className="flex justify-center items-center h-64">
-          <LoadingPage />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {Array.from({ length: 12 }).map((_, i) => (
+                <Card key={i} className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full")}>
+                  <CardContent className="p-0">
+                    <Skeleton className="aspect-[4/3] w-full" />
+                    <div className="p-4 space-y-2">
+                      <Skeleton className="h-5 w-3/4" />
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-6 rounded-full" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+            ))}
         </div>
       ) : error ? (
         <div className="text-center py-16 text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-lg">

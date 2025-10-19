@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Skeleton } from './ui/skeleton';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 
 interface PortfolioCardProps {
   project: Project;
@@ -25,6 +25,7 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
   const db = useFirestore();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const designerDocRef = useMemoFirebase(() => 
     (db && project) ? doc(db, 'users', project.designerId) : null
@@ -57,6 +58,24 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
     x.set(0);
     y.set(0);
   };
+  
+  const createQueryString = (paramsToUpdate: { [key: string]: string }) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(paramsToUpdate).forEach(([name, value]) => {
+      params.set(name, value);
+    });
+    return params.toString();
+  };
+  
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+      // For browse page, we want to open the modal
+      if(pathname.startsWith('/browse')) {
+        e.preventDefault();
+        const newUrl = `${pathname}?${createQueryString({ projectId: project.id })}`;
+        router.push(newUrl, { scroll: false });
+      }
+      // For other pages like /account/projects, it will navigate to the project detail page directly.
+  };
 
   if (isDesignerLoading) {
     return (
@@ -79,11 +98,9 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
     return null;
   }
   
-  const createQueryString = (name: string, value: string) => {
-    const params = new URLSearchParams(searchParams);
-    params.set(name, value);
-    return params.toString();
-  };
+  const projectLink = pathname.startsWith('/browse')
+    ? `${pathname}?${createQueryString({ projectId: project.id })}`
+    : `/projects/${project.id}`;
 
   return (
     <motion.div
@@ -99,7 +116,7 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
     >
       <Card className={cn("overflow-hidden group transition-shadow duration-300 hover:shadow-xl w-full h-full bg-card", className)} style={{transform: 'translateZ(75px)', transformStyle: 'preserve-3d'}}>
         <CardContent className="p-0">
-          <Link href={`${pathname}?${createQueryString('projectId', project.id)}`} scroll={false} className="block">
+          <Link href={projectLink} onClick={handleClick} scroll={false} className="block">
             <div className="aspect-[4/3] relative overflow-hidden rounded-t-lg">
                <motion.div
                  style={{
@@ -132,7 +149,7 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
           </Link>
 
           <div className="p-4" style={{transform: 'translateZ(40px)'}}>
-            <Link href={`${pathname}?${createQueryString('projectId', project.id)}`} scroll={false}>
+            <Link href={projectLink} onClick={handleClick} scroll={false}>
               <h3 className="font-headline font-bold text-lg truncate group-hover:text-primary transition-colors">{project.name}</h3>
             </Link>
             <div className="flex items-center gap-2 mt-2">
