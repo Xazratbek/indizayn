@@ -68,11 +68,10 @@ export default function Home() {
 
   return (
     <div className="flex flex-col">
-        <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
-            <ThreeShowcase />
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-              {!user && !isUserLoading && (
-                <>
+       {!user && !isUserLoading ? (
+            <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
+                <ThreeShowcase />
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
                   <motion.h1
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -110,10 +109,10 @@ export default function Home() {
                             </div>
                         )}
                     </motion.div>
-                  </>
-                )}
-            </div>
-        </section>
+                </div>
+            </section>
+        ) : null}
+
 
       <motion.section 
         className="py-16 md:py-24 bg-secondary/50"
