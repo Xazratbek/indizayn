@@ -2,7 +2,6 @@
 'use server';
 
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
-import { revalidatePath } from 'next/cache';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -41,8 +40,8 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
       uploadStream.end(buffer);
     });
 
-    // On successful upload, revalidate the path and return success response
-    revalidatePath('/account');
+    // On successful upload, return success response
+    // revalidatePath was causing an error here. The client side handles refreshing.
     
     return {
       success: true,
