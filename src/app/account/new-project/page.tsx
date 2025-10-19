@@ -20,15 +20,55 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import LoadingPage from "@/app/loading";
+import { Badge } from "@/components/ui/badge";
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: "Loyiha nomi kamida 3 belgidan iborat bo'lishi kerak." }),
   description: z.string().min(10, { message: "Tavsif kamida 10 belgidan iborat bo'lishi kerak." }),
-  tags: z.string().optional(),
-  tools: z.string().optional(),
 });
 
 type ProjectFormValues = z.infer<typeof projectSchema>;
+
+const TagInput = ({ value, onChange, placeholder }: { value: string[], onChange: (value: string[]) => void, placeholder: string }) => {
+    const [inputValue, setInputValue] = useState("");
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && inputValue.trim()) {
+            e.preventDefault();
+            if (!value.includes(inputValue.trim())) {
+                onChange([...value, inputValue.trim()]);
+            }
+            setInputValue("");
+        }
+    };
+
+    const removeTag = (tagToRemove: string) => {
+        onChange(value.filter(tag => tag !== tagToRemove));
+    };
+
+    return (
+        <div>
+            <div className="flex flex-wrap gap-2 mb-2">
+                {value.map((tag, index) => (
+                    <Badge key={index} variant="secondary" className="pl-3 pr-1 py-1 text-sm">
+                        {tag}
+                        <button type="button" onClick={() => removeTag(tag)} className="ml-2 rounded-full hover:bg-muted-foreground/20 p-0.5">
+                            <X className="h-3 w-3" />
+                        </button>
+                    </Badge>
+                ))}
+            </div>
+            <Input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholder}
+            />
+        </div>
+    );
+};
+
 
 export default function NewProjectPage() {
   const { data: session, status } = useSession();
@@ -41,6 +81,9 @@ export default function NewProjectPage() {
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [tags, setTags] = useState<string[]>([]);
+  const [tools, setTools] = useState<string[]>([]);
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.replace('/auth');
@@ -52,8 +95,6 @@ export default function NewProjectPage() {
     defaultValues: {
       name: "",
       description: "",
-      tags: "",
-      tools: "",
     },
   });
 
@@ -116,27 +157,22 @@ export default function NewProjectPage() {
     setIsSubmitting(true);
 
     try {
-      // --- 1. Upload Images to Cloudinary ---
       const imageUrls: string[] = [];
       for (const file of imageFiles) {
         const url = await uploadImageWithApi(file);
         imageUrls.push(url);
       }
 
-      // --- 2. Save Project to Firestore ---
-      const tagsArray = data.tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [];
-      const toolsArray = data.tools?.split(',').map(tool => tool.trim()).filter(Boolean) || [];
-
       if(!db) throw new Error("Database connection not found.");
 
       await addDoc(collection(db, "projects"), {
         name: data.name,
         description: data.description,
-        designerId: user.id, // Use user.id from next-auth session
-        imageUrl: imageUrls[0], // Main image
-        imageUrls: imageUrls, // All images
-        tags: tagsArray,
-        tools: toolsArray,
+        designerId: user.id,
+        imageUrl: imageUrls[0],
+        imageUrls: imageUrls,
+        tags: tags, // Use state for tags
+        tools: tools, // Use state for tools
         likeCount: 0,
         viewCount: 0,
         likes: [],
@@ -148,7 +184,6 @@ export default function NewProjectPage() {
         description: "Yangi loyihangiz platformaga qo'shildi.",
       });
 
-      // --- 3. Reset and Redirect ---
       setTimeout(() => {
         router.push('/account/projects');
       }, 1000);
@@ -208,32 +243,29 @@ export default function NewProjectPage() {
                                          </FormItem>
                                      )}
                                  />
-                                 <FormField
-                                     control={form.control}
-                                     name="tags"
-                                     render={({ field }) => (
-                                         <FormItem>
-                                             <FormLabel>Teglar</FormLabel>
-                                             <FormControl>
-                                                 <Input placeholder="Vergul bilan ajrating, masalan: ui, ux, figma" {...field} />
-                                             </FormControl>
-                                             <FormMessage />
-                                         </FormItem>
-                                     )}
-                                 />
-                                 <FormField
-                                     control={form.control}
-                                     name="tools"
-                                     render={({ field }) => (
-                                         <FormItem>
-                                             <FormLabel>Foydalanilgan vositalar</FormLabel>
-                                             <FormControl>
-                                                 <Input placeholder="Vergul bilan ajrating, masalan: Figma, Webflow" {...field} />
-                                             </FormControl>
-                                             <FormMessage />
-                                         </FormItem>
-                                     )}
-                                 />
+                                <FormItem>
+                                    <FormLabel>Teglar</FormLabel>
+                                    <FormControl>
+                                         <TagInput 
+                                            value={tags}
+                                            onChange={setTags}
+                                            placeholder="Teg qo'shish uchun 'Enter' bosing..."
+                                         />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                <FormItem>
+                                    <FormLabel>Foydalanilgan vositalar</FormLabel>
+                                    <FormControl>
+                                         <TagInput 
+                                            value={tools}
+                                            onChange={setTools}
+                                            placeholder="Vosita qo'shish uchun 'Enter' bosing..."
+                                         />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+
                              </div>
                              <div className="space-y-2">
                                  <Label>Loyiha rasmlari ({imagePreviews.length}/10)</Label>
@@ -292,3 +324,5 @@ export default function NewProjectPage() {
     </div>
   );
 }
+
+    
