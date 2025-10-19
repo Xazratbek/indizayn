@@ -16,8 +16,7 @@ export function TagInput({ value, onChange, placeholder }: TagInputProps) {
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-            e.preventDefault();
-            e.stopPropagation();
+            e.preventDefault(); // Prevent form submission
             if (inputValue.trim() && !value.includes(inputValue.trim())) {
                 onChange([...value, inputValue.trim()]);
                 setInputValue("");
