@@ -163,7 +163,8 @@ export default function AccountPage() {
         title: "Muvaffaqiyatli!",
         description: "Profilingiz yangilandi.",
       });
-    } catch (error: any) {
+    } catch (error: any)
+{
       console.error("Error updating profile:", error);
       toast({
         variant: "destructive",
@@ -308,7 +309,7 @@ export default function AccountPage() {
                   <Label>Profil Rasmi</Label>
                   <div className="flex items-center gap-4">
                       <Avatar className="h-20 w-20">
-                          <AvatarImage src={newImage.previewUrl ?? user.photoURL ?? ''} />
+                          <AvatarImage src={newImage.previewUrl ?? userProfile?.photoURL ?? user.photoURL ?? ''} />
                           <AvatarFallback>{userProfile?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <Input 
@@ -370,3 +371,5 @@ export default function AccountPage() {
     </div>
   );
 }
+
+    
