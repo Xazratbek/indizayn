@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -7,19 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Heart, Eye, Users, FolderKanban, LayoutDashboard, User, Settings, Loader2 } from "lucide-react";
+import { Heart, Eye, Users, FolderKanban, LayoutDashboard, User, Settings, Loader2, Upload } from "lucide-react";
 import PortfolioCard from "@/components/portfolio-card";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, useInView, useMotionValue, useSpring } from "framer-motion";
-import { useRef } from "react";
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
 import type { Project } from "@/lib/types";
 import type { Designer } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
+import { uploadImage } from '@/lib/actions';
+
 
 function AnimatedNumber({ value }: { value: number }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -54,11 +55,12 @@ function AnimatedNumber({ value }: { value: number }) {
 export default function AccountPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
-  const isMobile = useIsMobile();
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newImage, setNewImage] = useState<{file: File | null, previewUrl: string | null}>({ file: null, previewUrl: null });
 
-  const { register, handleSubmit, setValue, watch } = useForm<{
+  const { register, handleSubmit, setValue, watch, formState: {isDirty} } = useForm<{
     name: string;
     specialization: string;
     bio: string;
@@ -87,26 +89,56 @@ export default function AccountPage() {
   const totalLikes = useMemo(() => designerProjects?.reduce((acc, p) => acc + p.likeCount, 0) || 0, [designerProjects]);
   const totalViews = useMemo(() => designerProjects?.reduce((acc, p) => acc + p.viewCount, 0) || 0, [designerProjects]);
   
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setNewImage({ file, previewUrl });
+    }
+  };
+
   const onProfileUpdate = async (data: { name: string; specialization: string; bio: string; }) => {
     if (!user || !userProfile) return;
+    
+    if (!isDirty && !newImage.file) {
+      toast({ description: "O'zgarish kiritilmadi." });
+      return;
+    }
+
     setIsSaving(true);
     try {
       const userRef = doc(db, "users", user.uid);
+      let newPhotoURL = userProfile.photoURL;
+
+      if (newImage.file) {
+        const formData = new FormData();
+        formData.append('image', newImage.file);
+        const result = await uploadImage(formData);
+        if (result.success && result.url) {
+          newPhotoURL = result.url;
+        } else {
+          throw new Error(result.error || "Rasmni yuklab bo'lmadi.");
+        }
+      }
+      
       await updateDoc(userRef, {
         name: data.name,
         specialization: data.specialization,
-        bio: data.bio
+        bio: data.bio,
+        photoURL: newPhotoURL,
       });
+
+      setNewImage({ file: null, previewUrl: null });
       toast({
         title: "Muvaffaqiyatli!",
         description: "Profilingiz yangilandi.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile:", error);
       toast({
         variant: "destructive",
         title: "Xatolik!",
-        description: "Profilni yangilashda xatolik yuz berdi.",
+        description: error.message || "Profilni yangilashda xatolik yuz berdi.",
       });
     } finally {
       setIsSaving(false);
@@ -225,7 +257,9 @@ export default function AccountPage() {
                           <PortfolioCard key={project.id} project={project} />
                       ))
                   ) : (
-                      <p>Hali loyihalaringiz yo'q.</p>
+                    <div className="text-center py-16 border rounded-lg bg-card col-span-full">
+                       <p className="text-muted-foreground">Hali loyihalaringiz yo'q. Birinchisini yuklang!</p>
+                    </div>
                   )}
               </div>
             )}
@@ -240,10 +274,19 @@ export default function AccountPage() {
               <form onSubmit={handleSubmit(onProfileUpdate)} className="space-y-6">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
-                        <AvatarImage src={user.photoURL ?? ''} />
+                        <AvatarImage src={newImage.previewUrl ?? user.photoURL ?? ''} />
                         <AvatarFallback>{userProfile.name?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <Button variant="outline" type="button">Rasmni O'zgartirish</Button>
+                    <Input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleImageChange}
+                      className="hidden"
+                      accept="image/png, image/jpeg, image/gif"
+                    />
+                    <Button variant="outline" type="button" onClick={() => fileInputRef.current?.click()}>
+                       <Upload className="mr-2 h-4 w-4"/> Rasmni O'zgartirish
+                    </Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -290,4 +333,3 @@ export default function AccountPage() {
     </div>
   );
 }
-    
