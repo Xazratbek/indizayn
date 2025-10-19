@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { UserPlus, Mail, Loader2, UserCheck } from 'lucide-react';
 import PortfolioCard from '@/components/portfolio-card';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Designer, Project } from '@/lib/types';
 import { toast } from '@/hooks/use-toast';
 
@@ -17,9 +17,10 @@ export default function DesignerProfilePage() {
   const params = useParams();
   const id = typeof params.id === 'string' ? params.id : '';
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
 
   // Fetch designer's profile
   const designerDocRef = useMemoFirebase(() => doc(db, 'users', id), [db, id]);
@@ -54,7 +55,8 @@ export default function DesignerProfilePage() {
       });
       return;
     }
-
+    
+    setIsFollowLoading(true);
     const designerRef = doc(db, "users", id);
     
     try {
@@ -83,11 +85,13 @@ export default function DesignerProfilePage() {
             title: "Xatolik",
             description: "Amalni bajarishda xatolik yuz berdi.",
         });
+    } finally {
+        setIsFollowLoading(false);
     }
   };
 
 
-  const isLoading = isDesignerLoading || areProjectsLoading;
+  const isLoading = isDesignerLoading || areProjectsLoading || isUserLoading;
 
   if (isLoading) {
     return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin" /></div>;
@@ -105,7 +109,7 @@ export default function DesignerProfilePage() {
       <Card className="overflow-hidden mb-12">
         <div className="h-48 bg-secondary">
           <Image 
-            src={`https://picsum.photos/seed/${designer.id}99/1200/200`} 
+            src={`https://picsum.photos/seed/${designer.id}/1200/200`} 
             alt={`${designer.name}ning muqova surati`}
             width={1200}
             height={200}
@@ -128,8 +132,8 @@ export default function DesignerProfilePage() {
             </div>
             { user && user.uid !== id && (
               <div className="flex gap-2">
-                <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"}>
-                  {isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading}>
+                  {isFollowLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
                 </Button>
                 <Button variant="outline">
@@ -174,3 +178,4 @@ export default function DesignerProfilePage() {
     </div>
   );
 }
+    

@@ -13,19 +13,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState, useMemo } from "react";
 import { motion, useInView, useMotionValue, useSpring } from "framer-motion";
 import { useRef } from "react";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
-import type { Project, Designer } from "@/lib/types";
-import { toast } from "@/hooks/use-toast";
+import type { Project } from "@/lib/types";
+import type { Designer } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 
 function AnimatedNumber({ value }: { value: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const motionValue = useMotionValue(0);
   const springValue = useSpring(motionValue, {
-    damping: 30,
-    stiffness: 300,
+    damping: 100,
+    stiffness: 400,
   });
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -55,9 +56,10 @@ export default function AccountPage() {
   const db = useFirestore();
   const isMobile = useIsMobile();
   const [isSaving, setIsSaving] = useState(false);
+  const { toast } = useToast();
 
   const { register, handleSubmit, setValue, watch } = useForm<{
-    displayName: string;
+    name: string;
     specialization: string;
     bio: string;
   }>();
@@ -66,7 +68,6 @@ export default function AccountPage() {
   const userProfileQuery = useMemoFirebase(() =>
     user ? doc(db, 'users', user.uid) : null
   , [db, user]);
-  // The type parameter `Designer` is used here
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<Designer>(userProfileQuery);
 
   // Fetch projects for the current user
@@ -77,22 +78,22 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (userProfile) {
-      setValue('displayName', userProfile.name || user?.displayName || '');
+      setValue('name', userProfile.name || '');
       setValue('specialization', userProfile.specialization || '');
       setValue('bio', userProfile.bio || '');
     }
-  }, [userProfile, user, setValue]);
+  }, [userProfile, setValue]);
 
   const totalLikes = useMemo(() => designerProjects?.reduce((acc, p) => acc + p.likeCount, 0) || 0, [designerProjects]);
   const totalViews = useMemo(() => designerProjects?.reduce((acc, p) => acc + p.viewCount, 0) || 0, [designerProjects]);
   
-  const onProfileUpdate = async (data: { displayName: string; specialization: string; bio: string; }) => {
-    if (!user) return;
+  const onProfileUpdate = async (data: { name: string; specialization: string; bio: string; }) => {
+    if (!user || !userProfile) return;
     setIsSaving(true);
     try {
       const userRef = doc(db, "users", user.uid);
       await updateDoc(userRef, {
-        name: data.displayName,
+        name: data.name,
         specialization: data.specialization,
         bio: data.bio
       });
@@ -123,7 +124,7 @@ export default function AccountPage() {
       )
   }
   
-  if (!user) {
+  if (!user || !userProfile) {
       return (
         <div className="flex h-[80vh] items-center justify-center">
             <div className="text-center">
@@ -149,7 +150,7 @@ export default function AccountPage() {
           {tabItems.map((item) => (
             <TabsTrigger key={item.value} value={item.value} className="flex gap-2 items-center">
               <item.icon className="h-5 w-5" />
-              {!isMobile && <span className="hidden md:inline">{item.label}</span>}
+              <span className="hidden md:inline">{item.label}</span>
             </TabsTrigger>
           ))}
         </TabsList>
@@ -199,11 +200,11 @@ export default function AccountPage() {
           <div className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>So'nggi Faoliyat</CardTitle>
-                <CardDescription>Sizning so'nggi faoliyatingizning qisqacha mazmuni.</CardDescription>
+                <CardTitle>Faoliyat Tarixi</CardTitle>
+                <CardDescription>Bu yerda sizning faoliyatingiz tahlili ko'rsatiladi.</CardDescription>
               </CardHeader>
-              <CardContent>
-                <BarChart className="h-64 w-full text-primary" />
+              <CardContent className="text-center text-muted-foreground py-10">
+                <p>Statistika funksiyasi tez kunda qo'shiladi.</p>
               </CardContent>
             </Card>
           </div>
@@ -240,14 +241,14 @@ export default function AccountPage() {
                 <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
                         <AvatarImage src={user.photoURL ?? ''} />
-                        <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback>{userProfile.name?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <Button variant="outline" type="button">Rasmni O'zgartirish</Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="displayName">To'liq Ism</Label>
-                        <Input id="displayName" {...register("displayName")} />
+                        <Label htmlFor="name">To'liq Ism</Label>
+                        <Input id="name" {...register("name")} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="specialization">Mutaxassislik</Label>
@@ -289,3 +290,4 @@ export default function AccountPage() {
     </div>
   );
 }
+    
