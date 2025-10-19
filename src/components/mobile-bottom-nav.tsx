@@ -27,20 +27,23 @@ export function MobileBottomNav() {
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t border-border/40 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background/80 border-t border-border/40 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80 z-50">
       <nav className="h-full">
         <ul className="flex h-full items-center justify-around">
           {navItems.map((item) => {
             const isActive = (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href));
             return (
               <li key={item.href} className="flex-1">
-                <Link href={item.href}>
-                  <div className="flex flex-col items-center justify-center gap-1">
+                <Link href={item.href} className="flex flex-col items-center justify-center h-full">
+                  <div className={cn(
+                      "flex flex-col items-center justify-center gap-1 transition-all duration-300 ease-in-out",
+                      isActive ? 'transform -translate-y-2' : ''
+                  )}>
                     <item.icon
                       className={cn(
                         "w-6 h-6 transition-all duration-200",
                         isActive
-                          ? "text-primary scale-110 -translate-y-0.5"
+                          ? "text-primary"
                           : "text-muted-foreground"
                       )}
                     />
