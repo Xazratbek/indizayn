@@ -28,7 +28,7 @@ export default function ProjectDetailsPage() {
 
   const [isLiked, setIsLiked] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
 
   // Fetch project details and increment view count
   const projectDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'projects', id) : null, [db, id]);
@@ -100,8 +100,8 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  const openLightbox = (imageUrl: string) => {
-    setSelectedImage(imageUrl);
+  const openLightbox = (index: number) => {
+    setLightboxStartIndex(index);
     setLightboxOpen(true);
   };
 
@@ -134,7 +134,7 @@ export default function ProjectDetailsPage() {
                       <CarouselContent>
                       {projectImages.map((url, index) => (
                           <CarouselItem key={index}>
-                          <div className="aspect-[4/3] relative overflow-hidden rounded-lg bg-secondary/30 cursor-pointer" onClick={() => openLightbox(url)}>
+                          <div className="aspect-[4/3] relative overflow-hidden rounded-lg bg-secondary/30 cursor-pointer" onClick={() => openLightbox(index)}>
                               <Image
                               src={url}
                               alt={`${project.name} - ${index + 1}`}
@@ -152,7 +152,9 @@ export default function ProjectDetailsPage() {
                       <CarouselNext className="right-4"/>
                   </Carousel>
                 )}
-                <p className="text-lg text-muted-foreground leading-relaxed">{project.description}</p>
+                <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed">
+                   <p>{project.description}</p>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -234,7 +236,14 @@ export default function ProjectDetailsPage() {
           </div>
         </div>
       </div>
-      {selectedImage && <Lightbox imageUrl={selectedImage} open={lightboxOpen} onOpenChange={setLightboxOpen} />}
+      {lightboxOpen && (
+        <Lightbox 
+          imageUrls={projectImages} 
+          startIndex={lightboxStartIndex}
+          open={lightboxOpen} 
+          onOpenChange={setLightboxOpen} 
+        />
+      )}
     </>
   );
 }

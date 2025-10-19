@@ -1,7 +1,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Eye, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import type { Project, Designer } from '@/lib/types';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Skeleton } from './ui/skeleton';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from '@/components/ui/carousel';
 
 interface PortfolioCardProps {
   project: Project;
@@ -137,11 +137,11 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
               </Link>
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <Heart className="w-4 h-4" />
+                  <Heart className="w-4 h-4 text-red-500" />
                   <span>{project.likeCount || 0}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Eye className="w-4 h-4" />
+                  <span>👀</span>
                   <span>{project.viewCount || 0}</span>
                 </div>
               </div>
