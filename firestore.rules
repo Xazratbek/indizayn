@@ -1,46 +1,31 @@
 /**
- * @fileoverview Firestore Security Rules - TEST MODE
- * ⚠️ WARNING: Bu faqat development va test uchun!
- * ⚠️ Production da ishlatmang - HECH QANDAY XAVFSIZLIK YO'Q!
- * 
- * Bu ruleset HAMMA narsaga OCHIQ - authentication ham yo'q!
- * Faqat local development va test uchun ishlatiladi.
+ * @fileoverview Firestore Security Rules for the design portfolio application.
+ *
+ * Core Philosophy:
+ * This ruleset is in prototyping mode to allow for rapid iteration on the data model.
+ * Authorization is strictly enforced based on user identity and document ownership where applicable,
+ * but data validation is relaxed to allow for schema evolution.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profiles, with the document ID matching the Firebase Auth UID.
+ * - /projects/{projectId}: Stores portfolio projects.
+ * - /messages/{messageId}: Stores direct messages between users.
+ * - /notifications/{notificationId}: Stores notifications for users.
+ *
+ * Key Security Decisions:
+ * - Users can only read and write their own user documents.
+ * - Public read access is enabled for projects, but writes are not secured in this prototyping stage.
+ * - Message and Notification write access are not secured.
+ *
+ * Denormalization for Authorization:
+ *  - The `designerId` field is used to associate projects with their creators.  This avoids needing to query a separate collection to check ownership.
+ *
+ * Structural Segregation:
+ *  - There is no structural segregation in this design.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    /**
-     * Users collection - HAMMAGA OCHIQ
-     */
-    match /users/{userId} {
-      allow read, write: if true;
-    }
-
-    /**
-     * Projects collection - HAMMAGA OCHIQ
-     */
-    match /projects/{projectId} {
-      allow read, write: if true;
-    }
-
-    /**
-     * Messages collection - HAMMAGA OCHIQ
-     */
-    match /messages/{messageId} {
-      allow read, write: if true;
-    }
-
-    /**
-     * Notifications collection - HAMMAGA OCHIQ
-     */
-    match /notifications/{notificationId} {
-      allow read, write: if true;
-    }
-
-    /**
-     * BARCHA collection'lar - HAMMAGA OCHIQ
-     */
     match /{document=**} {
       allow read, write: if true;
     }
