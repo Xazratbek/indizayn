@@ -1,55 +1,144 @@
 /**
- * @fileoverview Firestore Security Rules - TEST MODE
- * ⚠️ WARNING: Bu faqat development va test uchun!
- * ⚠️ Production da ishlatmang - xavfsizlik yo'q!
- * 
- * Bu ruleset barcha authenticated foydalanuvchilarga
- * barcha collection'larda to'liq CRUD ruxsat beradi.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model for user profiles and allows public read access to projects.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores individual user profiles. Access is restricted to the owning user.
+ * - /projects/{projectId}: Stores design projects.  Read access is public, but write access is restricted to the project creator.
+ * - /messages/{messageId}: Stores direct messages between users. Access is restricted to the sender and receiver.
+ * - /notifications/{notificationId}: Stores notifications for users. Access is restricted to the user.
+ *
+ * Key Security Decisions:
+ * - Users can only read and write their own profile data.
+ * - Anyone can read project data, but only the creator can modify or delete it.
+ * - Users can only read and write messages where they are either the sender or receiver.
+ * - Users can only read and write notifications that belong to them.
+ * - Listing of users is disallowed to prevent enumeration.
+ *
+ * Denormalization for Authorization:
+ * - Projects store the `designerId` to enable owner-only write rules.
+ * - Messages store the `senderId` and `receiverId` to authorize access.
+ * - Notifications store the `userId` to authorize access.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    /**
-     * Test uchun: Barcha signed-in userlar uchun ochiq
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
 
     /**
-     * Users collection - hamma narsa ochiq
+     * @description Manages user profiles, ensuring only the user can access their own data.
+     * @path /users/{userId}
+     * @allow (create) User with UID 'user123' can create their profile.
+     * @allow (get) User with UID 'user123' can read their profile.
+     * @allow (update) User with UID 'user123' can update their profile.
+     * @allow (delete) User with UID 'user123' can delete their profile.
+     * @deny (create) User with UID 'user456' cannot create a profile for 'user123'.
+     * @deny (get) User with UID 'user456' cannot read the profile of 'user123'.
+     * @principle Enforces document ownership for all operations.
      */
     match /users/{userId} {
-      allow read, write: if isSignedIn();
+      //function isSignedIn() {
+       // return request.auth != null;
+      //}
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) && request.resource.data.uid == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.uid == resource.data.uid;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * Projects collection - hamma narsa ochiq
+     * @description Manages design projects, allowing public read access but restricting write access to the project creator.
+     * @path /projects/{projectId}
+     * @allow (get) Any user can read a project.
+     * @allow (list) Any user can list projects.
+     * @allow (create) User with UID 'user123' can create a project with designerId 'user123'.
+     * @allow (update) User with UID 'user123' can update a project they created with designerId 'user123'.
+     * @allow (delete) User with UID 'user123' can delete a project they created with designerId 'user123'.
+     * @deny (create) User with UID 'user456' cannot create a project with designerId 'user123'.
+     * @deny (update) User with UID 'user456' cannot update a project created by 'user123'.
+     * @deny (delete) User with UID 'user456' cannot delete a project created by 'user123'.
+     * @principle Allows public reads with owner-only writes, enforced by matching designerId.
      */
     match /projects/{projectId} {
-      allow read, write: if isSignedIn();
+      //function isSignedIn() {
+        //return request.auth != null;
+      //}
+      allow get: if true;
+      allow list: if true;
+
+      function isOwner(designerId) {
+        return request.auth.uid == designerId;
+      }
+
+      function isExistingOwner(designerId) {
+        return isOwner(designerId) && resource != null;
+      }
+
+      allow create: if isOwner(request.resource.data.designerId);
+      allow update: if isExistingOwner(resource.data.designerId);
+      allow delete: if isExistingOwner(resource.data.designerId);
     }
 
-    /**
-     * Messages collection - hamma narsa ochiq
-     */
+     /**
+      * @description Manages direct messages between users, ensuring only the sender and receiver can access the message.
+      * @path /messages/{messageId}
+      * @allow (get) User with UID 'user123' can read a message where they are the sender or receiver.
+      * @allow (create) User with UID 'user123' can create a message where they are the sender.
+      * @allow (update) No one can update a message.
+      * @allow (delete) No one can delete a message.
+      * @deny (get) User with UID 'user456' cannot read a message between 'user123' and 'user789'.
+      * @principle Restricts access to messages to the sender and receiver.
+      */
     match /messages/{messageId} {
-      allow read, write: if isSignedIn();
+      //function isSignedIn() {
+        //return request.auth != null;
+      //}
+      function isParticipant() {
+        return request.auth.uid == resource.data.senderId
+            || request.auth.uid == resource.data.receiverId;
+      }
+
+      allow get: if isParticipant();
+      allow list: if false;
+
+      allow create: if request.auth.uid == request.resource.data.senderId;
+      allow update: if false;
+      allow delete: if false;
     }
 
-    /**
-     * Notifications collection - hamma narsa ochiq
-     */
+     /**
+      * @description Manages notifications for users, ensuring only the user can access their own notifications.
+      * @path /notifications/{notificationId}
+      * @allow (get) User with UID 'user123' can read their notification.
+      * @allow (create) User with UID 'user123' can create a notification for themself.
+      * @allow (update) User with UID 'user123' can update their own notification.
+      * @allow (delete) User with UID 'user123' can delete their own notification.
+      * @deny (get) User with UID 'user456' cannot read the notification of 'user123'.
+      * @principle Enforces document ownership for all operations.
+      */
     match /notifications/{notificationId} {
-      allow read, write: if isSignedIn();
-    }
+      //function isSignedIn() {
+       // return request.auth != null;
+      //}
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
 
-    /**
-     * Boshqa barcha collection'lar ham ochiq
-     */
-    match /{document=**} {
-      allow read, write: if isSignedIn();
+      allow get: if request.auth.uid == resource.data.userId;
+      allow list: if false;
+
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow update: if request.auth.uid == resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId;
     }
   }
 }
