@@ -1,6 +1,7 @@
 
 'use server';
 
+import 'dotenv/config';
 import { v2 as cloudinary } from 'cloudinary';
 import { revalidatePath } from 'next/cache';
 
@@ -49,4 +50,3 @@ export async function uploadImage(formData: FormData) {
     return { error: error.message };
   }
 }
-
