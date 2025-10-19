@@ -16,10 +16,12 @@ import { uploadImage } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload } from "lucide-react";
 import type { Designer } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 export default function ProfileEditPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
+  const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -134,10 +136,12 @@ export default function ProfileEditPage() {
     );
   }
 
-  if (!user || !userProfile) {
+  if (!user) {
+    router.push('/auth');
     return (
       <div className="flex items-center justify-center h-screen">
         <p>Iltimos, hisobga kiring.</p>
+        <Loader2 className="animate-spin h-10 w-10" />
       </div>
     );
   }
@@ -155,8 +159,8 @@ export default function ProfileEditPage() {
               <Label>Profil rasmi</Label>
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={newImage.previewUrl ?? userProfile.photoURL ?? ""} />
-                  <AvatarFallback>{userProfile.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={newImage.previewUrl ?? userProfile?.photoURL ?? ""} />
+                  <AvatarFallback>{userProfile?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <Input
                   type="file"
