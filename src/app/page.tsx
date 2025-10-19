@@ -45,8 +45,6 @@ export default function Home() {
   const router = useRouter();
 
   const handleStartClick = () => {
-    if (isUserLoading) return;
-
     if (user) {
       router.push('/browse');
     } else {
@@ -85,7 +83,7 @@ export default function Home() {
           >
             <div className="animated-border-box">
                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick} disabled={isUserLoading}>
-                Boshlash <MoveRight className="ml-2" />
+                {isUserLoading ? 'Yuklanmoqda...' : 'Boshlash'} <MoveRight className="ml-2" />
               </Button>
             </div>
           </motion.div>
@@ -165,3 +163,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

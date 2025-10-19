@@ -1,11 +1,22 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { 
+    GoogleAuthProvider, 
+    signInWithPopup, 
+    signInWithRedirect, 
+    getRedirectResult 
+} from "firebase/auth";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { useRouter }grom "next/navigation";
+import { useAuth, useFirestore, useUser } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth, useUser } from "@/firebase";
-import { GoogleAuthProvider, signInWithRedirect, getRedirectResult, signInWithPopup } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -17,179 +28,154 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-
 export default function AuthPage() {
-    const auth = useAuth();
-    const { user, isUserLoading } = useUser();
-    const router = useRouter();
-    const [status, setStatus] = useState<'idle' | 'loading' | 'popup_closed' | 'error'>('idle');
-    const [errorCode, setErrorCode] = useState<string | null>(null);
+  const auth = useAuth();
+  const db = useFirestore();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        if (user) {
-            router.push('/account');
+  const saveUserToDB = async (firebaseUser: any) => {
+    if (!firebaseUser) return;
+    const userRef = doc(db, "users", firebaseUser.uid);
+    const snapshot = await getDoc(userRef);
+
+    if (!snapshot.exists()) {
+      try {
+        await setDoc(userRef, {
+          uid: firebaseUser.uid,
+          name: firebaseUser.displayName,
+          email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL,
+          createdAt: serverTimestamp(),
+          specialization: 'Yangi dizayner',
+          subscribers: 0,
+        });
+      } catch (error) {
+        console.error("Foydalanuvchini Firestorega saqlashda xatolik:", error);
+        toast({
+          variant: "destructive",
+          title: "Ma'lumotlar bazasi xatosi",
+          description: "Foydalanuvchi ma'lumotlarini saqlab bo'lmadi.",
+        });
+      }
+    }
+  };
+
+  const handleRedirectSignIn = async () => {
+    setIsLoading(true);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    await signInWithRedirect(auth, provider);
+  };
+  
+  const handlePopupSignIn = async () => {
+    setIsLoading(true);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (result?.user) {
+        await saveUserToDB(result.user);
+        toast({
+            title: "Muvaffaqiyatli kirdingiz!",
+            description: `Xush kelibsiz, ${result.user.displayName}!`,
+        });
+        router.push("/account");
+      }
+    } catch (error: any) {
+        console.warn("Popup xatosi, redirect'ga o'tilmoqda:", error.code);
+        // Popup bloklansa yoki yopilsa, redirect usuliga o'tamiz
+        handleRedirectSignIn();
+    }
+  };
+
+  // Redirect natijasini tekshirish
+  useEffect(() => {
+    // Agar foydalanuvchi allaqachon kirgan bo'lsa, /account ga o'tkazamiz
+    if (!isUserLoading && user) {
+        router.replace("/account");
+        return;
+    }
+
+    // Agar sahifa redirectdan keyin ochilgan bo'lsa, natijani olamiz
+    const checkRedirect = async () => {
+      try {
+        setIsLoading(true);
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          await saveUserToDB(result.user);
+          toast({
+              title: "Muvaffaqiyatli kirdingiz!",
+              description: `Xush kelibsiz, ${result.user.displayName}!`,
+          });
+          router.replace("/account");
+        } else {
+            // Agar redirect natijasi bo'lmasa, yuklanishni to'xtatamiz
+            setIsLoading(false);
         }
-    }, [user, router]);
-
-    // Handle redirect result on component mount
-    useEffect(() => {
-        if (isUserLoading || !auth || user) return;
-        
-        // This is the crucial part for handling the redirect result.
-        // It should run whenever the auth page loads.
-        getRedirectResult(auth)
-            .then((result) => {
-                if (result) {
-                    // This means the user has just signed in via redirect.
-                    // The onAuthStateChanged listener will handle the user state update,
-                    // and the useEffect above will redirect to /account.
-                    toast({
-                      title: "Muvaffaqiyatli kirdingiz!",
-                      description: `Xush kelibsiz, ${result.user.displayName}!`,
-                    });
-                }
-            })
-            .catch((error) => {
-                console.error("Redirect natijasini olishda xatolik: ", error);
-                if (error.code !== 'auth/operation-not-allowed') {
-                  toast({
-                      variant: "destructive",
-                      title: "Kirishda xatolik",
-                      description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
-                  });
-                } else {
-                   toast({
-                      variant: "destructive",
-                      title: "Avtorizatsiya usuli yoqilmagan",
-                      description: "Iltimos, Firebase loyihangiz sozlamalarida Google orqali kirishni yoqing.",
-                    });
-                }
-            });
-    }, [auth, router, isUserLoading, user]);
-
-
-    const handlePopupSignIn = async () => {
-        if (isUserLoading || !auth) return;
-        setStatus('loading');
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: "select_account" });
-
-        try {
-            await signInWithPopup(auth, provider);
-            // On success, the useEffect hook will redirect to /account
-        } catch (error: any) {
-            if (error.code === 'auth/popup-closed-by-user') {
-                setStatus('popup_closed');
-                setErrorCode(error.code);
-            } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
-                // If popup is blocked, immediately try the redirect method as a fallback.
-                handleRedirectSignIn();
-            } else if (error.code === 'auth/operation-not-allowed') {
-                setStatus('error');
-                setErrorCode(error.code);
-                 toast({
-                    variant: "destructive",
-                    title: "Ruxsat berilmagan operatsiya",
-                    description: "Firebase loyihangizda Google orqali kirish usuli yoqilmagan. Iltimos, uni Firebase konsolidan faollashtiring.",
-                });
-            }
-            else {
-                setStatus('error');
-                setErrorCode(error.code);
-                console.error("Google Popup bilan kirishda xatolik: ", error);
-                toast({
-                    variant: "destructive",
-                    title: "Kirishda xatolik",
-                    description: error.message || "Google orqali kirishda noma'lum muammo yuz berdi.",
-                });
-            }
-        }
+      } catch (error: any) {
+        console.error("Redirect natijasini olishda xatolik: ", error);
+        toast({
+            variant: "destructive",
+            title: "Kirishda xatolik",
+            description: "Tizimga qayta yo'naltirishdan so'ng xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+        });
+        setIsLoading(false);
+      }
     };
+    
+    // Faqat auth obyekti tayyor bo'lganda tekshiramiz
+    if (auth && !isUserLoading) {
+        checkRedirect();
+    }
 
-    const handleRedirectSignIn = async () => {
-        if (isUserLoading || !auth) return;
-        setStatus('loading');
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: "select_account" });
-        try {
-            await signInWithRedirect(auth, provider);
-            // The page will redirect, and the result will be handled by the useEffect hook on return.
-        } catch (error: any) {
-            setStatus('error');
-            setErrorCode(error.code);
-            console.error("Google Redirect bilan kirishda xatolik: ", error);
-             if (error.code === 'auth/operation-not-allowed') {
-                 toast({
-                    variant: "destructive",
-                    title: "Ruxsat berilmagan operatsiya",
-                    description: "Firebase loyihangizda Google orqali kirish usuli yoqilmagan. Iltimos, uni Firebase konsolidan faollashtiring.",
-                });
-             } else {
-                toast({
-                    variant: "destructive",
-                    title: "Kirishda xatolik",
-                    description: "Google'ga yo'naltirishda muammo yuz berdi. Iltimos, qayta urinib ko'ring.",
-                });
+  }, [auth, isUserLoading, user, router, db]);
+
+  const loadingOrSignedIn = isLoading || isUserLoading;
+
+  return (
+    <div className="flex items-center justify-center min-h-[80vh] bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-headline">Hisobingizga kiring</CardTitle>
+          <CardDescription>
+            {loadingOrSignedIn 
+                ? "Bir lahza kutib turing..." 
+                : "Boshlash uchun Google orqali kiring yoki ro'yxatdan o'ting."
             }
-        }
-    };
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingOrSignedIn ? (
+             <div className="flex justify-center items-center h-24">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" role="status">
+                    <span className="sr-only">Yuklanmoqda...</span>
+                </div>
+            </div>
+          ) : (
+            <>
+                <Button variant="outline" className="w-full h-12 text-base" onClick={handlePopupSignIn}>
+                    <GoogleIcon className="mr-2" />
+                    Google bilan davom eting
+                </Button>
 
-    const isLoading = status === 'loading' || isUserLoading;
-
-    return (
-        <div className="flex items-center justify-center min-h-[80vh] bg-background p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-headline">Hisobingizga kiring</CardTitle>
-                    <CardDescription>
-                       Boshlash uchun Google orqali kiring yoki ro'yxatdan o'ting.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        <Button variant="outline" className="w-full h-12 text-base" onClick={handlePopupSignIn} disabled={isLoading}>
-                           {isLoading ? (
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" role="status">
-                                    <span className="sr-only">Yuklanmoqda...</span>
-                                </div>
-                           ) : (
-                                <>
-                                    <GoogleIcon className="mr-2" />
-                                    Google bilan davom eting
-                                </>
-                           )}
-                        </Button>
-                    </div>
-
-                    {status === 'popup_closed' && (
-                        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-center">
-                            <p className="text-sm text-yellow-800 mb-3">Kirish oynasi yopildi. Qayta urinib ko'rasizmi yoki boshqa usulni sinab ko'rasizmi?</p>
-                            <div className="flex justify-center gap-2">
-                                <Button size="sm" onClick={handlePopupSignIn}>Qayta urinish (Popup)</Button>
-                                <Button size="sm" variant="secondary" onClick={handleRedirectSignIn}>Boshqa usul (Redirect)</Button>
-                            </div>
-                        </div>
-                    )}
-                    {status === 'error' && (
-                         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-center">
-                             <p className="text-sm text-red-800">Xatolik yuz berdi. Kod: {errorCode}</p>
-                         </div>
-                    )}
-
-                    <div className="mt-6 text-center text-sm text-muted-foreground">
-                        Davom etish orqali siz bizning{' '}
-                        <a href="#" className="underline hover:text-primary">
-                            Xizmat ko'rsatish shartlari
-                        </a>{' '}
-                        va{' '}
-                        <a href="#" className="underline hover:text-primary">
-                            Maxfiylik siyosati
-                        </a>mizga rozilik bildirasiz.
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
+                <div className="mt-6 text-center text-sm text-muted-foreground">
+                    Davom etish orqali siz bizning{' '}
+                    <a href="#" className="underline hover:text-primary">
+                        Xizmat ko'rsatish shartlari
+                    </a>{' '}
+                    va{' '}
+                    <a href="#" className="underline hover:text-primary">
+                        Maxfiylik siyosati
+                    </a>mizga rozilik bildirasiz.
+                </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
     
