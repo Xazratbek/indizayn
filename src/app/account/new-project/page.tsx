@@ -36,6 +36,7 @@ const TagInput = ({ value, onChange, placeholder }: { value: string[], onChange:
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && inputValue.trim()) {
             e.preventDefault();
+            e.stopPropagation();
             if (!value.includes(inputValue.trim())) {
                 onChange([...value, inputValue.trim()]);
             }
@@ -325,6 +326,3 @@ export default function NewProjectPage() {
     </div>
   );
 }
-
-
-    
