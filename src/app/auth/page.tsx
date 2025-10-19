@@ -33,8 +33,9 @@ export default function AuthPage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start as true to handle redirect check
 
+  // This function saves user data to Firestore if they don't exist
   const saveUserToDB = async (firebaseUser: any) => {
     if (!firebaseUser || !db) return;
     const userRef = doc(db, "users", firebaseUser.uid);
@@ -62,6 +63,7 @@ export default function AuthPage() {
     }
   };
   
+  // This function handles sign in via a redirect. It's the fallback.
   const handleRedirectSignIn = async () => {
     if (!auth) return;
     setIsLoading(true);
@@ -69,6 +71,7 @@ export default function AuthPage() {
     provider.setCustomParameters({ prompt: "select_account" });
     try {
         await signInWithRedirect(auth, provider);
+        // The page will redirect, and the result is handled by getRedirectResult in useEffect
     } catch (error) {
         console.error("Redirect sign in xatosi:", error);
         setIsLoading(false);
@@ -80,12 +83,14 @@ export default function AuthPage() {
     }
   };
   
-  const handlePopupSignIn = async () => {
+  // This is the primary sign-in function, attempting a popup first.
+  const handleSignIn = async () => {
     if (!auth) return;
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     try {
+      // Try signing in with a popup
       const result = await signInWithPopup(auth, provider);
       if (result?.user) {
         await saveUserToDB(result.user);
@@ -96,9 +101,10 @@ export default function AuthPage() {
         router.push("/account");
       }
     } catch (error: any) {
+        // If popup is blocked or closed, fall back to redirect method
         if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
             console.warn("Popup bloklandi yoki yopildi, redirect'ga o'tilmoqda...");
-            handleRedirectSignIn();
+            await handleRedirectSignIn();
         } else {
             console.error("Popup orqali kirishda xatolik:", error);
             toast({
@@ -111,25 +117,30 @@ export default function AuthPage() {
     }
   };
 
+  // This effect runs on page load to check for a redirect result
   useEffect(() => {
+    // If the user is already logged in, redirect them
     if (!isUserLoading && user) {
         router.replace("/account");
         return;
     }
 
-    if(auth) {
+    // Only run the redirect check if auth is available and we are not in the initial user loading state
+    if(auth && !isUserLoading) {
         const checkRedirect = async () => {
             try {
                 const result = await getRedirectResult(auth);
                 if (result?.user) {
-                  setIsLoading(true);
+                  // Don't set loading to true, as it's already true from the start
                   await saveUserToDB(result.user);
                   toast({
                       title: "Muvaffaqiyatli kirdingiz!",
                       description: `Xush kelibsiz, ${result.user.displayName}!`,
                   });
+                  // Redirect result is available, sign-in is complete
                   router.replace("/account");
                 } else {
+                    // No redirect result, so we can stop loading
                     setIsLoading(false);
                 }
             } catch (error: any) {
@@ -147,7 +158,8 @@ export default function AuthPage() {
     }
   }, [auth, isUserLoading, user, router, db]);
 
-  const loadingOrSignedIn = isLoading || (isUserLoading && !user);
+  // Combined loading state
+  const isProcessing = isLoading || isUserLoading;
 
   return (
     <div className="flex items-center justify-center min-h-[80vh] bg-background p-4">
@@ -155,14 +167,14 @@ export default function AuthPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-headline">Hisobingizga kiring</CardTitle>
           <CardDescription>
-            {loadingOrSignedIn 
+            {isProcessing 
                 ? "Bir lahza kutib turing..." 
                 : "Boshlash uchun Google orqali kiring yoki ro'yxatdan o'ting."
             }
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loadingOrSignedIn ? (
+          {isProcessing ? (
              <div className="flex justify-center items-center h-24">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" role="status">
                     <span className="sr-only">Yuklanmoqda...</span>
@@ -170,7 +182,7 @@ export default function AuthPage() {
             </div>
           ) : (
             <>
-                <Button variant="outline" className="w-full h-12 text-base" onClick={handlePopupSignIn}>
+                <Button variant="outline" className="w-full h-12 text-base" onClick={handleSignIn}>
                     <GoogleIcon className="mr-2" />
                     Google bilan davom eting
                 </Button>
