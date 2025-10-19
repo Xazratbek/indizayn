@@ -98,7 +98,7 @@ export default function Home() {
                           </div>
                       ) : (
                           <div className="animated-border-box">
-                              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick} disabled={isSigningIn}>
+                              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={handleStartClick} disabled={isSigningIn}>
                                   Boshlash <MoveRight className="ml-2" />
                               </Button>
                           </div>
