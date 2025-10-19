@@ -8,8 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState, useRef } from 'react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
 interface PortfolioCardProps {
   project: Project;
@@ -23,8 +23,6 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
   const projectImage = allImages.find((img) => img.id === project.imageId);
   const designerAvatar = allImages.find((img) => img.id === designer?.avatarId);
   
-  const [likes, setLikes] = useState(project.likes);
-  const [views, setViews] = useState(project.views);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -32,27 +30,73 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
   }, []);
 
 
+  const ref = useRef<HTMLDivElement>(null);
+
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 20 });
+  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 20 });
+
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ['7.5deg', '-7.5deg']);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ['-7.5deg', '7.5deg']);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (!ref.current) return;
+    const { left, top, width, height } = ref.current.getBoundingClientRect();
+    const mouseX = e.clientX - left;
+    const mouseY = e.clientY - top;
+    const xPct = mouseX / width - 0.5;
+    const yPct = mouseY / height - 0.5;
+    x.set(xPct);
+    y.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+
   if (!designer || !projectImage) {
     return null;
   }
 
   return (
-    <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.3 }}>
-      <Card className={cn("overflow-hidden group transition-shadow duration-300 hover:shadow-xl", className)}>
+     <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX,
+        rotateY,
+        transformStyle: 'preserve-3d',
+      }}
+      className="relative"
+    >
+      <Card className={cn("overflow-hidden group transition-shadow duration-300 hover:shadow-xl w-full h-full", className)} style={{transform: 'translateZ(75px)', transformStyle: 'preserve-3d'}}>
         <CardContent className="p-0">
           <Link href={`/projects/${project.id}`} className="block">
             <div className="aspect-[4/3] relative overflow-hidden">
-              <Image
-                src={projectImage.imageUrl}
-                alt={project.name}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                data-ai-hint={projectImage.imageHint}
-              />
+              <motion.div
+                style={{
+                  transform: 'translateZ(50px)',
+                  transformStyle: 'preserve-3d',
+                }}
+                className="absolute inset-0"
+              >
+                  <Image
+                    src={projectImage.imageUrl}
+                    alt={project.name}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    data-ai-hint={projectImage.imageHint}
+                  />
+              </motion.div>
             </div>
           </Link>
-          <div className="p-4">
+          <div className="p-4" style={{transform: 'translateZ(40px)'}}>
             <div className="flex items-center justify-between">
               <Link href={`/projects/${project.id}`}>
                 <h3 className="font-headline font-bold text-lg truncate">{project.name}</h3>
@@ -60,11 +104,11 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Heart className="w-4 h-4" />
-                  <span>{isClient ? likes : project.likes}</span>
+                  <span>{isClient ? project.likes : 0}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Eye className="w-4 h-4" />
-                  <span>{isClient ? views : project.views}</span>
+                  <span>{isClient ? project.views : 0}</span>
                 </div>
               </div>
             </div>
