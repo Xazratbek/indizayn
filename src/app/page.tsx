@@ -2,7 +2,7 @@
 "use client"
 
 import Link from 'next/link';
-import { Eye, Heart, MoveRight, Palette, UserCheck, ThumbsUp, Loader2 } from 'lucide-react';
+import { MoveRight, Palette, UserCheck, ThumbsUp, Loader2 } from 'lucide-react';
 import ThreeShowcase from '@/components/three-showcase';
 import { Button } from '@/components/ui/button';
 import PortfolioCard from '@/components/portfolio-card';
@@ -12,7 +12,7 @@ import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 
 
 const advantages = [
@@ -58,59 +58,47 @@ export default function Home() {
     if (user) {
       router.push('/browse');
     } else {
-      router.push('/auth');
+      signIn('google');
     }
   };
 
   return (
     <div className="flex flex-col">
-       {isUserLoading ? (
-         <div className="flex h-[80vh] items-center justify-center">
-            <div className="spinner">
-                <div className="spinner-outer"></div>
-                <div className="spinner-inner"></div>
+        <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
+            <ThreeShowcase />
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
+                <motion.h1
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                    className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
+                >
+                    inDizayn-ga Xush Kelibsiz!
+                </motion.h1>
+
+                <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+                    className="mt-4 max-w-2xl text-lg text-muted-foreground"
+                >
+                    Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
+                </motion.p>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
+                    className="mt-8"
+                >
+                    <div className="animated-border-box">
+                        <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick}>
+                            Boshlash <MoveRight className="ml-2" />
+                        </Button>
+                    </div>
+                </motion.div>
             </div>
-         </div>
-       ) : !user ? (
-        <>
-            <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
-                <ThreeShowcase />
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                        className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
-                    >
-                        inDizayn-ga Xush Kelibsiz!
-                    </motion.h1>
-
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-                        className="mt-4 max-w-2xl text-lg text-muted-foreground"
-                    >
-                        Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
-                    </motion.p>
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-                        className="mt-8"
-                    >
-                        <div className="animated-border-box">
-                            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick}>
-                                Boshlash <MoveRight className="ml-2" />
-                            </Button>
-                        </div>
-                    </motion.div>
-                </div>
-            </section>
-        </>
-      ) : null}
-
+        </section>
 
       <motion.section 
         className="py-16 md:py-24 bg-secondary/50"
@@ -151,7 +139,7 @@ export default function Home() {
         </div>
       </motion.section>
       
-      {!user && (
+      {!user && !isUserLoading && (
         <motion.section 
             className="py-16 md:py-24 bg-background"
             initial="hidden"
@@ -202,3 +190,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
