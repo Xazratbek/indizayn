@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Search, Menu, Home, Compass, Users } from "lucide-react"
+import { Search, Menu, Home, Compass, Users, PlusSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Logo } from "./icons"
@@ -18,6 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { useAuth, useUser } from "@/firebase"
 import { signOut } from "firebase/auth"
 import { useRouter } from "next/navigation"
+import UploadProjectDialog from "./upload-project-dialog"
 
 export function Header() {
   const isMobile = useIsMobile();
@@ -26,6 +27,7 @@ export function Header() {
   const router = useRouter();
 
   const handleSignOut = async () => {
+    if(!auth) return;
     await signOut(auth);
     router.push('/');
   }
@@ -70,7 +72,8 @@ export function Header() {
         
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
           <div className="w-full flex-1 md:w-auto md:flex-none">
-            <form>
+            {/* Search can be implemented later */}
+            {/* <form>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -79,10 +82,14 @@ export function Header() {
                   className="w-full pl-8 md:w-[200px] lg:w-[336px]"
                 />
               </div>
-            </form>
+            </form> */}
           </div>
-          <nav className="flex items-center">
+          <nav className="flex items-center gap-2">
              {!isUserLoading && user ? (
+               <>
+                <Button asChild size="sm">
+                  <Link href="/account/new-project"><PlusSquare className="mr-2 h-4 w-4"/> Loyiha Yuklash</Link>
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -103,11 +110,14 @@ export function Header() {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild><Link href="/account">Boshqaruv paneli</Link></DropdownMenuItem>
-                    <DropdownMenuItem>Sozlamalar</DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/account/projects">Mening loyihalarim</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/account/edit">Profilni tahrirlash</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/account/stats">Statistika</Link></DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleSignOut}>Chiqish</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+               </>
               ) : (
                 <>
                   {!isUserLoading && isMobile === false && (
