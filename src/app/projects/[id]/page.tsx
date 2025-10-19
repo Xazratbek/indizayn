@@ -1,6 +1,6 @@
 "use client";
 
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getFullProjectDetails } from '@/lib/mock-data';
@@ -17,7 +17,9 @@ import { uz } from 'date-fns/locale';
 
 const allImages = imageData.placeholderImages;
 
-export default function ProjectDetailsPage({ params: { id } }: { params: { id: string } }) {
+export default function ProjectDetailsPage() {
+  const params = useParams();
+  const id = typeof params.id === 'string' ? params.id : '';
   const projectDetails = getFullProjectDetails(id);
   
   const [isLiked, setIsLiked] = useState(false);

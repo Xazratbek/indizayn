@@ -1,6 +1,6 @@
 "use client";
 
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { designers as allDesigners, getProjectsByDesigner } from '@/lib/mock-data';
 import imageData from '@/lib/placeholder-images.json';
@@ -13,7 +13,9 @@ import { useState, useEffect } from 'react';
 
 const allImages = imageData.placeholderImages;
 
-export default function DesignerProfilePage({ params: { id } }: { params: { id: string } }) {
+export default function DesignerProfilePage() {
+  const params = useParams();
+  const id = typeof params.id === 'string' ? params.id : '';
   const designer = allDesigners.find(d => d.id === id);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isClient, setIsClient] = useState(false);
