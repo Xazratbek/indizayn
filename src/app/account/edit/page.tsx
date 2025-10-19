@@ -12,7 +12,6 @@ import { useEffect, useState, useRef } from "react";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc, DocumentData } from "firebase/firestore";
 import { useForm } from "react-hook-form";
-import { uploadImage } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Upload } from "lucide-react";
 import type { Designer } from "@/lib/types";
@@ -82,14 +81,20 @@ export default function ProfileEditPage() {
     }
   };
 
-  const uploadFile = async (file: File) => {
-      const formData = new FormData();
-      formData.append("image", file);
-      const result = await uploadImage(formData);
-      if (!result.success || !result.url) {
-        throw new Error(result.error || "Rasm yuklashda xatolik yuz berdi.");
-      }
-      return result.url;
+  const uploadFileWithApi = async (file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success || !result.url) {
+      throw new Error(result.error || "Rasm yuklashda xatolik yuz berdi.");
+    }
+    return result.url;
   };
 
   const onSubmit = async (data: { name: string; specialization: string; bio: string }) => {
@@ -119,10 +124,10 @@ export default function ProfileEditPage() {
         }, 200);
 
         if (profilePic.file) {
-            newPhotoURL = await uploadFile(profilePic.file);
+            newPhotoURL = await uploadFileWithApi(profilePic.file);
         }
         if (coverPhoto.file) {
-            newCoverPhotoURL = await uploadFile(coverPhoto.file);
+            newCoverPhotoURL = await uploadFileWithApi(coverPhoto.file);
         }
 
         clearInterval(progressInterval);
@@ -144,7 +149,6 @@ export default function ProfileEditPage() {
         await updateDoc(userRef, updatedData as DocumentData);
       }
       
-      // Update next-auth session
       await updateSession({
         ...session,
         user: {
@@ -157,7 +161,7 @@ export default function ProfileEditPage() {
       toast({ title: "Muvaffaqiyatli!", description: "Profil yangilandi!" });
       setProfilePic({ file: null, previewUrl: null });
       setCoverPhoto({ file: null, previewUrl: null });
-      router.refresh(); // Re-fetches server components
+      router.refresh();
 
     } catch (err: any) {
       toast({
