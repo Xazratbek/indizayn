@@ -10,6 +10,7 @@
         "name": { "type": "string", "description": "User's display name." },
         "email": { "type": "string", "description": "User's email address.", "format": "email" },
         "photoURL": { "type": "string", "description": "URL of the user's profile picture.", "format": "uri" },
+        "coverPhotoURL": { "type": "string", "description": "URL of the user's cover photo.", "format": "uri" },
         "specialization": { "type": "string", "description": "The designer's main specialization." },
         "bio": { "type": "string", "description": "A short biography of the designer." },
         "subscriberCount": { "type": "number", "description": "Number of users following this designer." },
@@ -52,3 +53,4 @@
     }
   }
 }
+

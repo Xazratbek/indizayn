@@ -108,16 +108,18 @@ export default function DesignerProfilePage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <Card className="overflow-hidden mb-12">
-        <div className="h-48 bg-secondary">
-          <Image 
-            src={`https://picsum.photos/seed/${designer.id}/1200/200`} 
-            alt={`${designer.name}ning muqova surati`}
-            width={1200}
-            height={200}
-            className="w-full h-full object-cover"
-            data-ai-hint="abstract pattern"
-            priority
-          />
+        <div className="h-48 bg-secondary relative">
+          {designer.coverPhotoURL ? (
+            <Image 
+              src={designer.coverPhotoURL}
+              alt={`${designer.name}ning muqova surati`}
+              layout="fill"
+              className="w-full h-full object-cover"
+              priority
+            />
+          ) : (
+             <div className="w-full h-full bg-gradient-to-r from-sky-100 to-blue-200"></div>
+          )}
         </div>
         <CardContent className="p-6 relative">
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-20">

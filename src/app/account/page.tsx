@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useParams } from 'next/navigation';
@@ -84,15 +85,17 @@ export default function AccountDashboardPage() {
     <div className="container mx-auto py-8 px-4">
       <Card className="overflow-hidden mb-8">
         <div className="h-48 bg-secondary relative">
-          <Image 
-            src={`https://picsum.photos/seed/${designer.id}/1200/200`} 
-            alt={`${designer.name}ning muqova surati`}
-            width={1200}
-            height={200}
-            className="w-full h-full object-cover"
-            data-ai-hint="abstract pattern"
-            priority
-          />
+          {designer.coverPhotoURL ? (
+            <Image 
+              src={designer.coverPhotoURL}
+              alt={`${designer.name}ning muqova surati`}
+              layout="fill"
+              className="w-full h-full object-cover"
+              priority
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-sky-100 to-blue-200"></div>
+          )}
            <div className="absolute top-4 right-4 flex gap-2">
                 <Button asChild size="icon" variant="outline">
                     <Link href="/account/projects"><LayoutDashboard /><span className="sr-only">Mening Loyihalarim</span></Link>

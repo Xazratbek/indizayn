@@ -7,6 +7,7 @@ export interface Designer {
   name: string;
   email: string;
   photoURL?: string;
+  coverPhotoURL?: string;
   specialization?: string;
   bio?: string;
   subscriberCount: number;
