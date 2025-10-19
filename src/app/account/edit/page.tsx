@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { useEffect, useState, useRef } from "react";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from "@/firebase";
 import { doc, updateDoc, DocumentData } from "firebase/firestore";
+import { updateProfile } from "firebase/auth";
 import { useForm } from "react-hook-form";
 import { uploadImage } from "@/lib/actions";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,7 @@ import Image from "next/image";
 export default function ProfileEditPage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
+  const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const profilePicInputRef = useRef<HTMLInputElement>(null);
@@ -84,7 +86,7 @@ export default function ProfileEditPage() {
   };
 
   const onSubmit = async (data: { name: string; specialization: string; bio: string }) => {
-    if (!user || !userProfile) return;
+    if (!user || !userProfile || !auth?.currentUser) return;
 
     if (!isDirty && !profilePic.file && !coverPhoto.file) {
       toast({ description: "O'zgarish kiritilmadi." });
@@ -94,6 +96,7 @@ export default function ProfileEditPage() {
     setIsSaving(true);
     let newPhotoURL = userProfile.photoURL || null;
     let newCoverPhotoURL = userProfile.coverPhotoURL || null;
+    let profilePicChanged = false;
 
     try {
       if (profilePic.file || coverPhoto.file) {
@@ -111,6 +114,7 @@ export default function ProfileEditPage() {
 
         if (profilePic.file) {
             newPhotoURL = await uploadFile(profilePic.file);
+            profilePicChanged = true;
         }
         if (coverPhoto.file) {
             newCoverPhotoURL = await uploadFile(coverPhoto.file);
@@ -132,11 +136,23 @@ export default function ProfileEditPage() {
 
       if (Object.keys(updatedData).length > 0) {
         await updateDoc(userRef, updatedData as DocumentData);
+        if (profilePicChanged || (dirtyFields.name && data.name !== auth.currentUser.displayName)) {
+            await updateProfile(auth.currentUser, {
+                displayName: data.name,
+                photoURL: newPhotoURL,
+            });
+        }
       }
       
       toast({ title: "Muvaffaqiyatli!", description: "Profil yangilandi!" });
       setProfilePic({ file: null, previewUrl: null });
       setCoverPhoto({ file: null, previewUrl: null });
+
+      if (profilePicChanged) {
+        // Force a reload of server components like the header
+        router.refresh();
+      }
+
 
     } catch (err: any) {
       toast({
@@ -186,7 +202,7 @@ export default function ProfileEditPage() {
                 <Label>Muqova rasmi</Label>
                 <div className="aspect-[16/6] relative w-full bg-secondary rounded-md overflow-hidden">
                     {(coverPhoto.previewUrl || userProfile?.coverPhotoURL) && (
-                        <Image src={coverPhoto.previewUrl ?? userProfile?.coverPhotoURL ?? ''} alt="Muqova rasmi" layout="fill" className="object-cover"/>
+                        <Image src={coverPhoto.previewUrl ?? userProfile?.coverPhotoURL ?? ''} alt="Muqova rasmi" fill className="object-cover"/>
                     )}
                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
                          <Button
