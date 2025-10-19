@@ -13,6 +13,8 @@ import { useRouter } from 'next/navigation';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import { useSession, signIn } from 'next-auth/react';
+import { useState } from 'react';
+import LoadingSpinner from '@/app/loading';
 
 
 const advantages = [
@@ -48,6 +50,7 @@ export default function Home() {
   const isUserLoading = status === 'loading';
   const router = useRouter();
   const db = useFirestore();
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const featuredProjectsQuery = useMemoFirebase(() =>
     db ? query(collection(db, 'projects'), orderBy('likeCount', 'desc'), limit(10)) : null
@@ -55,11 +58,8 @@ export default function Home() {
   const { data: featuredProjects, isLoading: areProjectsLoading } = useCollection<Project>(featuredProjectsQuery);
 
   const handleStartClick = () => {
-    if (user) {
-      router.push('/browse');
-    } else {
-      signIn('google');
-    }
+    setIsSigningIn(true);
+    signIn('google');
   };
 
   return (
@@ -92,11 +92,18 @@ export default function Home() {
                       transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
                       className="mt-8"
                   >
-                      <div className="animated-border-box">
-                          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick}>
-                              Boshlash <MoveRight className="ml-2" />
-                          </Button>
-                      </div>
+                      {isSigningIn ? (
+                          <div className="flex flex-col items-center gap-4">
+                              <LoadingSpinner />
+                              <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
+                          </div>
+                      ) : (
+                          <div className="animated-border-box">
+                              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={handleStartClick} disabled={isSigningIn}>
+                                  Boshlash <MoveRight className="ml-2" />
+                              </Button>
+                          </div>
+                      )}
                   </motion.div>
                 )}
             </div>
