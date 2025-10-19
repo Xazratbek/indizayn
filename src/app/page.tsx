@@ -68,11 +68,13 @@ export default function Home() {
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-             whileHover={{ scale: 1.05, boxShadow: "0px 10px 30px -5px hsl(var(--primary) / 0.3)" }}
+             className="mt-8"
           >
-            <Button asChild size="lg" className="mt-8 bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Link href="/browse">Boshlash <MoveRight className="ml-2" /></Link>
-            </Button>
+            <div className="animated-border-box">
+              <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Link href="/browse">Boshlash <MoveRight className="ml-2" /></Link>
+              </Button>
+            </div>
           </motion.div>
         </div>
       </section>
