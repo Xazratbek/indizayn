@@ -1,15 +1,18 @@
 "use client";
-import { designers } from "@/lib/mock-data";
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import type { Designer } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Loader2 } from "lucide-react";
 import Link from "next/link";
-import imageData from "@/lib/placeholder-images.json";
-
-const allImages = imageData.placeholderImages;
+import { collection } from 'firebase/firestore';
 
 export default function DesignersPage() {
+  const db = useFirestore();
+  const designersQuery = useMemoFirebase(() => collection(db, 'users'), [db]);
+  const { data: designers, isLoading } = useCollection<Designer>(designersQuery);
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="text-center mb-12">
@@ -18,17 +21,20 @@ export default function DesignersPage() {
           Platformamizdagi eng iqtidorli va ijodkor dizaynerlar hamjamiyatini kashf eting.
         </p>
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {designers.map((designer) => {
-          const designerAvatar = allImages.find(img => img.id === designer.avatarId);
-          return (
+      
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          {designers?.map((designer) => (
             <Link key={designer.id} href={`/designers/${designer.id}`}>
               <Card className="text-center hover:shadow-xl transition-shadow duration-300">
                 <CardContent className="p-6">
                   <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/20">
-                    {designerAvatar && <AvatarImage src={designerAvatar.imageUrl} alt={designer.name} />}
-                    <AvatarFallback className="text-3xl">{designer.name.charAt(0)}</AvatarFallback>
+                    {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                    <AvatarFallback className="text-3xl">{designer.name?.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <h3 className="font-headline text-xl font-bold">{designer.name}</h3>
                   <p className="text-muted-foreground mb-4">{designer.specialization}</p>
@@ -38,9 +44,9 @@ export default function DesignersPage() {
                 </CardContent>
               </Card>
             </Link>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

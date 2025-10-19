@@ -1,35 +1,32 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Eye, Heart } from 'lucide-react';
-import type { Project } from '@/lib/types';
-import { designers } from '@/lib/mock-data';
-import imageData from '@/lib/placeholder-images.json';
+import type { Project, Designer } from '@/lib/types';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useEffect, useState, useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { Skeleton } from './ui/skeleton';
 
 interface PortfolioCardProps {
   project: Project;
   className?: string;
 }
 
-const allImages = imageData.placeholderImages;
 
 export default function PortfolioCard({ project, className }: PortfolioCardProps) {
-  const designer = designers.find((d) => d.id === project.designerId);
-  const projectImage = allImages.find((img) => img.id === project.imageId);
-  const designerAvatar = allImages.find((img) => img.id === designer?.avatarId);
+  const db = useFirestore();
+
+  // Fetch designer details for the project
+  const designerDocRef = useMemoFirebase(() => 
+    project ? doc(db, 'users', project.designerId) : null
+  , [db, project]);
+  const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
   
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-
   const ref = useRef<HTMLDivElement>(null);
 
   const x = useMotionValue(0);
@@ -58,7 +55,24 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
   };
 
 
-  if (!designer || !projectImage) {
+  if (isDesignerLoading) {
+    return (
+       <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full", className)}>
+        <CardContent className="p-0">
+          <Skeleton className="aspect-[4/3] w-full" />
+          <div className="p-4 space-y-2">
+            <Skeleton className="h-5 w-3/4" />
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <Skeleton className="h-4 w-1/2" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!designer || !project) {
     return null;
   }
 
@@ -86,12 +100,12 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
                 className="absolute inset-0"
               >
                   <Image
-                    src={projectImage.imageUrl}
+                    src={project.imageUrl || `https://picsum.photos/seed/${project.id}/400/300`}
                     alt={project.name}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-110"
-                    data-ai-hint={projectImage.imageHint}
+                    data-ai-hint="project image"
                   />
               </motion.div>
             </div>
@@ -104,18 +118,18 @@ export default function PortfolioCard({ project, className }: PortfolioCardProps
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Heart className="w-4 h-4" />
-                  <span>{isClient ? project.likes : 0}</span>
+                  <span>{project.likeCount || 0}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Eye className="w-4 h-4" />
-                  <span>{isClient ? project.views : 0}</span>
+                  <span>{project.viewCount || 0}</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2 mt-2">
               <Link href={`/designers/${designer.id}`} className="flex items-center gap-2">
                 <Avatar className="h-6 w-6">
-                  {designerAvatar && <AvatarImage src={designerAvatar.imageUrl} alt={designer.name} data-ai-hint={designerAvatar.imageHint} />}
+                  {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
                   <AvatarFallback>{designer.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium hover:underline">{designer.name}</span>

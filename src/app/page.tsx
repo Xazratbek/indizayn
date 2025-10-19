@@ -1,17 +1,17 @@
 "use client"
 
 import Link from 'next/link';
-import { Eye, Heart, MoveRight, Palette, UserCheck, ThumbsUp } from 'lucide-react';
+import { Eye, Heart, MoveRight, Palette, UserCheck, ThumbsUp, Loader2 } from 'lucide-react';
 import ThreeShowcase from '@/components/three-showcase';
 import { Button } from '@/components/ui/button';
-import { designers, projects as allProjects } from '@/lib/mock-data';
 import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { motion } from 'framer-motion';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import type { Project } from '@/lib/types';
 
-const featuredProjects = allProjects.sort((a, b) => b.likes - a.likes).slice(0, 4);
 
 const advantages = [
     {
@@ -43,6 +43,12 @@ const sectionVariants = {
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const db = useFirestore();
+
+  const featuredProjectsQuery = useMemoFirebase(() =>
+    query(collection(db, 'projects'), orderBy('likeCount', 'desc'), limit(4))
+  , [db]);
+  const { data: featuredProjects, isLoading: areProjectsLoading } = useCollection<Project>(featuredProjectsQuery);
 
   const handleStartClick = () => {
     if (user) {
@@ -148,11 +154,17 @@ export default function Home() {
             <h2 className="font-headline text-3xl md:text-4xl font-bold">Tavsiya Etilgan Loyihalar</h2>
             <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan tanlab olingan loyihalar.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredProjects.map(project => (
-              <PortfolioCard key={project.id} project={project} />
-            ))}
-          </div>
+          {areProjectsLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-10 w-10 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredProjects?.map(project => (
+                <PortfolioCard key={project.id} project={project} />
+              ))}
+            </div>
+          )}
            <div className="text-center mt-12">
             <Button asChild variant="outline">
               <Link href="/browse">Barcha Loyihalarni Ko'rish</Link>

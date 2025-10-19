@@ -1,58 +1,105 @@
 "use client";
 
-import { notFound, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getFullProjectDetails } from '@/lib/mock-data';
-import imageData from '@/lib/placeholder-images.json';
+import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { doc, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Eye, Heart, Calendar, Wrench } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Eye, Heart, Calendar, Wrench, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { uz } from 'date-fns/locale';
-
-const allImages = imageData.placeholderImages;
+import type { Project, Designer } from '@/lib/types';
+import { toast } from '@/hooks/use-toast';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
   const id = typeof params.id === 'string' ? params.id : '';
-  const projectDetails = getFullProjectDetails(id);
-  
+  const db = useFirestore();
+  const { user } = useUser();
+
   const [isLiked, setIsLiked] = useState(false);
-  const [likes, setLikes] = useState(projectDetails?.likes ?? 0);
-  const [isClient, setIsClient] = useState(false);
 
+  // Fetch project details and increment view count
+  const projectDocRef = useMemoFirebase(() => doc(db, 'projects', id), [db, id]);
+  const { data: project, isLoading: isProjectLoading, error } = useDoc<Project>(projectDocRef);
+  
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (projectDetails) {
-        setLikes(projectDetails.likes);
+    // Increment view count only once per page load
+    if (id) {
+        const projectRef = doc(db, 'projects', id);
+        updateDoc(projectRef, {
+            viewCount: increment(1)
+        }).catch(err => console.error("Failed to increment view count: ", err));
     }
-  }, [projectDetails]);
+  }, [id, db]);
 
-  if (!projectDetails || !projectDetails.designer) {
-    notFound();
+
+  // Fetch designer details based on designerId from the project
+  const designerDocRef = useMemoFirebase(() => 
+    project ? doc(db, 'users', project.designerId) : null
+  , [db, project]);
+  const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
+
+  // Check if current user has liked this project
+  useEffect(() => {
+    if (user && project?.likes) {
+      setIsLiked(project.likes.includes(user.uid));
+    }
+  }, [user, project]);
+
+  const handleLikeToggle = async () => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Xatolik!",
+        description: "Loyiha yoqishi uchun tizimga kiring.",
+      });
+      return;
+    }
+
+    const projectRef = doc(db, 'projects', id);
+
+    try {
+        if (isLiked) {
+            // Unlike
+            await updateDoc(projectRef, {
+                likes: arrayRemove(user.uid),
+                likeCount: increment(-1)
+            });
+            setIsLiked(false);
+        } else {
+            // Like
+            await updateDoc(projectRef, {
+                likes: arrayUnion(user.uid),
+                likeCount: increment(1)
+            });
+            setIsLiked(true);
+        }
+    } catch (err) {
+        console.error("Like/Unlike error", err);
+        toast({
+            variant: "destructive",
+            title: "Xatolik!",
+            description: "Amalni bajarishda xatolik yuz berdi.",
+        });
+    }
+  };
+
+
+  const isLoading = isProjectLoading || isDesignerLoading;
+
+  if (isLoading) {
+    return <div className="flex h-[80vh] items-center justify-center"><Loader2 className="h-10 w-10 animate-spin" /></div>;
   }
-
-  const { project, designer } = { project: projectDetails, designer: projectDetails.designer };
-  const projectImage = allImages.find(img => img.id === project.imageId);
-  const designerAvatar = allImages.find(img => img.id === designer.avatarId);
-  const projectViews = project.views;
-
-  const handleLike = () => {
-    if(isLiked) {
-      setLikes(likes - 1);
-      setIsLiked(false);
-    } else {
-      setLikes(likes + 1);
-      setIsLiked(true);
-    }
+  
+  if (!project || !designer) {
+    return <div className="flex h-[80vh] items-center justify-center"><p>Loyiha topilmadi.</p></div>;
   }
 
   return (
@@ -65,15 +112,16 @@ export default function ProjectDetailsPage() {
               <h1 className="font-headline text-4xl font-bold">{project.name}</h1>
             </CardHeader>
             <CardContent>
-              {projectImage && (
+              {project.imageUrl && (
                 <div className="aspect-[4/3] relative overflow-hidden rounded-lg mb-6">
                   <Image
-                    src={projectImage.imageUrl}
+                    src={project.imageUrl}
                     alt={project.name}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 66vw"
                     className="object-cover"
-                    data-ai-hint={projectImage.imageHint}
+                    data-ai-hint="project image"
+                    priority
                   />
                 </div>
               )}
@@ -97,7 +145,7 @@ export default function ProjectDetailsPage() {
               <CardContent className="p-4">
                 <Link href={`/designers/${designer.id}`} className="flex items-center gap-3 group">
                   <Avatar className="h-12 w-12">
-                    {designerAvatar && <AvatarImage src={designerAvatar.imageUrl} alt={designer.name} />}
+                    {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
                     <AvatarFallback>{designer.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
@@ -111,7 +159,7 @@ export default function ProjectDetailsPage() {
             <Card>
               <CardContent className="p-4 space-y-4">
                 <div className="flex gap-2">
-                  <Button onClick={handleLike} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" variant={isLiked ? "secondary" : "default"}>
+                  <Button onClick={handleLikeToggle} className="w-full" variant={isLiked ? "secondary" : "default"}>
                     <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />
                     {isLiked ? 'Yoqdi' : 'Yoqdi'}
                   </Button>
@@ -119,11 +167,11 @@ export default function ProjectDetailsPage() {
                 <div className="flex justify-around text-sm text-muted-foreground">
                   <div className="flex items-center gap-1.5">
                     <Heart className="w-4 h-4" />
-                    <span>{isClient ? likes : project.likes} Likes</span>
+                    <span>{project.likeCount || 0} Likes</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Eye className="w-4 h-4" />
-                    <span>{isClient ? projectViews : project.views} Ko'rishlar</span>
+                    <span>{project.viewCount || 0} Ko'rishlar</span>
                   </div>
                 </div>
               </CardContent>
@@ -131,30 +179,36 @@ export default function ProjectDetailsPage() {
 
             <Card>
               <CardContent className="p-4 space-y-3 text-sm">
-                <div className="flex items-start">
-                  <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                  <div>
-                    <h4 className="font-semibold">Chop etilgan</h4>
-                    <p className="text-muted-foreground">{isClient ? format(parseISO(project.createdAt), 'd MMMM, yyyy', { locale: uz }) : project.createdAt}</p>
-                  </div>
-                </div>
-                <div className="flex items-start">
-                  <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                  <div>
-                    <h4 className="font-semibold">Foydalanilgan vositalar</h4>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
+                 {project.createdAt && (
+                  <div className="flex items-start">
+                    <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                    <div>
+                      <h4 className="font-semibold">Chop etilgan</h4>
+                      <p className="text-muted-foreground">
+                        {/* Firestore timestamp requires .toDate() conversion */}
+                        {format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
+                      </p>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-start">
-                  <div>
-                    <h4 className="font-semibold">Teglar</h4>
+                 )}
+                {project.tools && project.tools.length > 0 && (
+                  <div className="flex items-start">
+                    <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                    <div>
+                      <h4 className="font-semibold">Foydalanilgan vositalar</h4>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {project.tags && project.tags.length > 0 && (
+                  <div className="flex items-start">
                     <div className="flex flex-wrap gap-1 mt-1">
                       {project.tags.map(tag => <Badge key={tag} variant="outline">{tag}</Badge>)}
                     </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>

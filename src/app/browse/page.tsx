@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from 'react';
-import { getFullProjects } from '@/lib/mock-data';
+import { useState, useMemo } from 'react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import PortfolioCard from '@/components/portfolio-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,32 +13,43 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { collection, query, orderBy, limit, startAt, getDocs, where } from 'firebase/firestore';
+import type { Project } from '@/lib/types';
 
-const allProjects = getFullProjects();
 
 export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('trending');
+  const db = useFirestore();
 
-  const filteredProjects = allProjects
-    .filter(project => 
+  const projectsQuery = useMemoFirebase(() => {
+    const baseQuery = collection(db, 'projects');
+    if (sortBy === 'latest') {
+      return query(baseQuery, orderBy('createdAt', 'desc'));
+    }
+    if (sortBy === 'popular') {
+      return query(baseQuery, orderBy('likeCount', 'desc'));
+    }
+    // "trending" is more complex, for now, we'll sort by views.
+    // A real trending algorithm would require more logic (e.g., views in the last 7 days).
+    return query(baseQuery, orderBy('viewCount', 'desc'));
+  }, [db, sortBy]);
+
+  const { data: allProjects, isLoading, error } = useCollection<Project>(projectsQuery);
+
+  const filteredProjects = useMemo(() => {
+    if (!allProjects) return [];
+    if (!searchTerm) return allProjects;
+
+    return allProjects.filter(project =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.designer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-    )
-    .sort((a, b) => {
-      if (sortBy === 'trending') {
-        return (b.likes + b.views) - (a.likes + a.views);
-      }
-      if (sortBy === 'latest') {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      }
-      if (sortBy === 'popular') {
-        return b.likes - a.likes;
-      }
-      return 0;
-    });
+      // Searching by designer name would require fetching designer data for each project,
+      // which is inefficient here. A better approach would be to denormalize designer name
+      // onto the project document or use a search service like Algolia.
+    );
+  }, [allProjects, searchTerm]);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -92,7 +103,15 @@ export default function BrowsePage() {
         </DropdownMenu>
       </div>
 
-      {filteredProjects.length > 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-16">
+            <p className="text-destructive">Ma'lumotlarni yuklashda xatolik yuz berdi.</p>
+        </div>
+      ) : filteredProjects.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {filteredProjects.map(project => (
             <PortfolioCard key={project.id} project={project} />

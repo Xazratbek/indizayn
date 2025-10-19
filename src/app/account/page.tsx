@@ -7,22 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Heart, Eye, Users, FolderKanban, LayoutDashboard, User, Settings } from "lucide-react";
-import { getProjectsByDesigner, designers } from "@/lib/mock-data";
+import { BarChart, Heart, Eye, Users, FolderKanban, LayoutDashboard, User, Settings, Loader2 } from "lucide-react";
 import PortfolioCard from "@/components/portfolio-card";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion, useInView, useMotionValue, useSpring } from "framer-motion";
 import { useRef } from "react";
-import { useUser } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-// Mocking a logged-in user
-const loggedInDesigner = designers[0];
-const designerProjects = getProjectsByDesigner(loggedInDesigner.id);
-
-const totalLikes = designerProjects.reduce((acc, p) => acc + p.likes, 0);
-const totalViews = designerProjects.reduce((acc, p) => acc + p.views, 0);
+import { collection, query, where, doc, updateDoc } from 'firebase/firestore';
+import type { Project, Designer } from "@/lib/types";
+import { toast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
 
 function AnimatedNumber({ value }: { value: number }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -55,13 +51,77 @@ function AnimatedNumber({ value }: { value: number }) {
 }
 
 export default function AccountPage() {
-  const [isClient, setIsClient] = useState(false);
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
+  const db = useFirestore();
   const isMobile = useIsMobile();
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { register, handleSubmit, setValue, watch } = useForm<{
+    displayName: string;
+    specialization: string;
+    bio: string;
+  }>();
+
+  // Fetch current user's profile data
+  const userProfileQuery = useMemoFirebase(() =>
+    user ? doc(db, 'users', user.uid) : null
+  , [db, user]);
+  // The type parameter `Designer` is used here
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<Designer>(userProfileQuery);
+
+  // Fetch projects for the current user
+  const designerProjectsQuery = useMemoFirebase(() =>
+    user ? query(collection(db, 'projects'), where('designerId', '==', user.uid)) : null
+  , [db, user]);
+  const { data: designerProjects, isLoading: areProjectsLoading } = useCollection<Project>(designerProjectsQuery);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
+    if (userProfile) {
+      setValue('displayName', userProfile.name || user?.displayName || '');
+      setValue('specialization', userProfile.specialization || '');
+      setValue('bio', userProfile.bio || '');
+    }
+  }, [userProfile, user, setValue]);
+
+  const totalLikes = useMemo(() => designerProjects?.reduce((acc, p) => acc + p.likeCount, 0) || 0, [designerProjects]);
+  const totalViews = useMemo(() => designerProjects?.reduce((acc, p) => acc + p.viewCount, 0) || 0, [designerProjects]);
+  
+  const onProfileUpdate = async (data: { displayName: string; specialization: string; bio: string; }) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      await updateDoc(userRef, {
+        name: data.displayName,
+        specialization: data.specialization,
+        bio: data.bio
+      });
+      toast({
+        title: "Muvaffaqiyatli!",
+        description: "Profilingiz yangilandi.",
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Xatolik!",
+        description: "Profilni yangilashda xatolik yuz berdi.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
+  const isLoading = isUserLoading || isProfileLoading;
+
+  if (isLoading) {
+      return (
+        <div className="flex h-[80vh] items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin" />
+        </div>
+      )
+  }
   
   if (!user) {
       return (
@@ -101,8 +161,8 @@ export default function AccountPage() {
                 <Eye className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isClient ? <AnimatedNumber value={totalViews} /> : 0}</div>
-                <p className="text-xs text-muted-foreground">o'tgan oyga nisbatan +10.2%</p>
+                <div className="text-2xl font-bold"><AnimatedNumber value={totalViews} /></div>
+                <p className="text-xs text-muted-foreground">barcha loyihalaringiz bo'yicha</p>
               </CardContent>
             </Card>
             <Card>
@@ -111,8 +171,8 @@ export default function AccountPage() {
                 <Heart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isClient ? <AnimatedNumber value={totalLikes} /> : 0}</div>
-                <p className="text-xs text-muted-foreground">o'tgan oyga nisbatan +15.1%</p>
+                <div className="text-2xl font-bold"><AnimatedNumber value={totalLikes} /></div>
+                <p className="text-xs text-muted-foreground">barcha loyihalaringiz bo'yicha</p>
               </CardContent>
             </Card>
             <Card>
@@ -121,8 +181,8 @@ export default function AccountPage() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{isClient ? <AnimatedNumber value={loggedInDesigner.subscribers} /> : 0}</div>
-                <p className="text-xs text-muted-foreground">o'tgan oydan beri +201</p>
+                <div className="text-2xl font-bold"><AnimatedNumber value={userProfile?.subscriberCount || 0} /></div>
+                <p className="text-xs text-muted-foreground">sizni kuzatmoqda</p>
               </CardContent>
             </Card>
              <Card>
@@ -131,8 +191,8 @@ export default function AccountPage() {
                 <FolderKanban className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{designerProjects.length}</div>
-                <p className="text-xs text-muted-foreground">shu oyda +2 yuklandi</p>
+                <div className="text-2xl font-bold">{designerProjects?.length || 0}</div>
+                <p className="text-xs text-muted-foreground">jami yuklangan</p>
               </CardContent>
             </Card>
           </div>
@@ -150,14 +210,24 @@ export default function AccountPage() {
         </TabsContent>
         <TabsContent value="projects">
             <div className="flex justify-between items-center mt-6 mb-6">
-                <h2 className="text-2xl font-bold font-headline">Mening Loyihalarim ({designerProjects.length})</h2>
+                <h2 className="text-2xl font-bold font-headline">Mening Loyihalarim ({designerProjects?.length || 0})</h2>
                 <Button>Loyiha Yuklash</Button>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {designerProjects.map(project => (
-                    <PortfolioCard key={project.id} project={project} />
-                ))}
-            </div>
+            {areProjectsLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-10 w-10 animate-spin" />
+              </div>
+            ) : (
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {designerProjects && designerProjects.length > 0 ? (
+                      designerProjects.map(project => (
+                          <PortfolioCard key={project.id} project={project} />
+                      ))
+                  ) : (
+                      <p>Hali loyihalaringiz yo'q.</p>
+                  )}
+              </div>
+            )}
         </TabsContent>
         <TabsContent value="profile">
           <Card className="mt-6">
@@ -165,29 +235,34 @@ export default function AccountPage() {
               <CardTitle>Ommaviy Profil</CardTitle>
               <CardDescription>Saytda boshqalar sizni shunday ko'radilar.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent>
+              <form onSubmit={handleSubmit(onProfileUpdate)} className="space-y-6">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
                         <AvatarImage src={user.photoURL ?? ''} />
                         <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <Button variant="outline">Rasmni O'zgartirish</Button>
+                    <Button variant="outline" type="button">Rasmni O'zgartirish</Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">To'liq Ism</Label>
-                        <Input id="name" defaultValue={user.displayName ?? ''} />
+                        <Label htmlFor="displayName">To'liq Ism</Label>
+                        <Input id="displayName" {...register("displayName")} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="specialization">Mutaxassislik</Label>
-                        <Input id="specialization" defaultValue={loggedInDesigner.specialization} />
+                        <Input id="specialization" {...register("specialization")} />
                     </div>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="bio">Biografiya</Label>
-                    <Textarea id="bio" placeholder="Hammaga o'zingiz haqingizda bir oz aytib bering" />
+                    <Textarea id="bio" placeholder="Hammaga o'zingiz haqingizda bir oz aytib bering" {...register("bio")} />
                 </div>
-                 <Button>Profilni Yangilash</Button>
+                 <Button type="submit" disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Profilni Yangilash
+                 </Button>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
@@ -200,24 +275,13 @@ export default function AccountPage() {
             <CardContent className="space-y-6">
                 <div className="space-y-2">
                     <Label htmlFor="email">Elektron pochta manzili</Label>
-                    <Input id="email" type="email" defaultValue={user.email ?? ''} />
+                    <Input id="email" type="email" defaultValue={user.email ?? ''} readOnly disabled />
                 </div>
                 <Separator />
                 <div>
                     <h3 className="text-lg font-medium">Parol</h3>
-                    <p className="text-sm text-muted-foreground">Xavfsizlik uchun parolni o'zgartirish uchun joriy parolingizni kiritishingiz kerak.</p>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="current-password">Joriy Parol</Label>
-                            <Input id="current-password" type="password" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="new-password">Yangi Parol</Label>
-                            <Input id="new-password" type="password" />
-                        </div>
-                    </div>
+                    <p className="text-sm text-muted-foreground">Bu funksiya hozircha mavjud emas.</p>
                 </div>
-                <Button>Sozlamalarni Yangilash</Button>
             </CardContent>
           </Card>
         </TabsContent>

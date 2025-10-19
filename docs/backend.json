@@ -1,254 +1,53 @@
 
 {
   "entities": {
-    "UserProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "UserProfile",
+    "User": {
+      "title": "User",
       "type": "object",
-      "description": "Represents a designer's profile in the DesignFlow application.",
+      "description": "Represents a user profile, who is also a designer.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the UserProfile entity."
-        },
-        "profilePicture": {
-          "type": "string",
-          "description": "URL of the designer's profile picture.",
-          "format": "uri"
-        },
-        "name": {
-          "type": "string",
-          "description": "The designer's name."
-        },
-        "specializations": {
-          "type": "array",
-          "description": "List of specializations (UI/UX, Motion, Branding, etc.).",
-          "items": {
-            "type": "string"
-          }
-        },
-        "subscriberCount": {
-          "type": "number",
-          "description": "Number of subscribers following the designer."
-        },
-        "bio": {
-          "type": "string",
-          "description": "A short biography of the designer."
-        },
-        "email": {
-          "type": "string",
-          "description": "The designer's email address.",
-          "format": "email"
-        }
+        "uid": { "type": "string", "description": "Firebase Auth User ID." },
+        "name": { "type": "string", "description": "User's display name." },
+        "email": { "type": "string", "description": "User's email address.", "format": "email" },
+        "photoURL": { "type": "string", "description": "URL of the user's profile picture.", "format": "uri" },
+        "specialization": { "type": "string", "description": "The designer's main specialization." },
+        "bio": { "type": "string", "description": "A short biography of the designer." },
+        "subscriberCount": { "type": "number", "description": "Number of users following this designer." },
+        "followers": { "type": "array", "items": { "type": "string" }, "description": "List of UIDs of users who follow this designer." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of user creation." }
       },
-      "required": [
-        "id",
-        "profilePicture",
-        "name",
-        "specializations",
-        "subscriberCount",
-        "email"
-      ]
+      "required": ["uid", "name", "email", "createdAt", "subscriberCount", "followers"]
     },
-    "Portfolio": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Portfolio",
+    "Project": {
+      "title": "Project",
       "type": "object",
       "description": "Represents a design portfolio project.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Portfolio entity."
-        },
-        "userProfileId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Portfolio)"
-        },
-        "image": {
-          "type": "string",
-          "description": "URL of the portfolio project image.",
-          "format": "uri"
-        },
-        "name": {
-          "type": "string",
-          "description": "Name of the portfolio project."
-        },
-        "tags": {
-          "type": "array",
-          "description": "Tags associated with the project.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "viewCount": {
-          "type": "number",
-          "description": "Number of views for the project."
-        },
-        "likeCount": {
-          "type": "number",
-          "description": "Number of likes for the project."
-        },
-        "description": {
-          "type": "string",
-          "description": "A detailed description of the portfolio project."
-        }
+        "name": { "type": "string", "description": "Name of the portfolio project." },
+        "designerId": { "type": "string", "description": "UID of the user who created the project." },
+        "imageUrl": { "type": "string", "description": "URL of the project's main image.", "format": "uri" },
+        "description": { "type": "string", "description": "Detailed description of the project." },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Descriptive tags for the project." },
+        "tools": { "type": "array", "items": { "type": "string" }, "description": "Tools used to create the project." },
+        "viewCount": { "type": "number", "description": "Number of times the project has been viewed." },
+        "likeCount": { "type": "number", "description": "Number of likes for the project." },
+        "likes": { "type": "array", "items": { "type": "string" }, "description": "List of UIDs of users who liked this project." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of project creation." }
       },
-      "required": [
-        "id",
-        "userProfileId",
-        "image",
-        "name",
-        "tags",
-        "viewCount",
-        "likeCount",
-        "description"
-      ]
-    },
-    "Like": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Like",
-      "type": "object",
-      "description": "Represents a user liking a portfolio item.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Like entity."
-        },
-        "userProfileId": {
-          "type": "string",
-          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Like)"
-        },
-        "portfolioId": {
-          "type": "string",
-          "description": "Reference to Portfolio. (Relationship: Portfolio 1:N Like)"
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Timestamp of when the like was created.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "userProfileId",
-        "portfolioId",
-        "timestamp"
-      ]
-    },
-    "Follow": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Follow",
-      "type": "object",
-      "description": "Represents a user following another user (designer).",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Follow entity."
-        },
-        "followerId": {
-          "type": "string",
-          "description": "Reference to UserProfile (the follower). (Relationship: UserProfile 1:N Follow)"
-        },
-        "followingId": {
-          "type": "string",
-          "description": "Reference to UserProfile (the designer being followed). (Relationship: UserProfile 1:N Follow)"
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Timestamp of when the follow relationship was created.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "followerId",
-        "followingId",
-        "timestamp"
-      ]
+      "required": ["name", "designerId", "imageUrl", "description", "createdAt", "viewCount", "likeCount", "likes"]
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous",
-      "google.com"
-    ]
+    "providers": ["password", "anonymous", "google.com"]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}/userProfiles/{userProfileId}",
-        "definition": {
-          "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Stores user profile data. The `userId` path segment ensures that only the authenticated user can access their profile. Includes `userId` in the profile document itself for redundancy.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "userProfileId",
-              "description": "The unique identifier of the user profile."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/portfolios/{portfolioId}",
-        "definition": {
-          "entityName": "Portfolio",
-          "schema": {
-            "$ref": "#/backend/entities/Portfolio"
-          },
-          "description": "Stores portfolio items for each user.  The `userId` path segment ensures that only the authenticated user can access their portfolio. Includes `userId` in the portfolio document itself for redundancy.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user."
-            },
-            {
-              "name": "portfolioId",
-              "description": "The unique identifier of the portfolio item."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/likes/{likeId}",
-        "definition": {
-          "entityName": "Like",
-          "schema": {
-            "$ref": "#/backend/entities/Like"
-          },
-          "description": "Stores likes for portfolio items. A separate collection allows for efficient querying of likes.",
-          "params": [
-            {
-              "name": "likeId",
-              "description": "The unique identifier of the like."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/follows/{followId}",
-        "definition": {
-          "entityName": "Follow",
-          "schema": {
-            "$ref": "#/backend/entities/Follow"
-          },
-          "description": "Stores follow relationships between users. A separate collection allows for efficient querying of followers and followees.",
-          "params": [
-            {
-              "name": "followId",
-              "description": "The unique identifier of the follow relationship."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability. User profiles and their associated portfolio items are stored in hierarchical paths (`/users/{userId}/userProfiles/{userProfileId}` and `/users/{userId}/portfolios/{portfolioId}`) to simplify ownership-based security rules. Likes and Follows are stored in separate collections for efficient querying and management. This structure promotes a homogeneous security posture by segregating data based on access requirements. Specifically, Authorization Independence is achieved by leveraging path-based ownership. Since each user owns the data in the `userProfiles` and `portfolios` collections, security rules can be written without relying on `get()` calls to parent documents.  The structure inherently supports secure `list` operations because the data is segregated into collections with clear ownership. This segregation prevents the need for complex filtering in security rules, thereby fulfilling the QAPs requirement."
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Stores all user profiles. The document ID is the user's Firebase Auth UID."
+    },
+    "/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/Project" },
+      "description": "Stores all portfolio projects created by users."
+    }
   }
 }
