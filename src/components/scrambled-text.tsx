@@ -2,7 +2,10 @@
 
 import React, { useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
+import { ScrambleTextPlugin } from 'gsap/ScrambleTextPlugin';
 import { useInView } from 'framer-motion';
+
+gsap.registerPlugin(ScrambleTextPlugin);
 
 // This is a simplified version that doesn't rely on SplitText or hover effects
 // but uses a simple scramble-on-view animation.
@@ -26,12 +29,6 @@ const ScrambledText: React.FC<ScrambledTextProps> = ({
   const animation = useRef<gsap.core.Tween | null>(null);
 
   useEffect(() => {
-    // ScrambleTextPlugin needs to be registered. Assuming it's done elsewhere or here.
-    if (!gsap.plugins.scrambleText) {
-        console.error("GSAP ScrambleTextPlugin is not registered.");
-        return;
-    }
-    
     if (isInView && ref.current) {
       const originalText = ref.current.textContent || '';
       
