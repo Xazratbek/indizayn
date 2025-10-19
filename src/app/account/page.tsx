@@ -7,13 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart, Heart, Eye, Users, FolderKanban } from "lucide-react";
+import { BarChart, Heart, Eye, Users, FolderKanban, LayoutDashboard, User, Settings } from "lucide-react";
 import { getProjectsByDesigner, designers } from "@/lib/mock-data";
 import PortfolioCard from "@/components/portfolio-card";
 import { Textarea } from "@/components/ui/textarea";
 import { useEffect, useState } from "react";
 import { motion, useInView, useMotionValue, useSpring } from "framer-motion";
 import { useRef } from "react";
+import { useUser } from "@/firebase";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Mocking a logged-in user
 const loggedInDesigner = designers[0];
@@ -54,20 +56,42 @@ function AnimatedNumber({ value }: { value: number }) {
 
 export default function AccountPage() {
   const [isClient, setIsClient] = useState(false);
+  const { user } = useUser();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+  
+  if (!user) {
+      return (
+        <div className="flex h-[80vh] items-center justify-center">
+            <div className="text-center">
+                <p className="text-lg font-semibold">Yuklanmoqda...</p>
+                <p className="text-muted-foreground">Iltimos, hisob ma'lumotlarini ko'rish uchun kiring.</p>
+            </div>
+        </div>
+      )
+  }
+
+  const tabItems = [
+    { value: "dashboard", icon: LayoutDashboard, label: "Boshqaruv Paneli" },
+    { value: "projects", icon: FolderKanban, label: "Mening Loyihalarim" },
+    { value: "profile", icon: User, label: "Profil" },
+    { value: "settings", icon: Settings, label: "Sozlamalar" },
+  ];
 
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="font-headline text-4xl font-bold mb-8">Mening Hisobim</h1>
       <Tabs defaultValue="dashboard" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="dashboard">Boshqaruv Paneli</TabsTrigger>
-          <TabsTrigger value="projects">Mening Loyihalarim</TabsTrigger>
-          <TabsTrigger value="profile">Profil</TabsTrigger>
-          <TabsTrigger value="settings">Sozlamalar</TabsTrigger>
+          {tabItems.map((item) => (
+            <TabsTrigger key={item.value} value={item.value} className="flex gap-2 items-center">
+              <item.icon className="h-5 w-5" />
+              {!isMobile && <span className="hidden md:inline">{item.label}</span>}
+            </TabsTrigger>
+          ))}
         </TabsList>
         <TabsContent value="dashboard">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mt-6">
@@ -144,15 +168,15 @@ export default function AccountPage() {
             <CardContent className="space-y-6">
                 <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
-                        <AvatarImage src={`https://picsum.photos/seed/101/100/100`} />
-                        <AvatarFallback>ER</AvatarFallback>
+                        <AvatarImage src={user.photoURL ?? ''} />
+                        <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <Button variant="outline">Rasmni O'zgartirish</Button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">To'liq Ism</Label>
-                        <Input id="name" defaultValue={loggedInDesigner.name} />
+                        <Input id="name" defaultValue={user.displayName ?? ''} />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="specialization">Mutaxassislik</Label>
@@ -176,7 +200,7 @@ export default function AccountPage() {
             <CardContent className="space-y-6">
                 <div className="space-y-2">
                     <Label htmlFor="email">Elektron pochta manzili</Label>
-                    <Input id="email" type="email" defaultValue="elena@example.com" />
+                    <Input id="email" type="email" defaultValue={user.email ?? ''} />
                 </div>
                 <Separator />
                 <div>
