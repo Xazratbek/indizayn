@@ -52,16 +52,16 @@ export default function MessagesPage() {
   // Mobile layout
   if (isMobile) {
     return (
-       <div className="container mx-auto h-[calc(100vh-8.5rem)] py-2">
+       <div className="container mx-auto h-[calc(100vh-7rem)] py-2">
            <Card className="h-full overflow-hidden relative">
-              <div className={cn("absolute inset-0 w-full transition-transform duration-300 ease-in-out", selectedUserId ? "-translate-x-full" : "translate-x-0")}>
+              <div className={cn("absolute inset-0 w-full transition-transform duration-300 ease-in-out h-full", selectedUserId ? "-translate-x-full" : "translate-x-0")}>
                 <ChatSidebar
                   currentUser={user}
                   selectedUserId={selectedUserId}
                   onSelectUser={setSelectedUserId}
                 />
               </div>
-              <div className={cn("absolute inset-0 w-full transition-transform duration-300 ease-in-out", selectedUserId ? "translate-x-0" : "translate-x-full")}>
+              <div className={cn("absolute inset-0 w-full transition-transform duration-300 ease-in-out h-full", selectedUserId ? "translate-x-0" : "translate-x-full")}>
                  {selectedUserId && (
                    <ChatWindow 
                       currentUser={user}
