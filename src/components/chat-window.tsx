@@ -35,7 +35,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
         if (!audio) return;
 
         const setAudioData = () => {
-            setDuration(audio.duration);
+            if (isFinite(audio.duration)) {
+                setDuration(audio.duration);
+            }
             setCurrentTime(audio.currentTime);
         };
 
@@ -131,11 +133,12 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   const [optimisticMessages, setOptimisticMessages] = useState<OptimisticMessage[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
-  const [recordingMode, setRecordingMode] = useState<'audio' | 'video'>('audio');
   const [isRecording, setIsRecording] = useState(false);
+  const [recordingMode, setRecordingMode] = useState<'audio' | 'video'>('audio');
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
@@ -183,7 +186,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         }
         // For Firestore-like objects that are not Timestamp instances
         if (typeof createdAt === 'object' && 'seconds' in createdAt && typeof (createdAt as any).seconds === 'number') {
-            return (createdAt as Timestamp).toMillis();
+            return (createdAt as any as Timestamp).toMillis();
         }
         return 0;
     };
@@ -232,59 +235,65 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
   const startRecording = async () => {
     if (isRecording) return;
+    setRecordingTime(0);
 
     try {
         const constraints = recordingMode === 'video'
             ? { audio: true, video: { facingMode } }
             : { audio: true };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        streamRef.current = stream;
 
-        let streamToRecord = stream;
+        let streamToRecord: MediaStream;
 
         if (recordingMode === 'video') {
             if (videoPreviewRef.current) {
                 videoPreviewRef.current.srcObject = stream;
             }
 
-            if(canvasRef.current){
-                const canvas = canvasRef.current;
-                const video = videoPreviewRef.current;
-                if(video){
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    const ctx = canvas.getContext('2d');
-                    if(ctx) {
-                        const drawToCanvas = () => {
-                             if(video.paused || video.ended || !isRecording) return;
-                             ctx.clearRect(0, 0, canvas.width, canvas.height);
-                             if (facingMode === 'user') {
+            const canvas = canvasRef.current;
+            const video = videoPreviewRef.current;
+            
+            if (canvas && video) {
+                const videoTrack = stream.getVideoTracks()[0];
+                const videoSettings = videoTrack.getSettings();
+                canvas.width = videoSettings.width || 640;
+                canvas.height = videoSettings.height || 480;
+
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    const drawToCanvas = () => {
+                         if (!video.paused && !video.ended) {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            if (facingMode === 'user') {
                                  ctx.save();
                                  ctx.scale(-1, 1);
                                  ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
                                  ctx.restore();
-                             } else {
+                            } else {
                                  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                             }
-                             requestAnimationFrame(drawToCanvas);
-                        }
-                        video.onloadedmetadata = () => {
-                             canvas.width = video.videoWidth;
-                             canvas.height = video.videoHeight;
-                             drawToCanvas();
-                        }
+                            }
+                         }
+                         if (streamRef.current) {
+                            requestAnimationFrame(drawToCanvas);
+                         }
                     }
-                    streamToRecord = canvas.captureStream();
-                    // Add audio track to the canvas stream
-                    stream.getAudioTracks().forEach(track => streamToRecord.addTrack(track));
+                    drawToCanvas();
                 }
+
+                streamToRecord = canvas.captureStream(30); // 30 FPS
+                stream.getAudioTracks().forEach(track => streamToRecord.addTrack(track.clone()));
+            } else {
+                streamToRecord = stream;
             }
+        } else {
+            streamToRecord = stream;
         }
         
         const mimeType = recordingMode === 'video' ? 'video/webm' : 'audio/webm';
         mediaRecorderRef.current = new MediaRecorder(streamToRecord, { mimeType });
         
         setIsRecording(true);
-        setRecordingTime(0);
         
         mediaRecorderRef.current.start();
         
@@ -305,31 +314,32 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
     const stopRecording = () => {
         return new Promise<Blob | null>((resolve) => {
-            if (!mediaRecorderRef.current || !isRecording) {
+            if (!mediaRecorderRef.current) {
                 resolve(null);
                 return;
-            };
+            }
     
             let chunks: BlobPart[] = [];
             mediaRecorderRef.current.ondataavailable = (e) => {
-                chunks.push(e.data);
+                if (e.data.size > 0) chunks.push(e.data);
             };
         
             mediaRecorderRef.current.onstop = () => {
                 const mimeType = recordingMode === 'video' ? 'video/webm' : 'audio/webm';
-                const blob = new Blob(chunks, { type: mimeType });
-                
-                mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
-                if (videoPreviewRef.current) {
-                    videoPreviewRef.current.srcObject = null;
-                }
-                
-                if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
-                setIsRecording(false);
+                const blob = chunks.length > 0 ? new Blob(chunks, { type: mimeType }) : null;
                 resolve(blob);
             };
-        
+            
             mediaRecorderRef.current.stop();
+            
+            streamRef.current?.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+            if (videoPreviewRef.current) {
+                videoPreviewRef.current.srcObject = null;
+            }
+            
+            if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+            setIsRecording(false);
         });
     }
 
@@ -341,7 +351,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   };
 
   const handleCancelRecording = async () => {
-    await stopRecording(); // Stops and cleans up everything
+    await stopRecording(); 
   }
     
     const sendMediaMessage = async (mediaBlob: Blob, mode: 'audio' | 'video') => {
@@ -404,8 +414,8 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                   createdAt: serverTimestamp(),
                 });
             }
-            URL.revokeObjectURL(localMediaUrl);
             setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
+            // URL.revokeObjectURL(localMediaUrl); // Don't revoke immediately, pleyer might still need it
 
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
@@ -453,13 +463,31 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   };
     
     const handleSwitchCamera = () => {
-        setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
-        // Restart recording with the new camera
-        if (isRecording) {
-            stopRecording().then(() => {
-                startRecording();
-            })
-        }
+        setFacingMode(prev => {
+            const newMode = prev === 'user' ? 'environment' : 'user';
+            // Restart recording with the new camera
+            if (isRecording) {
+                stopRecording().then(() => {
+                    // We need to pass the new mode to startRecording, but it doesn't accept arguments.
+                    // So we update state and rely on the next render. But we can't wait for a render.
+                    // A better way is to restart it directly with new constraints
+                    const restartWithNewCamera = async () => {
+                        try {
+                            const constraints = { audio: true, video: { facingMode: newMode } };
+                            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                             streamRef.current = stream; // Update stream ref
+                             startRecording(); // This will use the new stream
+                        } catch (error) {
+                             console.error("Camera switch failed:", error);
+                        }
+                    }
+                    // This is hacky, but we need to ensure the state update is processed.
+                    // A better refactor is needed for a cleaner approach.
+                    setTimeout(startRecording, 100);
+                })
+            }
+            return newMode;
+        });
     };
     
   if (!selectedUserId) {
@@ -576,7 +604,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         )}
       </ScrollArea>
         
-      {/* Hidden canvas for video processing */}
       <canvas ref={canvasRef} className="hidden"></canvas>
       
       <AnimatePresence>
@@ -594,6 +621,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                         className={cn("w-full h-full object-cover", facingMode === 'user' && 'scale-x-[-1]')}
                         autoPlay 
                         muted 
+                        playsInline
                         />
                   </div>
               </div>
@@ -605,7 +633,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       <div className="p-2 md:p-4 border-t bg-background overflow-hidden z-20">
         {isRecording ? (
             <div className="flex items-center gap-4 h-10">
-                <Button onClick={handleCancelRecording} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                <Button onClick={handleCancelRecording} variant="destructive" size="icon" className="rounded-full">
                     <Trash2 />
                 </Button>
                 <div className="flex-1 bg-secondary rounded-full h-10 flex items-center justify-center px-4">
@@ -653,7 +681,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                                     exit={{ scale: 0, rotate: 90 }}
                                     className="flex items-center justify-center text-muted-foreground"
                                 >
-                                    {recordingMode === 'audio' ? <Camera/> : <Mic />}
+                                    {recordingMode === 'audio' ? <Mic/> : <Camera />}
                                 </motion.div>
                             </AnimatePresence>
                         </Button>
@@ -673,7 +701,3 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
-
-    
-
-    

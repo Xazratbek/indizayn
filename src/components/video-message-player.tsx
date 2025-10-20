@@ -16,20 +16,24 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
     const [isPlaying, setIsPlaying] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+    const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
+
+    const handleEnded = () => {
+        setIsPlaying(false);
+        setHasPlayedOnce(true);
+        // Automatically collapse when video ends
+        setIsExpanded(false); 
+    };
 
     useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
 
-        const handleEnded = () => {
-            setIsPlaying(false);
-            setIsExpanded(false); // Automatically collapse when video ends
-        };
-        
-        video.addEventListener('ended', handleEnded);
-        
         // Mute by default in small circle view
         video.muted = !isExpanded;
+        video.loop = false; // Ensure loop is always false for main playback
+
+        video.addEventListener('ended', handleEnded);
 
         return () => {
             video.removeEventListener('ended', handleEnded);
@@ -37,7 +41,7 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
     }, [isExpanded]);
     
     useEffect(() => {
-        // Autoplay when expanded
+        // Autoplay with sound when expanded
         if(isExpanded && videoRef.current) {
             videoRef.current.play().catch(e => console.error("Video autoplay failed", e));
             setIsPlaying(true);
@@ -62,14 +66,8 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
         if (!isExpanded) {
             setIsExpanded(true);
         } else {
-            // In expanded view, only controls should work, not the container itself
-            if(videoRef.current?.paused) {
-                 videoRef.current?.play().catch(e => console.error("Video play failed", e));
-                 setIsPlaying(true);
-            } else {
-                videoRef.current?.pause();
-                setIsPlaying(false);
-            }
+            // In expanded view, clicking the container toggles play/pause
+            togglePlay({} as React.MouseEvent);
         }
     }
 
@@ -102,13 +100,12 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
                 layout
                 src={videoUrl}
                 playsInline
-                loop={false} 
-                muted={!isExpanded}
-                className="w-full h-full object-cover scale-[1.3]" // Scale to fill circle
+                className="w-full h-full object-cover scale-[1.4]" // Scale to fill circle
                 onLoadedData={() => {
-                    // Autoplay muted when small and looping
-                     if(!isExpanded && videoRef.current) {
+                    // Autoplay muted and looping only when small and if it hasn't played once
+                     if(!isExpanded && videoRef.current && !hasPlayedOnce) {
                          videoRef.current.loop = true;
+                         videoRef.current.muted = true;
                          videoRef.current.play().catch(e => {});
                     } else if (videoRef.current) {
                         videoRef.current.loop = false;
@@ -116,18 +113,16 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
                 }}
             />
             <AnimatePresence>
-                {(isHovered) && (
+                {(isHovered || isExpanded) && !isPlaying && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="absolute inset-0 bg-black/30 flex items-center justify-center"
                     >
-                         {isExpanded && !isPlaying && (
-                             <div className="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center" onClick={togglePlay}>
-                                <Play className="w-6 h-6 text-white" />
-                            </div>
-                         )}
+                         <div className="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center" onClick={togglePlay}>
+                            <Play className="w-6 h-6 text-white" />
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
