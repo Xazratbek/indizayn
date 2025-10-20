@@ -13,7 +13,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
-import { Users, Mic, Video } from 'lucide-react';
+import { Users, Mic, Video, Camera } from 'lucide-react';
 
 interface ChatSidebarProps {
   currentUser: Session['user'];
@@ -44,9 +44,9 @@ const renderLastMessage = (msg: Message, currentUserId: string) => {
         case 'text':
             return prefix + msg.content;
         case 'audio':
-            return <div className="flex items-center">{prefix}<Mic className="h-4 w-4 mr-1 flex-shrink-0"/> Ovozli xabar</div>;
+            return <div className="flex items-center gap-1.5">{prefix}<Mic className="h-4 w-4 flex-shrink-0"/> Ovozli xabar</div>;
         case 'video':
-            return <div className="flex items-center">{prefix}<Video className="h-4 w-4 mr-1 flex-shrink-0"/> Video xabar</div>;
+            return <div className="flex items-center gap-1.5">{prefix}<Camera className="h-4 w-4 flex-shrink-0"/> Video xabar</div>;
         default:
             return '';
     }
@@ -155,9 +155,9 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
                             {lastMessage.createdAt ? formatDistanceToNowStrict(lastMessage.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}
                         </p>
                     </div>
-                     <p className="text-sm text-muted-foreground truncate flex items-center">
+                     <div className="text-sm text-muted-foreground truncate flex items-center">
                         {renderLastMessage(lastMessage, currentUser.id)}
-                    </p>
+                    </div>
                 </div>
             </button>
             ))
