@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from 'next-auth';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, writeBatch, or } from 'firebase/firestore';
 import type { Message, Designer } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -35,38 +35,43 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   const [isSending, setIsSending] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // Fetch partner/recipient's profile data
   const recipientDocRef = useMemoFirebase(
     () => (db && selectedUserId) ? doc(db, 'users', selectedUserId) : null,
     [db, selectedUserId]
   );
   const { data: partner, isLoading: partnerLoading } = useDoc<Designer>(recipientDocRef);
 
-  // Re-using the same logic from sidebar to get all messages related to the user
-  const sentMessagesQuery = useMemoFirebase(
+  // Get all messages between the current user and the selected partner
+  const messagesQuery = useMemoFirebase(
     () => db && currentUser?.id && selectedUserId
-        ? query(collection(db, 'messages'), where('senderId', '==', currentUser.id), where('receiverId', '==', selectedUserId), orderBy('createdAt', 'asc'))
+        ? query(
+            collection(db, 'messages'),
+            or(
+                where('senderId', '==', currentUser.id),
+                where('receiverId', '==', currentUser.id)
+            ),
+            orderBy('createdAt', 'asc')
+          )
         : null,
     [db, currentUser.id, selectedUserId]
   );
-  const { data: sentMessages, isLoading: loadingSent } = useCollection<Message>(sentMessagesQuery);
-
-  const receivedMessagesQuery = useMemoFirebase(
-     () => db && currentUser?.id && selectedUserId
-        ? query(collection(db, 'messages'), where('senderId', '==', selectedUserId), where('receiverId', '==', currentUser.id), orderBy('createdAt', 'asc'))
-        : null,
-    [db, currentUser.id, selectedUserId]
-  );
-  const { data: receivedMessages, isLoading: loadingReceived } = useCollection<Message>(receivedMessagesQuery);
-
-  const filteredMessages = useMemo(() => {
-    return [...(sentMessages || []), ...(receivedMessages || [])].sort((a,b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0));
-  }, [sentMessages, receivedMessages]);
+  const { data: allMessages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
   
+  // Filter messages on the client to get the specific conversation
+  const conversationMessages = useMemo(() => {
+    if (!allMessages || !selectedUserId) return [];
+    return allMessages.filter(msg => 
+        (msg.senderId === currentUser.id && msg.receiverId === selectedUserId) ||
+        (msg.senderId === selectedUserId && msg.receiverId === currentUser.id)
+    )
+  }, [allMessages, selectedUserId, currentUser.id]);
+
 
   // Mark messages as read
   useEffect(() => {
-    if (db && selectedUserId && currentUser.id && receivedMessages && receivedMessages.length > 0) {
-      const unreadMessages = receivedMessages.filter(
+    if (db && selectedUserId && currentUser.id && conversationMessages.length > 0) {
+      const unreadMessages = conversationMessages.filter(
         msg => !msg.isRead && msg.senderId === selectedUserId
       );
 
@@ -81,7 +86,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         batch.commit().catch(console.error);
       }
     }
-  }, [receivedMessages, selectedUserId, currentUser.id, db]);
+  }, [conversationMessages, selectedUserId, currentUser.id, db]);
 
 
   useEffect(() => {
@@ -91,7 +96,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
              viewport.scrollTop = viewport.scrollHeight;
         }
     }
-  }, [filteredMessages]);
+  }, [conversationMessages]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedUserId || !db) return;
@@ -123,7 +128,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     );
   }
 
-  const isLoading = partnerLoading || loadingSent || loadingReceived;
+  const isLoading = partnerLoading || messagesLoading;
 
   return (
     <div className="flex flex-col h-full bg-secondary/30">
@@ -165,7 +170,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 <MessageSkeleton />
             </div>
         ) : (
-            filteredMessages.map(msg => (
+            conversationMessages.map(msg => (
                 <div
                     key={msg.id}
                     className={cn(

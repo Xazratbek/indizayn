@@ -40,7 +40,7 @@ function ConversationSkeleton() {
 export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser }: ChatSidebarProps) {
   const db = useFirestore();
 
-  // Unified query for all messages involving the current user
+  // 1. Get all messages involving the current user in real-time
   const allMessagesQuery = useMemoFirebase(
     () => db && currentUser?.id 
         ? query(
@@ -56,7 +56,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
   );
   const { data: allMessages, isLoading: loadingMessages } = useCollection<Message>(allMessagesQuery);
 
-
+  // 2. From all messages, derive the latest message for each conversation partner
   const partnerLastMessage = useMemo(() => {
     if (!allMessages || !currentUser.id) return new Map<string, Message>();
     
@@ -70,21 +70,26 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
     return map;
   }, [allMessages, currentUser.id]);
 
+  // 3. Get the unique IDs of all partners
   const partnerIds = useMemo(() => Array.from(partnerLastMessage.keys()), [partnerLastMessage]);
 
-  // Query for all partners based on the extracted IDs
+  // 4. Fetch the user data for all partners in real-time
   const partnersQuery = useMemoFirebase(
-    () => (db && partnerIds.length > 0) ? query(collection(db, 'users'), where('id', 'in', partnerIds)) : null,
+    () => (db && partnerIds.length > 0) 
+        ? query(collection(db, 'users'), where('__name__', 'in', partnerIds))
+        : null,
     [db, partnerIds]
   );
   const { data: partnersData, isLoading: loadingPartners } = useCollection<Designer>(partnersQuery);
 
+  // 5. Create a quickly searchable map of partner data
   const partnersMap = useMemo(() => {
     const map = new Map<string, Designer>();
     partnersData?.forEach(p => map.set(p.id, p));
     return map;
   }, [partnersData]);
 
+  // 6. Combine partner data and last message data to create the final conversation list
   const finalConversations: Conversation[] = useMemo(() => {
     return Array.from(partnerLastMessage.entries())
       .map(([partnerId, lastMessage]) => {
@@ -95,6 +100,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
         return null;
       })
       .filter((c): c is Conversation => c !== null)
+      // Sort again here because partner data might arrive at a different time
       .sort((a, b) => (b.lastMessage.createdAt?.toMillis() ?? 0) - (a.lastMessage.createdAt?.toMillis() ?? 0));
   }, [partnerLastMessage, partnersMap]);
   
