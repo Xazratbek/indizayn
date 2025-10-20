@@ -42,38 +42,31 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
 
   // Re-using the same logic from sidebar to get all messages related to the user
   const sentMessagesQuery = useMemoFirebase(
-    () => db && currentUser?.id 
-        ? query(collection(db, 'messages'), where('senderId', '==', currentUser.id), orderBy('createdAt', 'asc'))
+    () => db && currentUser?.id && selectedUserId
+        ? query(collection(db, 'messages'), where('senderId', '==', currentUser.id), where('receiverId', '==', selectedUserId), orderBy('createdAt', 'asc'))
         : null,
-    [db, currentUser.id]
+    [db, currentUser.id, selectedUserId]
   );
   const { data: sentMessages, isLoading: loadingSent } = useCollection<Message>(sentMessagesQuery);
 
   const receivedMessagesQuery = useMemoFirebase(
-    () => db && currentUser?.id 
-        ? query(collection(db, 'messages'), where('receiverId', '==', currentUser.id), orderBy('createdAt', 'asc'))
+     () => db && currentUser?.id && selectedUserId
+        ? query(collection(db, 'messages'), where('senderId', '==', selectedUserId), where('receiverId', '==', currentUser.id), orderBy('createdAt', 'asc'))
         : null,
-    [db, currentUser.id]
+    [db, currentUser.id, selectedUserId]
   );
   const { data: receivedMessages, isLoading: loadingReceived } = useCollection<Message>(receivedMessagesQuery);
 
-  const allMessages = useMemo(() => {
+  const filteredMessages = useMemo(() => {
     return [...(sentMessages || []), ...(receivedMessages || [])].sort((a,b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0));
   }, [sentMessages, receivedMessages]);
   
-  const filteredMessages = useMemo(() => {
-      if (!allMessages || !selectedUserId) return [];
-      return allMessages.filter(msg => 
-        (msg.senderId === currentUser.id && msg.receiverId === selectedUserId) ||
-        (msg.senderId === selectedUserId && msg.receiverId === currentUser.id)
-      )
-  }, [allMessages, selectedUserId, currentUser.id]);
 
   // Mark messages as read
   useEffect(() => {
-    if (db && selectedUserId && currentUser.id && filteredMessages.length > 0) {
-      const unreadMessages = filteredMessages.filter(
-        msg => msg.receiverId === currentUser.id && !msg.isRead
+    if (db && selectedUserId && currentUser.id && receivedMessages && receivedMessages.length > 0) {
+      const unreadMessages = receivedMessages.filter(
+        msg => !msg.isRead
       );
 
       if (unreadMessages.length > 0) {
@@ -87,7 +80,7 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
         batch.commit().catch(console.error);
       }
     }
-  }, [filteredMessages, selectedUserId, currentUser.id, db]);
+  }, [receivedMessages, selectedUserId, currentUser.id, db]);
 
 
   useEffect(() => {
