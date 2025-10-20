@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo } from 'react';
@@ -12,7 +13,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
-import { Users } from 'lucide-react';
+import { Users, Mic } from 'lucide-react';
 
 interface ChatSidebarProps {
   currentUser: Session['user'];
@@ -139,9 +140,16 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
                             {lastMessage.createdAt ? formatDistanceToNowStrict(lastMessage.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}
                         </p>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
+                     <p className="text-sm text-muted-foreground truncate flex items-center">
                         {lastMessage.senderId === currentUser.id && 'Siz: '}
-                        {lastMessage.content}
+                        {lastMessage.type === 'audio' ? (
+                            <>
+                                <Mic className="h-4 w-4 mr-1 flex-shrink-0"/> 
+                                Ovozli xabar
+                            </>
+                        ) : (
+                            lastMessage.content
+                        )}
                     </p>
                 </div>
             </button>

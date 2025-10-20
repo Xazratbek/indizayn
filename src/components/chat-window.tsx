@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -10,7 +11,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft } from 'lucide-react';
+import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft, Mic, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -36,6 +37,14 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  // Audio recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
 
   // Fetch partner/recipient's profile data
   const recipientDocRef = useMemoFirebase(
@@ -100,21 +109,116 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     }
   }, [conversationMessages]);
 
+
+    const handleStartRecording = async () => {
+        if (isRecording) return;
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                audioChunksRef.current.push(event.data);
+            };
+
+            mediaRecorderRef.current.onstop = async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                sendAudioMessage(audioBlob);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorderRef.current.start();
+            setIsRecording(true);
+            setRecordingTime(0);
+            recordingIntervalRef.current = setInterval(() => {
+                setRecordingTime(prev => prev + 1);
+            }, 1000);
+
+        } catch (error) {
+            console.error("Audio recording failed:", error);
+            toast({
+                variant: 'destructive',
+                title: "Xatolik",
+                description: "Ovoz yozish uchun ruxsat berilmadi yoki qurilmangizda muammo bor."
+            });
+        }
+    };
+
+    const handleStopRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            mediaRecorderRef.current.stop();
+            setIsRecording(false);
+            if(recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+        }
+    };
+    
+    const handleCancelRecording = () => {
+        if (mediaRecorderRef.current && isRecording) {
+            // Stop without saving
+             mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+             mediaRecorderRef.current = null;
+        }
+        setIsRecording(false);
+        if(recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+        setRecordingTime(0);
+    }
+
+    const sendAudioMessage = async (audioBlob: Blob) => {
+        if (!selectedUserId || !db) return;
+        setIsSending(true);
+
+        try {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'voice-message.webm');
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || "Ovozli xabarni yuklashda xatolik.");
+            }
+
+            const audioUrl = result.url;
+
+            await addDoc(collection(db, 'messages'), {
+                senderId: currentUser.id,
+                receiverId: selectedUserId,
+                type: 'audio',
+                audioUrl: audioUrl,
+                content: '',
+                isRead: false,
+                createdAt: serverTimestamp(),
+            });
+
+        } catch (error: any) {
+            console.error("Ovozli xabar yuborishda xatolik:", error);
+            toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
+        } finally {
+            setIsSending(false);
+        }
+    }
+
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedUserId || !db) return;
     setIsSending(true);
+    const text = newMessage;
+    setNewMessage('');
     
     try {
-      // 1. Save message to 'messages' collection
       await addDoc(collection(db, 'messages'), {
         senderId: currentUser.id,
         receiverId: selectedUserId,
-        content: newMessage,
+        content: text,
+        type: 'text',
         isRead: false,
         createdAt: serverTimestamp(),
       });
       
-      // 2. Create notification for the recipient
       if(partner) {
           const notificationsRef = collection(db, "notifications");
           await addDoc(notificationsRef, {
@@ -124,13 +228,10 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
             senderName: currentUser.name || 'Anonim',
             senderPhotoURL: currentUser.image || '',
             isRead: false,
-            messageSnippet: newMessage.substring(0, 50) + (newMessage.length > 50 ? '...' : ''),
+            messageSnippet: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
             createdAt: serverTimestamp(),
           });
       }
-
-      setNewMessage('');
-
     } catch (error) {
       console.error("Xabar yuborishda xatolik:", error);
       toast({
@@ -154,6 +255,12 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   }
 
   const isLoading = partnerLoading || messagesLoading;
+  
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  }
 
   return (
     <div className="flex flex-col h-full bg-secondary/30">
@@ -215,7 +322,12 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                         : 'bg-background text-foreground rounded-bl-none'
                     )}
                 >
-                    <p className="pb-4 pr-5">{msg.content}</p>
+                     {msg.type === 'audio' && msg.audioUrl ? (
+                        <audio controls src={msg.audioUrl} className="max-w-[200px] h-10" />
+                     ) : (
+                        <p className="pb-4 pr-5">{msg.content}</p>
+                     )}
+                    
                     {msg.senderId === currentUser.id && (
                         <div className="absolute bottom-1 right-2 flex items-center">
                             {msg.isRead ? (
@@ -231,20 +343,42 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         )}
       </ScrollArea>
       <div className="p-4 border-t bg-background">
-        <form 
-            className="flex items-center gap-2"
-            onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
-        >
-          <Input
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Xabar yozing..."
-            disabled={isSending}
-          />
-          <Button type="submit" disabled={isSending || !newMessage.trim()}>
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
+         {isRecording ? (
+             <div className="flex items-center gap-2">
+                 <Button onClick={handleCancelRecording} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                    <Trash2 />
+                 </Button>
+                <div className="flex-1 bg-secondary rounded-full h-10 flex items-center px-4">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></div>
+                    <p className="text-sm font-mono text-muted-foreground">{formatTime(recordingTime)}</p>
+                </div>
+                 <Button onClick={handleStopRecording} disabled={isSending}>
+                    <Send className="h-4 w-4" />
+                 </Button>
+             </div>
+         ) : (
+            <form 
+                className="flex items-center gap-2"
+                onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+            >
+            <Input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Xabar yozing..."
+                disabled={isSending}
+                className="transition-all duration-300"
+            />
+            {newMessage ? (
+                 <Button type="submit" disabled={isSending || !newMessage.trim()}>
+                    <Send className="h-4 w-4" />
+                 </Button>
+            ) : (
+                 <Button type="button" onClick={handleStartRecording} disabled={isSending}>
+                    <Mic className="h-4 w-4" />
+                 </Button>
+            )}
+            </form>
+         )}
       </div>
     </div>
   );

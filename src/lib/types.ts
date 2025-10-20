@@ -38,7 +38,9 @@ export interface Message {
     id: string;
     senderId: string;
     receiverId: string;
-    content: string;
+    content?: string; // Made optional for audio messages
+    type: 'text' | 'audio';
+    audioUrl?: string;
     createdAt: Timestamp;
     isRead: boolean;
 }
