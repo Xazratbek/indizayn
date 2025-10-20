@@ -48,20 +48,20 @@ export default function DesignersPage() {
     if (!designers) return [];
 
     let filtered = designers;
+    const lowerCaseSearchTerm = searchTerm.toLowerCase();
 
-    // Filter by search term
-    if (searchTerm) {
-        filtered = filtered.filter(d => 
-            d.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }
-    
-    // Filter by specializations
-    if(selectedSpecs.length > 0) {
-        filtered = filtered.filter(d => 
-            d.specialization && selectedSpecs.includes(d.specialization)
-        );
-    }
+    // Filter by both search term (name or specialization) and selected specs
+    filtered = filtered.filter(d => {
+        const nameMatch = d.name.toLowerCase().includes(lowerCaseSearchTerm);
+        const specMatch = d.specialization?.toLowerCase().includes(lowerCaseSearchTerm) ?? false;
+        const searchCondition = nameMatch || specMatch;
+
+        const specFilterCondition = selectedSpecs.length > 0 
+            ? d.specialization && selectedSpecs.includes(d.specialization)
+            : true;
+        
+        return searchCondition && specFilterCondition;
+    });
 
     return filtered;
 
@@ -109,7 +109,7 @@ export default function DesignersPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Ism yoki familiya bo'yicha qidirish..."
+            placeholder="Ism yoki mutaxassislik bo'yicha qidirish..."
             className="w-full pl-10 h-12"
             value={searchTerm}
             onChange={(e) => {
@@ -196,4 +196,3 @@ export default function DesignersPage() {
     </div>
   );
 }
-
