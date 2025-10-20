@@ -1,4 +1,5 @@
 
+
 export const PREDEFINED_TAGS = [
   'UI/UX',
   'Web Dizayn',
@@ -30,4 +31,20 @@ export const PREDEFINED_TAGS = [
   'Sanoat Dizayni',
   'Kitob Dizayni',
   'Rassomchilik',
+] as const;
+
+
+export const PREDEFINED_SPECIALIZATIONS = [
+  'UI/UX Dizayner',
+  'Grafik Dizayner',
+  'Web Dizayner',
+  'Brend Dizayner',
+  'Illustrator',
+  '3D Rassom',
+  'Motion Dizayner',
+  'Mahsulot Dizayneri',
+  'Interyer Dizayneri',
+  'Arxitektor',
+  'Fotograf',
+  'Yangi dizayner',
 ] as const;
