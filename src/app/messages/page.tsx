@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ChatSidebar from '@/components/chat-sidebar';
 import ChatWindow from '@/components/chat-window';
 import { useSession } from 'next-auth/react';
@@ -9,11 +9,21 @@ import { Card } from '@/components/ui/card';
 import LoadingPage from '../loading';
 import { Button } from '@/components/ui/button';
 import { LogIn } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
 export default function MessagesPage() {
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const initialUserId = searchParams.get('userId');
+
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(initialUserId);
   const { data: session, status } = useSession();
   const user = session?.user;
+
+  useEffect(() => {
+    if (initialUserId) {
+      setSelectedUserId(initialUserId);
+    }
+  }, [initialUserId]);
 
   if (status === 'loading') {
     return <LoadingPage />;

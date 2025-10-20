@@ -112,7 +112,7 @@ export default function NotificationsDropdown() {
       case 'follow':
         return `/designers/${notification.senderId}`;
       case 'message':
-        return `/designers/${notification.senderId}`;
+        return `/messages?userId=${notification.senderId}`;
       default:
         return '#';
     }
