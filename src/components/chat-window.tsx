@@ -4,13 +4,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from 'next-auth';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, or, addDoc, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, where, orderBy, or, addDoc, serverTimestamp, doc, writeBatch } from 'firebase/firestore';
 import type { Message, Designer } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Send, MessageSquareText } from 'lucide-react';
+import { Send, MessageSquareText, Check, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 
@@ -41,16 +41,16 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
   const { data: partner, isLoading: partnerLoading } = useDoc<Designer>(recipientDocRef);
 
   const messagesQuery = useMemoFirebase(() => {
-    if (!db || !currentUser?.id || !selectedUserId) return null;
+    if (!db || !currentUser?.id) return null;
     return query(
-      collection(db, 'messages'),
-      or(
-        where('senderId', '==', currentUser.id),
-        where('receiverId', '==', currentUser.id)
-      ),
-      orderBy('createdAt', 'asc')
-    );
-  }, [db, currentUser.id, selectedUserId]);
+        collection(db, 'messages'),
+        or(
+          where('senderId', '==', currentUser.id),
+          where('receiverId', '==', currentUser.id)
+        ),
+        orderBy('createdAt', 'asc')
+      );
+  }, [db, currentUser.id]);
 
   const { data: allMessages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
   
@@ -61,6 +61,24 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
         (msg.senderId === selectedUserId && msg.receiverId === currentUser.id)
       )
   }, [allMessages, selectedUserId, currentUser.id]);
+
+  // Mark messages as read
+  useEffect(() => {
+    if (db && selectedUserId && currentUser.id && filteredMessages.length > 0) {
+      const unreadMessages = filteredMessages.filter(
+        msg => msg.receiverId === currentUser.id && !msg.isRead
+      );
+
+      if (unreadMessages.length > 0) {
+        const batch = writeBatch(db);
+        unreadMessages.forEach(msg => {
+          const msgRef = doc(db, 'messages', msg.id);
+          batch.update(msgRef, { isRead: true });
+        });
+        batch.commit().catch(console.error);
+      }
+    }
+  }, [filteredMessages, selectedUserId, currentUser.id, db]);
 
 
   useEffect(() => {
@@ -148,13 +166,22 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
                 </Avatar>
                 <div
                     className={cn(
-                        'p-3 rounded-lg',
+                        'p-3 rounded-lg relative',
                         msg.senderId === currentUser.id
                         ? 'bg-primary text-primary-foreground rounded-br-none'
                         : 'bg-background text-foreground rounded-bl-none'
                     )}
                 >
-                    <p>{msg.content}</p>
+                    <p className="pb-4 pr-5">{msg.content}</p>
+                    {msg.senderId === currentUser.id && (
+                        <div className="absolute bottom-1 right-2 flex items-center">
+                            {msg.isRead ? (
+                                <CheckCheck size={16} className="text-blue-400" />
+                            ) : (
+                                <Check size={16} className="text-muted-foreground/70" />
+                            )}
+                        </div>
+                    )}
                 </div>
                 </div>
             ))
@@ -179,3 +206,4 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
     </div>
   );
 }
+
