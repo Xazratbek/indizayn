@@ -362,13 +362,12 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                   createdAt: serverTimestamp(),
                 });
             }
+            setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
             URL.revokeObjectURL(localMediaUrl);
 
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
             setOptimisticMessages(prev => prev.map(m => m.id === optimisticId ? {...m, status: 'failed'} : m));
-        } finally {
-            setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
         }
     }
 
@@ -686,10 +685,10 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                     </Button>
                  </motion.div>
             </div>
-            </form>
-         )}
-         </div>
+         </motion.div>
       </div>
     </div>
   );
 }
+
+    
