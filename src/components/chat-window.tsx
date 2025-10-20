@@ -11,7 +11,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft, Mic, Trash2, Loader2, Play, Pause, Camera, SwitchCamera, ArrowUp, Lock, ChevronLeft } from 'lucide-react';
+import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft, Mic, Trash2, Loader2, Play, Pause, Camera, SwitchCamera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -131,18 +131,12 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   
   const [currentRecordingMode, setCurrentRecordingMode] = useState<'audio' | 'video'>('audio');
   const [isRecording, setIsRecording] = useState(false);
-  const [isLocked, setIsLocked] = useState(false);
-
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
-  const [pointerStart, setPointerStart] = useState({ x: 0, y: 0 });
-  const [pointerMove, setPointerMove] = useState({ x: 0, y: 0 });
-  const LOCK_THRESHOLD = -80; // pixels to swipe up to lock
-  const CANCEL_THRESHOLD = -80; // pixels to swipe left to cancel
 
   const recipientDocRef = useMemoFirebase(
     () => (db && selectedUserId) ? doc(db, 'users', selectedUserId) : null,
@@ -183,7 +177,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         if (createdAt instanceof Date) {
             return createdAt.getTime();
         }
-        // Handle Firestore-like object from server-side rendering or cache
         if (typeof createdAt === 'object' && 'seconds' in createdAt && typeof (createdAt as any).seconds === 'number') {
             return (createdAt as Timestamp).toMillis();
         }
@@ -234,9 +227,10 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
 
   const startRecording = async () => {
+    if (isRecording) return;
     setIsRecording(true);
-    if (isLocked) setIsLocked(false);
     setRecordingTime(0);
+
     try {
         const constraints = currentRecordingMode === 'video'
             ? { audio: true, video: { facingMode } }
@@ -267,42 +261,34 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     }
   };
 
-    const stopRecording = async (send: boolean = true) => {
-        if (!mediaRecorderRef.current || !isRecording) return;
+  const stopRecording = async (send: boolean) => {
+    if (!mediaRecorderRef.current || !isRecording) return;
+  
+    if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
     
-        if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
-        
+    return new Promise<Blob | null>((resolve) => {
+      if (!mediaRecorderRef.current) {
+        resolve(null);
+        return;
+      }
+      
+      let chunks: BlobPart[] = [];
+      mediaRecorderRef.current.ondataavailable = (e) => {
+        chunks.push(e.data);
+      };
+  
+      mediaRecorderRef.current.onstop = () => {
+        const mimeType = currentRecordingMode === 'video' ? 'video/webm' : 'audio/webm';
+        const blob = new Blob(chunks, { type: mimeType });
+        mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
         setIsRecording(false);
-        setIsLocked(false);
+        resolve(blob);
+      };
+  
+      mediaRecorderRef.current.stop();
+    });
+  };
 
-        try {
-            const mediaBlob = await new Promise<Blob>((resolve) => {
-                if (!mediaRecorderRef.current) return;
-                
-                let chunks: BlobPart[] = [];
-                mediaRecorderRef.current.ondataavailable = (e) => {
-                    chunks.push(e.data);
-                };
-    
-                mediaRecorderRef.current.onstop = () => {
-                    const mimeType = currentRecordingMode === 'video' ? 'video/webm' : 'audio/webm';
-                    const blob = new Blob(chunks, { type: mimeType });
-                    resolve(blob);
-                };
-
-                mediaRecorderRef.current.stop();
-                mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-            });
-    
-            if (send && mediaBlob.size > 0) {
-                await sendMediaMessage(mediaBlob, currentRecordingMode);
-            } else if (send) {
-                toast({ variant: 'destructive', title: 'Xatolik', description: `Yozib olingan ${currentRecordingMode} bo'sh.` });
-            }
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Xatolik', description: `${currentRecordingMode} yozishni to'xtatishda muammo.` });
-        }
-    };
     
     const sendMediaMessage = async (mediaBlob: Blob, mode: 'audio' | 'video') => {
         if (!selectedUserId || !db) return;
@@ -364,7 +350,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                   createdAt: serverTimestamp(),
                 });
             }
-            // Remove the optimistic message once the real one is sent and will be received via snapshot
             setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
             URL.revokeObjectURL(localMediaUrl);
 
@@ -415,38 +400,19 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       setIsSending(false);
     }
   };
-  
-    const onPointerDown = (e: React.PointerEvent) => {
-        if (!newMessage && !isLocked) {
-            e.preventDefault();
-            setPointerStart({ x: e.clientX, y: e.clientY });
-            setPointerMove({ x: e.clientX, y: e.clientY });
-            startRecording();
-        }
-    };
-    const onPointerMove = (e: React.PointerEvent) => {
-        if (isRecording && !isLocked) {
-            setPointerMove({ x: e.clientX, y: e.clientY });
-            const dy = e.clientY - pointerStart.y;
-            if (dy < LOCK_THRESHOLD) {
-                setIsLocked(true);
-            }
-            const dx = e.clientX - pointerStart.x;
-            if (dx < CANCEL_THRESHOLD) {
-                stopRecording(false);
-                setPointerStart({x:0,y:0})
-            }
-        }
-    };
-    const onPointerUp = () => {
-        if (isRecording && !isLocked) {
-            stopRecording(true);
-        }
+
+    const handleCancelRecording = async () => {
+        await stopRecording(false);
     };
 
-    const handleCancelLockedRecording = () => stopRecording(false);
-
-    const handleSendLockedRecording = () => stopRecording(true);
+    const handleSendRecording = async () => {
+        const blob = await stopRecording(true);
+        if (blob && blob.size > 0) {
+            await sendMediaMessage(blob, currentRecordingMode);
+        } else if (blob) {
+            toast({ variant: 'destructive', title: 'Xatolik', description: `Yozib olingan ${currentRecordingMode} bo'sh.` });
+        }
+    };
     
     const handleSwitchCamera = () => {
         setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
@@ -479,8 +445,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   }
   
-  const swipeDx = isRecording && !isLocked ? pointerMove.x - pointerStart.x : 0;
-
   return (
     <div className="flex flex-col h-full bg-secondary/30">
       {isLoading && !partner ? (
@@ -570,7 +534,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       </ScrollArea>
 
         {isRecording && currentRecordingMode === 'video' && (
-            <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center pointer-events-none">
                 <div className="relative w-64 h-64">
                     <div className="absolute inset-0 rounded-full overflow-hidden border-4 border-primary animate-pulse">
                          <video ref={videoPreviewRef} className="w-full h-full object-cover scale-x-[-1]" autoPlay muted />
@@ -579,7 +543,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                         onClick={handleSwitchCamera}
                         size="icon"
                         variant="secondary"
-                        className="absolute bottom-4 right-4 rounded-full z-10"
+                        className="absolute bottom-4 right-4 rounded-full z-10 pointer-events-auto"
                     >
                         <SwitchCamera />
                     </Button>
@@ -589,7 +553,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
       <div className="p-2 md:p-4 border-t bg-background overflow-hidden">
          <AnimatePresence>
-            {isLocked && (
+            {isRecording ? (
                 <motion.div
                      initial={{ y: "100%" }}
                      animate={{ y: "0%" }}
@@ -597,113 +561,74 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                      transition={{ duration: 0.3, ease: 'easeOut' }}
                      className="flex items-center gap-2"
                 >
-                    <Button onClick={handleCancelLockedRecording} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                    <Button onClick={handleCancelRecording} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                         <Trash2 />
                     </Button>
                     <div className="flex-1 bg-secondary rounded-full h-10 flex items-center px-4">
                         <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></div>
                         <p className="text-sm font-mono text-muted-foreground">{formatTime(recordingTime)}</p>
                     </div>
-                    <Button onClick={handleSendLockedRecording} disabled={isSending}>
+                    <Button onClick={handleSendRecording} size="icon" className="rounded-full" disabled={isSending}>
                         <Send className="h-4 w-4" />
                     </Button>
                 </motion.div>
+            ): (
+                 <motion.div
+                    initial={{ y: "100%" }}
+                    animate={{ y: "0%" }}
+                    exit={{ y: "100%" }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className="flex items-center gap-2"
+                 >
+                    <Input
+                        value={newMessage}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                            }
+                        }}
+                        onChange={(e) => setNewMessage(e.target.value)}
+                        placeholder="Xabar yozing..."
+                        disabled={isSending}
+                    />
+                    {newMessage ? (
+                        <Button type="button" size="icon" className="rounded-full" onClick={handleSendMessage} disabled={isSending}>
+                            <Send/>
+                        </Button>
+                    ) : (
+                        <>
+                            <Button 
+                                type="button" 
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setCurrentRecordingMode(prev => prev === 'audio' ? 'video' : 'audio')}
+                            >
+                                <AnimatePresence mode="popLayout">
+                                    <motion.div
+                                        key={currentRecordingMode}
+                                        initial={{ scale: 0, rotate: -90 }}
+                                        animate={{ scale: 1, rotate: 0 }}
+                                        exit={{ scale: 0, rotate: 90 }}
+                                    >
+                                        {currentRecordingMode === 'audio' ? <Mic/> : <Camera />}
+                                    </motion.div>
+                                </AnimatePresence>
+                            </Button>
+                            <Button
+                                type="button" 
+                                size="icon"
+                                className="rounded-full"
+                                onClick={startRecording}
+                            >
+                                {currentRecordingMode === 'audio' ? <Mic/> : <Camera/> }
+                            </Button>
+                        </>
+                    )}
+                 </motion.div>
             )}
          </AnimatePresence>
-          <motion.div
-            animate={{
-                y: isLocked ? '150%' : '0%',
-                opacity: isLocked ? 0 : 1
-            }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className={cn("flex items-center gap-2", isLocked && "pointer-events-none")}
-          >
-            {isRecording && !isLocked ? (
-                <div className="flex-1 flex items-center justify-between text-muted-foreground transition-all duration-300" style={{ transform: `translateX(${Math.max(0, -swipeDx)}px)`}}>
-                     <div className="flex items-center gap-1 text-sm">
-                        <ChevronLeft className="h-4 w-4"/> Bekor qilish uchun suring
-                     </div>
-                      <div className="flex items-center gap-1 text-sm">
-                        <p className='font-mono'>{formatTime(recordingTime)}</p>
-                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                      </div>
-                </div>
-            ) : (
-                <>
-                <Input
-                    value={newMessage}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage();
-                        }
-                    }}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Xabar yozing..."
-                    disabled={isSending}
-                />
-                 { !newMessage && (
-                    <Button 
-                        type="button" 
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setCurrentRecordingMode(prev => prev === 'audio' ? 'video' : 'audio')}
-                    >
-                        <AnimatePresence mode="popLayout">
-                            <motion.div
-                                key={currentRecordingMode}
-                                initial={{ scale: 0, rotate: -90 }}
-                                animate={{ scale: 1, rotate: 0 }}
-                                exit={{ scale: 0, rotate: 90 }}
-                            >
-                                {currentRecordingMode === 'audio' ? <Mic/> : <Camera />}
-                            </motion.div>
-                        </AnimatePresence>
-                    </Button>
-                 )}
-                </>
-            )}
-
-            <div 
-                className="relative"
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerCancel={onPointerUp}
-            >
-                <AnimatePresence>
-                    {isRecording && !isLocked && (
-                         <motion.div 
-                            initial={{ y: 0, opacity: 0}}
-                            animate={{ y: -60, opacity: 1}}
-                            transition={{ delay: 0.5, type: 'spring', stiffness: 300, damping: 15 }}
-                            className="absolute bottom-full left-1/2 -translate-x-1/2 p-2 bg-secondary rounded-full shadow-lg"
-                         >
-                            <Lock className="text-muted-foreground h-5 w-5"/>
-                         </motion.div>
-                    )}
-                 </AnimatePresence>
-                 <motion.div
-                     animate={{ scale: isRecording ? 1.4 : 1 }}
-                     transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-                     style={{ transformOrigin: 'center' }}
-                 >
-                    <Button
-                        type="button" 
-                        size="icon"
-                        onClick={newMessage ? handleSendMessage : undefined}
-                        className={cn("rounded-full transition-colors duration-300", isRecording && 'bg-primary/80')}
-                    >
-                        {newMessage ? <Send/> : currentRecordingMode === 'audio' ? <Mic/> : <Camera/> }
-                    </Button>
-                 </motion.div>
-            </div>
-         </motion.div>
       </div>
     </div>
   );
 }
-
-    
-
-    
