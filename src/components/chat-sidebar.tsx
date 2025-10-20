@@ -51,7 +51,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
   );
 
   const { data: sentMessages, isLoading: loadingSent } = useCollection<Message>(messagesSentQuery);
-  const { data: receivedMessages, isLoading: loadingReceived } = useCollection<Message>(receivedMessagesQuery);
+  const { data: receivedMessages, isLoading: loadingReceived } = useCollection<Message>(messagesReceivedQuery);
   
   // 2. Combine and find unique conversation partners
   const conversations = useMemo(() => {
@@ -64,13 +64,13 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
       const partnerId = msg.senderId === currentUser.id ? msg.receiverId : msg.senderId;
       const existingLastMsg = partnerLastMessage.get(partnerId);
 
-      if (!existingLastMsg || msg.createdAt.toMillis() > existingLastMsg.createdAt.toMillis()) {
+      if (!existingLastMsg || (msg.createdAt && existingLastMsg.createdAt && msg.createdAt.toMillis() > existingLastMsg.createdAt.toMillis())) {
         partnerLastMessage.set(partnerId, msg);
       }
     });
 
     return Array.from(partnerLastMessage.values())
-        .sort((a,b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        .sort((a,b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
         
   }, [sentMessages, receivedMessages, currentUser.id]);
 
@@ -138,7 +138,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
                     <div className="flex justify-between items-center">
                         <p className="font-semibold truncate">{partner.name}</p>
                         <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNowStrict(lastMessage.createdAt.toDate(), { addSuffix: true, locale: uz })}
+                            {lastMessage.createdAt ? formatDistanceToNowStrict(lastMessage.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}
                         </p>
                     </div>
                     <p className="text-sm text-muted-foreground truncate">

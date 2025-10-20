@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from 'next-auth';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, or, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, or, addDoc, serverTimestamp, doc } from 'firebase/firestore';
 import type { Message, Designer } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -36,20 +36,15 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
 
   // Fetch recipient's data
   const recipientDocRef = useMemoFirebase(
-    () => (db && selectedUserId) ? collection(db, 'users', selectedUserId) : null, // Mistake here - should be doc()
+    () => (db && selectedUserId) ? doc(db, 'users', selectedUserId) : null,
     [db, selectedUserId]
   );
-  
-  const partnerQuery = useMemoFirebase(
-    () => (db && selectedUserId) ? query(collection(db, 'users'), where('id', '==', selectedUserId)) : null,
-    [db, selectedUserId]
-  );
-  const { data: partnerData, isLoading: partnerLoading } = useCollection<Designer>(partnerQuery);
-  const partner = partnerData?.[0];
+  const { data: partner, isLoading: partnerLoading } = useDoc<Designer>(recipientDocRef);
 
-  // Fetch messages
+
+  // Fetch all messages for the current user to filter later
   const messagesQuery = useMemoFirebase(() => {
-    if (!db || !selectedUserId) return null;
+    if (!db || !currentUser.id) return null;
     return query(
       collection(db, 'messages'),
       or(
