@@ -19,6 +19,7 @@ import LoadingPage from '@/app/loading';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { TelegramIcon } from '@/components/icons';
+import { Badge } from '@/components/ui/badge';
 
 export default function DesignerProfilePage() {
   const params = useParams();
@@ -156,7 +157,7 @@ export default function DesignerProfilePage() {
             </div>
             <div className="flex-1 text-center md:text-left">
               <h1 className="font-headline text-4xl font-bold">{designer.name}</h1>
-              <p className="text-muted-foreground text-lg">{designer.specialization}</p>
+              {designer.specialization && <Badge variant="secondary" className="mt-1 text-base py-1 px-3">{designer.specialization}</Badge>}
             </div>
             { status === 'authenticated' && session.user.id !== id ? (
               <div className="flex flex-wrap items-center justify-center gap-2">
@@ -181,7 +182,7 @@ export default function DesignerProfilePage() {
                 {designer.telegramUrl && (
                   <a href={`https://t.me/${designer.telegramUrl.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
                     <TelegramIcon className="w-5 h-5" />
-                    <span>Telegram</span>
+                    <span>@{designer.telegramUrl.replace('@', '')}</span>
                   </a>
                 )}
               </div>
@@ -233,3 +234,5 @@ export default function DesignerProfilePage() {
     </>
   );
 }
+
+    
