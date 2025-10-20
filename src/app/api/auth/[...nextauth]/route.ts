@@ -6,7 +6,6 @@ import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs
 import { db } from "@/firebase/firestore-config";
 import type { Designer } from "@/lib/types";
 
-const isProduction = process.env.NODE_ENV === 'production';
 const ONE_WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
 
 export const authOptions: NextAuthOptions = {
@@ -31,20 +30,6 @@ export const authOptions: NextAuthOptions = {
   jwt: {
     maxAge: ONE_WEEK_IN_SECONDS,
   },
-  ...(isProduction && process.env.NEXTAUTH_URL && {
-    cookies: {
-      sessionToken: {
-        name: `__Secure-next-auth.session-token`,
-        options: {
-          httpOnly: true,
-          sameSite: 'lax',
-          path: '/',
-          secure: true,
-          domain: new URL(process.env.NEXTAUTH_URL).hostname,
-        }
-      },
-    },
-  }),
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider !== "google" || !user.email) {
