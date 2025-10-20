@@ -157,7 +157,7 @@ export default function DesignerProfilePage() {
               <h1 className="font-headline text-4xl font-bold">{designer.name}</h1>
               <p className="text-muted-foreground text-lg">{designer.specialization}</p>
             </div>
-            { user && user.id !== id && (
+            { status === 'authenticated' && session.user.id !== id && (
               <div className="flex gap-2">
                 <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading}>
                   {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}

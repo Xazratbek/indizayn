@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import type { Session } from 'next-auth';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, or } from 'firebase/firestore';
 import type { Message, Designer } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -40,37 +40,21 @@ function ConversationSkeleton() {
 export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser }: ChatSidebarProps) {
   const db = useFirestore();
 
-  // Get all messages sent BY the current user
-  const sentMessagesQuery = useMemoFirebase(
+  // Unified query for all messages involving the current user
+  const allMessagesQuery = useMemoFirebase(
     () => db && currentUser?.id 
         ? query(
             collection(db, 'messages'), 
-            where('senderId', '==', currentUser.id),
+            or(
+              where('senderId', '==', currentUser.id),
+              where('receiverId', '==', currentUser.id)
+            ),
             orderBy('createdAt', 'desc')
           )
         : null,
     [db, currentUser.id]
   );
-  const { data: sentMessages, isLoading: loadingSent } = useCollection<Message>(sentMessagesQuery);
-
-  // Get all messages sent TO the current user
-  const receivedMessagesQuery = useMemoFirebase(
-    () => db && currentUser?.id 
-        ? query(
-            collection(db, 'messages'), 
-            where('receiverId', '==', currentUser.id),
-            orderBy('createdAt', 'desc')
-          )
-        : null,
-    [db, currentUser.id]
-  );
-  const { data: receivedMessages, isLoading: loadingReceived } = useCollection<Message>(receivedMessagesQuery);
-  
-  const allMessages = useMemo(() => {
-      const messages = [...(sentMessages || []), ...(receivedMessages || [])];
-      // Sort all messages by creation time, descending
-      return messages.sort((a, b) => (b.createdAt?.toMillis() ?? 0) - (a.createdAt?.toMillis() ?? 0));
-  }, [sentMessages, receivedMessages]);
+  const { data: allMessages, isLoading: loadingMessages } = useCollection<Message>(allMessagesQuery);
 
 
   const partnerLastMessage = useMemo(() => {
@@ -88,6 +72,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
 
   const partnerIds = useMemo(() => Array.from(partnerLastMessage.keys()), [partnerLastMessage]);
 
+  // Query for all partners based on the extracted IDs
   const partnersQuery = useMemoFirebase(
     () => (db && partnerIds.length > 0) ? query(collection(db, 'users'), where('id', 'in', partnerIds)) : null,
     [db, partnerIds]
@@ -110,12 +95,10 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
         return null;
       })
       .filter((c): c is Conversation => c !== null)
-      // The sorting is already handled by fetching in descending order and picking the first one.
-      // So this sort might be redundant but keeps the logic clear.
       .sort((a, b) => (b.lastMessage.createdAt?.toMillis() ?? 0) - (a.lastMessage.createdAt?.toMillis() ?? 0));
   }, [partnerLastMessage, partnersMap]);
   
-  const isLoading = loadingSent || loadingReceived || (partnerIds.length > 0 && loadingPartners);
+  const isLoading = loadingMessages || (partnerIds.length > 0 && loadingPartners);
 
   return (
     <div className="border-r bg-background/80 h-full flex flex-col">
