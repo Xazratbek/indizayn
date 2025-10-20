@@ -129,7 +129,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   const db = useFirestore();
   const { toast } = useToast();
   const [newMessage, setNewMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
   const [optimisticMessages, setOptimisticMessages] = useState<OptimisticMessage[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
@@ -230,9 +229,10 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     }
   }, [combinedMessages]);
 
-  const startRecording = async () => {
+    const startRecording = async () => {
     if (isRecording) return;
    
+    setIsRecording(true);
     setRecordingTime(0);
 
     try {
@@ -249,7 +249,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
         
         mediaRecorderRef.current.start();
-        setIsRecording(true);
         
         recordingIntervalRef.current = setInterval(() => {
             setRecordingTime(prev => prev + 1);
@@ -265,38 +264,53 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         setIsRecording(false);
     }
   };
-    const stopRecording = async (options: { send: boolean } = { send: true }) => {
-        if (!mediaRecorderRef.current || !isRecording) return;
-      
-        if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
-        setIsRecording(false);
-      
-        return new Promise<void>((resolve) => {
-          if (!mediaRecorderRef.current) {
-            resolve();
-            return;
-          }
-          
-          let chunks: BlobPart[] = [];
-          mediaRecorderRef.current.ondataavailable = (e) => {
+
+  const stopRecording = async () => {
+    if (!mediaRecorderRef.current || !isRecording) return;
+
+    return new Promise<Blob>((resolve) => {
+        if (!mediaRecorderRef.current) return;
+
+        let chunks: BlobPart[] = [];
+        mediaRecorderRef.current.ondataavailable = (e) => {
             chunks.push(e.data);
-          };
-      
-          mediaRecorderRef.current.onstop = async () => {
+        };
+    
+        mediaRecorderRef.current.onstop = () => {
             const mimeType = recordingMode === 'video' ? 'video/webm' : 'audio/webm';
             const blob = new Blob(chunks, { type: mimeType });
             
             mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
-            
-            if (options.send && blob.size > 0) {
-              await sendMediaMessage(blob, recordingMode);
+            if (videoPreviewRef.current) {
+                videoPreviewRef.current.srcObject = null;
             }
-            resolve();
-          };
-      
-          mediaRecorderRef.current.stop();
-        });
-      };
+            resolve(blob);
+        };
+    
+        mediaRecorderRef.current.stop();
+        if(recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+        setIsRecording(false);
+    });
+  };
+
+  const handleStopAndSend = async () => {
+    const mediaBlob = await stopRecording();
+    if (mediaBlob && mediaBlob.size > 0) {
+        await sendMediaMessage(mediaBlob, recordingMode);
+    }
+  };
+
+  const handleCancelRecording = async () => {
+    if (!mediaRecorderRef.current || !isRecording) return;
+    
+    mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    if (videoPreviewRef.current) {
+        videoPreviewRef.current.srcObject = null;
+    }
+    mediaRecorderRef.current.stop(); // Stop will fire onstop, but we don't do anything with the blob.
+    if(recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+    setIsRecording(false);
+  }
     
     const sendMediaMessage = async (mediaBlob: Blob, mode: 'audio' | 'video') => {
         if (!selectedUserId || !db) return;
@@ -344,6 +358,8 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 ...(mode === 'video' && { videoUrl: mediaUrl }),
                 createdAt: serverTimestamp(),
             });
+
+            setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
             
              if(partner) {
                 const notificationsRef = collection(db, "notifications");
@@ -358,8 +374,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                   createdAt: serverTimestamp(),
                 });
             }
-            // Remove the optimistic message once the real one is sent
-            setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
             URL.revokeObjectURL(localMediaUrl);
 
         } catch (error: any) {
@@ -371,7 +385,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedUserId || !db) return;
-    setIsSending(true);
     const text = newMessage;
     setNewMessage('');
     
@@ -405,8 +418,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         title: 'Xatolik',
         description: 'Xabarni yuborishda muammo yuz berdi.',
       });
-    } finally {
-      setIsSending(false);
     }
   };
     
@@ -416,8 +427,10 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     
     useEffect(() => {
         if (isRecording && recordingMode === 'video') {
-            stopRecording({ send: false }).then(() => {
-                 setTimeout(startRecording, 100);
+            stopRecording().then((blob) => {
+                if(blob) {
+                    startRecording();
+                }
             });
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -531,10 +544,15 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       </ScrollArea>
 
         {isRecording && recordingMode === 'video' && (
-            <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center pointer-events-none">
-                <div className="relative w-64 h-64">
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-48 h-48 z-20 pointer-events-none">
+                 <div className="relative w-full h-full">
                     <div className="absolute inset-0 rounded-full overflow-hidden border-4 border-primary animate-pulse">
-                         <video ref={videoPreviewRef} className="w-full h-full object-cover scale-x-[-1]" autoPlay muted />
+                         <video 
+                           ref={videoPreviewRef} 
+                           className={cn("w-full h-full object-cover", facingMode === 'user' && 'scale-x-[-1]')}
+                           autoPlay 
+                           muted 
+                         />
                     </div>
                 </div>
             </div>
@@ -542,15 +560,26 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
       <div className="p-2 md:p-4 border-t bg-background overflow-hidden">
         {isRecording ? (
-            <div className="flex items-center gap-2">
-                <Button onClick={() => stopRecording({ send: false })} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+            <div className="flex items-center gap-4 h-10">
+                <Button onClick={handleCancelRecording} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                     <Trash2 />
                 </Button>
-                <div className="flex-1 bg-secondary rounded-full h-10 flex items-center px-4">
+                <div className="flex-1 bg-secondary rounded-full h-10 flex items-center justify-center px-4">
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></div>
                     <p className="text-sm font-mono text-muted-foreground">{formatTime(recordingTime)}</p>
                 </div>
-                <Button onClick={() => stopRecording({ send: true })} size="icon" className="rounded-full" disabled={isSending}>
+                
+                 {recordingMode === 'video' && (
+                     <Button
+                        onClick={handleSwitchCamera}
+                        size="icon"
+                        variant="ghost"
+                    >
+                        <SwitchCamera />
+                    </Button>
+                )}
+                
+                <Button onClick={handleStopAndSend} size="icon" className="rounded-full">
                     <Send className="h-4 w-4" />
                 </Button>
             </div>
@@ -566,14 +595,21 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                     }}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Xabar yozing..."
-                    disabled={isSending}
                 />
                 {newMessage ? (
-                    <Button type="button" size="icon" className="rounded-full" onClick={handleSendMessage} disabled={isSending}>
+                    <Button type="button" size="icon" className="rounded-full" onClick={handleSendMessage}>
                         <Send/>
                     </Button>
                 ) : (
                     <>
+                        <Button 
+                            type="button" 
+                            size="icon"
+                            className="rounded-full"
+                            onClick={startRecording}
+                        >
+                           {recordingMode === 'audio' ? <Mic/> : <Camera/> }
+                        </Button>
                          <Button 
                             type="button" 
                             variant="ghost"
@@ -586,28 +622,12 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                                     initial={{ scale: 0, rotate: -90 }}
                                     animate={{ scale: 1, rotate: 0 }}
                                     exit={{ scale: 0, rotate: 90 }}
+                                    className="flex items-center justify-center"
                                 >
-                                    {recordingMode === 'audio' ? <Mic/> : <Camera />}
+                                    {recordingMode === 'audio' ? <Camera/> : <Mic />}
                                 </motion.div>
                             </AnimatePresence>
                         </Button>
-                        <Button
-                            type="button" 
-                            size="icon"
-                            className="rounded-full"
-                            onClick={startRecording}
-                        >
-                           {recordingMode === 'audio' ? <Mic/> : <Camera/> }
-                        </Button>
-                        {recordingMode === 'video' && (
-                             <Button
-                                onClick={handleSwitchCamera}
-                                size="icon"
-                                variant="ghost"
-                            >
-                                <SwitchCamera />
-                            </Button>
-                        )}
                     </>
                 )}
             </div>
@@ -616,3 +636,5 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
+
+    
