@@ -1,15 +1,17 @@
 
+
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LayoutGrid, Users, User } from "lucide-react";
+import { Home, LayoutGrid, Users, User, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems = [
   { href: "/", label: "Bosh Sahifa", icon: Home },
   { href: "/browse", label: "Loyihalar", icon: LayoutGrid },
+  { href: "/messages", label: "Xabarlar", icon: MessageSquare },
   { href: "/designers", label: "Dizaynerlar", icon: Users },
   { href: "/account", label: "Profil", icon: User },
 ];

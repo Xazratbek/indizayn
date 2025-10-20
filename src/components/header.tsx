@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Search, Menu, Home, Compass, Users, PlusSquare } from "lucide-react"
+import { Search, Menu, Home, Compass, Users, PlusSquare, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Logo } from "./icons"
@@ -50,6 +50,12 @@ export function Header() {
           className="transition-colors hover:text-foreground/80 text-foreground/60"
         >
           Dizaynerlar
+        </Link>
+        <Link
+          href="/messages"
+          className="transition-colors hover:text-foreground/80 text-foreground/60"
+        >
+          Xabarlar
         </Link>
         <Link
           href="/about"

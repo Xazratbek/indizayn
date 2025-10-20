@@ -38,7 +38,7 @@
       },
       "required": ["name", "designerId", "imageUrl", "imageUrls", "description", "createdAt", "viewCount", "likeCount", "likes"]
     },
-     "Message": {
+    "Message": {
       "title": "Message",
       "type": "object",
       "description": "Represents a direct message between two users.",
