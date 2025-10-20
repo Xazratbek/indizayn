@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -11,7 +10,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft, Mic, Trash2, Loader2, Play, Pause, Camera, SwitchCamera } from 'lucide-react';
+import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft, Mic, Trash2, Loader2, Play, Pause, Camera, SwitchCamera, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -43,9 +42,14 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
 
         const setAudioTime = () => setCurrentTime(audio.currentTime);
 
+        const handleEnded = () => {
+            setIsPlaying(false);
+            setCurrentTime(0);
+        };
+
         audio.addEventListener('loadeddata', setAudioData);
         audio.addEventListener('timeupdate', setAudioTime);
-        audio.addEventListener('ended', () => setIsPlaying(false));
+        audio.addEventListener('ended', handleEnded);
 
         if (audioUrl.startsWith('blob:')) {
             audio.load();
@@ -54,7 +58,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
         return () => {
             audio.removeEventListener('loadeddata', setAudioData);
             audio.removeEventListener('timeupdate', setAudioTime);
-            audio.removeEventListener('ended', () => setIsPlaying(false));
+            audio.removeEventListener('ended', handleEnded);
         };
     }, [audioUrl]);
     
@@ -87,7 +91,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
 
     return (
         <div className="flex items-center gap-2 w-[220px]">
-             <audio ref={audioRef} src={audioUrl} preload="metadata" />
+             <audio ref={audioRef} src={audioUrl} preload="metadata" loop={false} />
             <Button onClick={togglePlayPause} size="icon" variant="ghost" className="shrink-0">
                 {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </Button>
@@ -129,7 +133,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   const [optimisticMessages, setOptimisticMessages] = useState<OptimisticMessage[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
-  const [currentRecordingMode, setCurrentRecordingMode] = useState<'audio' | 'video'>('audio');
+  const [recordingMode, setRecordingMode] = useState<'audio' | 'video'>('audio');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -174,9 +178,10 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         if (createdAt instanceof Timestamp) {
             return createdAt.toMillis();
         }
-        if (createdAt instanceof Date) {
+        if (createdAt instanceof Date) { // For optimistic messages
             return createdAt.getTime();
         }
+        // For Firestore-like objects that are not Timestamp instances
         if (typeof createdAt === 'object' && 'seconds' in createdAt && typeof (createdAt as any).seconds === 'number') {
             return (createdAt as Timestamp).toMillis();
         }
@@ -232,16 +237,16 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     setRecordingTime(0);
 
     try {
-        const constraints = currentRecordingMode === 'video'
+        const constraints = recordingMode === 'video'
             ? { audio: true, video: { facingMode } }
             : { audio: true };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         
-        if (currentRecordingMode === 'video' && videoPreviewRef.current) {
+        if (recordingMode === 'video' && videoPreviewRef.current) {
             videoPreviewRef.current.srcObject = stream;
         }
 
-        const mimeType = currentRecordingMode === 'video' ? 'video/webm' : 'audio/webm';
+        const mimeType = recordingMode === 'video' ? 'video/webm' : 'audio/webm';
         mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
         
         mediaRecorderRef.current.start();
@@ -251,18 +256,18 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         }, 1000);
 
     } catch (error) {
-        console.error(`${currentRecordingMode} recording failed:`, error);
+        console.error(`${recordingMode} recording failed:`, error);
         toast({
             variant: 'destructive',
             title: "Xatolik",
-            description: `${currentRecordingMode === 'video' ? 'Video' : 'Ovoz'} yozish uchun ruxsat berilmadi yoki qurilmangizda muammo bor.`
+            description: `${recordingMode === 'video' ? 'Video' : 'Ovoz'} yozish uchun ruxsat berilmadi yoki qurilmangizda muammo bor.`
         });
         setIsRecording(false);
     }
   };
 
-  const stopRecording = async (send: boolean) => {
-    if (!mediaRecorderRef.current || !isRecording) return;
+  const stopRecording = async () => {
+    if (!mediaRecorderRef.current || !isRecording) return null;
   
     if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
     
@@ -278,7 +283,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       };
   
       mediaRecorderRef.current.onstop = () => {
-        const mimeType = currentRecordingMode === 'video' ? 'video/webm' : 'audio/webm';
+        const mimeType = recordingMode === 'video' ? 'video/webm' : 'audio/webm';
         const blob = new Blob(chunks, { type: mimeType });
         mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
         setIsRecording(false);
@@ -350,6 +355,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                   createdAt: serverTimestamp(),
                 });
             }
+            // Remove the optimistic message once the real one is sent
             setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
             URL.revokeObjectURL(localMediaUrl);
 
@@ -400,28 +406,33 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       setIsSending(false);
     }
   };
-
-    const handleCancelRecording = async () => {
-        await stopRecording(false);
-    };
-
-    const handleSendRecording = async () => {
-        const blob = await stopRecording(true);
-        if (blob && blob.size > 0) {
-            await sendMediaMessage(blob, currentRecordingMode);
-        } else if (blob) {
-            toast({ variant: 'destructive', title: 'Xatolik', description: `Yozib olingan ${currentRecordingMode} bo'sh.` });
+    
+    const handleToggleRecording = async () => {
+        if (isRecording) {
+            // Stop and send
+            const blob = await stopRecording();
+            if (blob && blob.size > 0) {
+                await sendMediaMessage(blob, recordingMode);
+            }
+        } else {
+            // Start recording
+            await startRecording();
         }
     };
-    
+
+    const handleCancelRecording = async () => {
+        await stopRecording(); // Stops recording and discards blob
+    };
+
     const handleSwitchCamera = () => {
         setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
     };
     
     useEffect(() => {
-        if (isRecording && currentRecordingMode === 'video') {
-             // We need to re-request the stream to change camera
-            stopRecording(false).then(startRecording);
+        if (isRecording && recordingMode === 'video') {
+            stopRecording().then(() => {
+                 setTimeout(startRecording, 100);
+            });
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [facingMode]);
@@ -533,101 +544,88 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         )}
       </ScrollArea>
 
-        {isRecording && currentRecordingMode === 'video' && (
+        {isRecording && recordingMode === 'video' && (
             <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center pointer-events-none">
                 <div className="relative w-64 h-64">
                     <div className="absolute inset-0 rounded-full overflow-hidden border-4 border-primary animate-pulse">
                          <video ref={videoPreviewRef} className="w-full h-full object-cover scale-x-[-1]" autoPlay muted />
                     </div>
-                     <Button
-                        onClick={handleSwitchCamera}
-                        size="icon"
-                        variant="secondary"
-                        className="absolute bottom-4 right-4 rounded-full z-10 pointer-events-auto"
-                    >
-                        <SwitchCamera />
-                    </Button>
                 </div>
             </div>
         )}
 
       <div className="p-2 md:p-4 border-t bg-background overflow-hidden">
-         <AnimatePresence>
-            {isRecording ? (
-                <motion.div
-                     initial={{ y: "100%" }}
-                     animate={{ y: "0%" }}
-                     exit={{ y: "100%" }}
-                     transition={{ duration: 0.3, ease: 'easeOut' }}
-                     className="flex items-center gap-2"
-                >
-                    <Button onClick={handleCancelRecording} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                        <Trash2 />
+        {isRecording ? (
+             <div className="flex items-center gap-2">
+                <Button onClick={handleCancelRecording} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                    <Trash2 />
+                </Button>
+                <div className="flex-1 bg-secondary rounded-full h-10 flex items-center px-4">
+                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></div>
+                    <p className="text-sm font-mono text-muted-foreground">{formatTime(recordingTime)}</p>
+                </div>
+                <Button onClick={handleToggleRecording} size="icon" className="rounded-full" disabled={isSending}>
+                    <Send className="h-4 w-4" />
+                </Button>
+            </div>
+        ) : (
+            <div className="flex items-center gap-2">
+                <Input
+                    value={newMessage}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                        }
+                    }}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Xabar yozing..."
+                    disabled={isSending}
+                />
+                {newMessage ? (
+                    <Button type="button" size="icon" className="rounded-full" onClick={handleSendMessage} disabled={isSending}>
+                        <Send/>
                     </Button>
-                    <div className="flex-1 bg-secondary rounded-full h-10 flex items-center px-4">
-                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></div>
-                        <p className="text-sm font-mono text-muted-foreground">{formatTime(recordingTime)}</p>
-                    </div>
-                    <Button onClick={handleSendRecording} size="icon" className="rounded-full" disabled={isSending}>
-                        <Send className="h-4 w-4" />
-                    </Button>
-                </motion.div>
-            ): (
-                 <motion.div
-                    initial={{ y: "100%" }}
-                    animate={{ y: "0%" }}
-                    exit={{ y: "100%" }}
-                    transition={{ duration: 0.3, ease: 'easeOut' }}
-                    className="flex items-center gap-2"
-                 >
-                    <Input
-                        value={newMessage}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage();
-                            }
-                        }}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Xabar yozing..."
-                        disabled={isSending}
-                    />
-                    {newMessage ? (
-                        <Button type="button" size="icon" className="rounded-full" onClick={handleSendMessage} disabled={isSending}>
-                            <Send/>
+                ) : (
+                    <>
+                         <Button 
+                            type="button" 
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setRecordingMode(prev => prev === 'audio' ? 'video' : 'audio')}
+                        >
+                            <AnimatePresence mode="popLayout">
+                                <motion.div
+                                    key={recordingMode}
+                                    initial={{ scale: 0, rotate: -90 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    exit={{ scale: 0, rotate: 90 }}
+                                >
+                                    {recordingMode === 'audio' ? <Mic/> : <Camera />}
+                                </motion.div>
+                            </AnimatePresence>
                         </Button>
-                    ) : (
-                        <>
-                            <Button 
-                                type="button" 
+                        <Button
+                            type="button" 
+                            size="icon"
+                            className="rounded-full"
+                            onClick={handleToggleRecording}
+                        >
+                           {recordingMode === 'audio' ? <Mic/> : <Camera/> }
+                        </Button>
+                        {recordingMode === 'video' && (
+                             <Button
+                                onClick={handleSwitchCamera}
+                                size="icon"
                                 variant="ghost"
-                                size="icon"
-                                onClick={() => setCurrentRecordingMode(prev => prev === 'audio' ? 'video' : 'audio')}
                             >
-                                <AnimatePresence mode="popLayout">
-                                    <motion.div
-                                        key={currentRecordingMode}
-                                        initial={{ scale: 0, rotate: -90 }}
-                                        animate={{ scale: 1, rotate: 0 }}
-                                        exit={{ scale: 0, rotate: 90 }}
-                                    >
-                                        {currentRecordingMode === 'audio' ? <Mic/> : <Camera />}
-                                    </motion.div>
-                                </AnimatePresence>
+                                <SwitchCamera />
                             </Button>
-                            <Button
-                                type="button" 
-                                size="icon"
-                                className="rounded-full"
-                                onClick={startRecording}
-                            >
-                                {currentRecordingMode === 'audio' ? <Mic/> : <Camera/> }
-                            </Button>
-                        </>
-                    )}
-                 </motion.div>
-            )}
-         </AnimatePresence>
+                        )}
+                    </>
+                )}
+            </div>
+        )}
       </div>
     </div>
   );

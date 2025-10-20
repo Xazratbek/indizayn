@@ -5,6 +5,7 @@ import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, Maximize, Minimize } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
 
 interface VideoMessagePlayerProps {
     videoUrl: string;
@@ -22,8 +23,7 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
 
         const handleEnded = () => {
             setIsPlaying(false);
-            // Optionally shrink back when video ends
-            // setIsExpanded(false);
+            setIsExpanded(false); // Automatically collapse when video ends
         };
         
         video.addEventListener('ended', handleEnded);
@@ -42,17 +42,12 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
             videoRef.current.play().catch(e => console.error("Video autoplay failed", e));
             setIsPlaying(true);
         }
-    }, [isExpanded])
+    }, [isExpanded]);
 
     const togglePlay = (e: React.MouseEvent) => {
         e.stopPropagation();
         const video = videoRef.current;
         if (!video) return;
-
-        if (!isExpanded) {
-            setIsExpanded(true);
-            return;
-        }
 
         if (video.paused) {
             video.play().catch(e => console.error("Video play failed", e));
@@ -64,12 +59,29 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
     };
     
     const handleContainerClick = () => {
+        if (!isExpanded) {
+            setIsExpanded(true);
+        } else {
+            // In expanded view, only controls should work, not the container itself
+            if(videoRef.current?.paused) {
+                 videoRef.current?.play().catch(e => console.error("Video play failed", e));
+                 setIsPlaying(true);
+            } else {
+                videoRef.current?.pause();
+                setIsPlaying(false);
+            }
+        }
+    }
+
+    const handleToggleSize = (e: React.MouseEvent) => {
+        e.stopPropagation();
         setIsExpanded(!isExpanded);
-         if(isExpanded && videoRef.current) {
+        if(isExpanded && videoRef.current) {
             videoRef.current.pause();
             setIsPlaying(false);
         }
     }
+
 
     return (
         <motion.div
@@ -78,7 +90,7 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
             animate={{ borderRadius: isExpanded ? '1rem' : '50%' }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
             className={cn(
-                'relative w-48 h-48 bg-black cursor-pointer overflow-hidden',
+                'relative w-48 h-48 bg-black cursor-pointer overflow-hidden shadow-lg',
                 isExpanded && 'w-72 h-72'
             )}
             onClick={handleContainerClick}
@@ -90,46 +102,47 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
                 layout
                 src={videoUrl}
                 playsInline
-                loop={!isExpanded} // Loop when small
-                muted={!isExpanded} // Mute when small
+                loop={false} 
+                muted={!isExpanded}
                 className="w-full h-full object-cover scale-[1.3]" // Scale to fill circle
                 onLoadedData={() => {
-                    // Autoplay muted when small
-                    if(!isExpanded && videoRef.current) {
+                    // Autoplay muted when small and looping
+                     if(!isExpanded && videoRef.current) {
+                         videoRef.current.loop = true;
                          videoRef.current.play().catch(e => {});
+                    } else if (videoRef.current) {
+                        videoRef.current.loop = false;
                     }
                 }}
             />
             <AnimatePresence>
-                {(isHovered || isExpanded) && (
+                {(isHovered) && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="absolute inset-0 bg-black/30 flex items-center justify-center"
-                        onClick={togglePlay}
                     >
-                         {!isPlaying && isExpanded && (
-                            <div className="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center">
+                         {isExpanded && !isPlaying && (
+                             <div className="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center" onClick={togglePlay}>
                                 <Play className="w-6 h-6 text-white" />
                             </div>
-                        )}
-                        {isPlaying && isExpanded && (
-                             <div className="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center">
-                                <Pause className="w-6 h-6 text-white" />
-                            </div>
-                        )}
-                        {!isExpanded && (
-                            <div className="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center">
-                                <Maximize className="w-6 h-6 text-white" />
-                            </div>
-                        )}
+                         )}
                     </motion.div>
                 )}
             </AnimatePresence>
+             <div className="absolute bottom-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
+                <Button
+                    size="icon"
+                    variant="ghost"
+                    className="w-8 h-8 rounded-full bg-black/30 text-white hover:bg-black/50 hover:text-white"
+                    onClick={handleToggleSize}
+                >
+                    {isExpanded ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                </Button>
+            </div>
         </motion.div>
     );
 };
 
 export default VideoMessagePlayer;
-
