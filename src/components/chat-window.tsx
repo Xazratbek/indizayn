@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -11,10 +10,101 @@ import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft, Mic, Trash2 } from 'lucide-react';
+import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft, Mic, Trash2, Loader2, Play, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { Slider } from './ui/slider';
+
+// Optimistic UI for messages
+type OptimisticMessage = Message & { status?: 'uploading' | 'sent' | 'failed' };
+
+interface AudioPlayerProps {
+    audioUrl: string;
+}
+
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [duration, setDuration] = useState(0);
+    const [currentTime, setCurrentTime] = useState(0);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const setAudioData = () => {
+            setDuration(audio.duration);
+            setCurrentTime(audio.currentTime);
+        };
+
+        const setAudioTime = () => setCurrentTime(audio.currentTime);
+
+        audio.addEventListener('loadeddata', setAudioData);
+        audio.addEventListener('timeupdate', setAudioTime);
+        audio.addEventListener('ended', () => setIsPlaying(false));
+
+        return () => {
+            audio.removeEventListener('loadeddata', setAudioData);
+            audio.removeEventListener('timeupdate', setAudioTime);
+            audio.removeEventListener('ended', () => setIsPlaying(false));
+        };
+    }, []);
+    
+    useEffect(() => {
+        // This is necessary to load duration for blob URLs
+        if (audioUrl.startsWith('blob:') && audioRef.current) {
+            audioRef.current.load();
+        }
+    }, [audioUrl]);
+
+    const togglePlayPause = () => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        if (isPlaying) {
+            audio.pause();
+        } else {
+            audio.play().catch(e => console.error("Audio play failed:", e));
+        }
+        setIsPlaying(!isPlaying);
+    };
+
+    const handleSliderChange = (value: number[]) => {
+        const audio = audioRef.current;
+        if (audio) {
+            audio.currentTime = value[0];
+            setCurrentTime(value[0]);
+        }
+    };
+    
+    const formatTime = (time: number) => {
+        if (isNaN(time) || time === Infinity) return '00:00';
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    };
+
+    return (
+        <div className="flex items-center gap-2 w-[220px]">
+             <audio ref={audioRef} src={audioUrl} preload="metadata" />
+            <Button onClick={togglePlayPause} size="icon" variant="ghost" className="shrink-0">
+                {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+            </Button>
+            <div className="flex-1 flex items-center gap-2">
+                <Slider
+                    value={[currentTime]}
+                    max={duration || 1}
+                    step={0.1}
+                    onValueChange={handleSliderChange}
+                    className="w-full"
+                />
+                <span className="text-xs font-mono w-12 text-right">{formatTime(currentTime)}</span>
+            </div>
+        </div>
+    )
+}
+
 
 interface ChatWindowProps {
   currentUser: Session['user'];
@@ -36,6 +126,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   const { toast } = useToast();
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [optimisticMessages, setOptimisticMessages] = useState<OptimisticMessage[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   // Audio recording state
@@ -78,6 +169,18 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     )
   }, [allMessages, selectedUserId, currentUser.id]);
 
+  const combinedMessages = useMemo(() => {
+    const finalMessages = [...conversationMessages];
+    
+    optimisticMessages.forEach(optMsg => {
+        if (!finalMessages.some(m => m.id === optMsg.id)) {
+            finalMessages.push(optMsg);
+        }
+    });
+
+    return finalMessages.sort((a,b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
+  }, [conversationMessages, optimisticMessages])
+
 
   // Mark messages as read
   useEffect(() => {
@@ -107,7 +210,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
              viewport.scrollTop = viewport.scrollHeight;
         }
     }
-  }, [conversationMessages]);
+  }, [combinedMessages]);
 
 
     const handleStartRecording = async () => {
@@ -122,7 +225,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 audioChunksRef.current.push(event.data);
             };
 
-            mediaRecorderRef.current.onstop = async () => {
+            mediaRecorderRef.current.onstop = () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
                 sendAudioMessage(audioBlob);
                 stream.getTracks().forEach(track => track.stop());
@@ -155,7 +258,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     
     const handleCancelRecording = () => {
         if (mediaRecorderRef.current && isRecording) {
-            // Stop without saving
              mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
              mediaRecorderRef.current = null;
         }
@@ -166,8 +268,23 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
     const sendAudioMessage = async (audioBlob: Blob) => {
         if (!selectedUserId || !db) return;
-        setIsSending(true);
 
+        const optimisticId = `optimistic-${Date.now()}`;
+        const localAudioUrl = URL.createObjectURL(audioBlob);
+
+        const optimisticMsg: OptimisticMessage = {
+            id: optimisticId,
+            senderId: currentUser.id,
+            receiverId: selectedUserId,
+            type: 'audio',
+            audioUrl: localAudioUrl,
+            content: '',
+            createdAt: new Date() as any, // Temporary timestamp
+            isRead: false,
+            status: 'uploading',
+        };
+        setOptimisticMessages(prev => [...prev, optimisticMsg]);
+        
         try {
             const formData = new FormData();
             formData.append('audio', audioBlob, 'voice-message.webm');
@@ -193,12 +310,15 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 isRead: false,
                 createdAt: serverTimestamp(),
             });
+            
+             // Remove the successful optimistic message
+            setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
+            URL.revokeObjectURL(localAudioUrl); // Clean up blob URL
 
         } catch (error: any) {
             console.error("Ovozli xabar yuborishda xatolik:", error);
             toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
-        } finally {
-            setIsSending(false);
+            setOptimisticMessages(prev => prev.map(m => m.id === optimisticId ? {...m, status: 'failed'} : m));
         }
     }
 
@@ -302,7 +422,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 <MessageSkeleton />
             </div>
         ) : (
-            conversationMessages.map(msg => (
+            combinedMessages.map(msg => (
                 <div
                     key={msg.id}
                     className={cn(
@@ -316,27 +436,31 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 </Avatar>
                 <div
                     className={cn(
-                        'p-3 rounded-lg relative shadow-md',
+                        'p-2 rounded-lg relative shadow-md',
                         msg.senderId === currentUser.id
                         ? 'bg-primary text-primary-foreground rounded-br-none'
                         : 'bg-background text-foreground rounded-bl-none'
                     )}
                 >
                      {msg.type === 'audio' && msg.audioUrl ? (
-                        <audio controls src={msg.audioUrl} className="max-w-[200px] h-10" />
+                        <AudioPlayer audioUrl={msg.audioUrl}/>
                      ) : (
                         <p className="pb-4 pr-5">{msg.content}</p>
                      )}
                     
-                    {msg.senderId === currentUser.id && (
-                        <div className="absolute bottom-1 right-2 flex items-center">
-                            {msg.isRead ? (
-                                <CheckCheck size={16} className="text-blue-400" />
-                            ) : (
-                                <Check size={16} className={cn("text-muted-foreground/70", msg.senderId === currentUser.id ? 'text-primary-foreground/70' : 'text-muted-foreground/70')} />
-                            )}
-                        </div>
-                    )}
+                    <div className="absolute bottom-1 right-2 flex items-center gap-1">
+                      {(msg as OptimisticMessage).status === 'uploading' && <Loader2 size={14} className="animate-spin text-primary-foreground/70" />}
+                      
+                      {msg.senderId === currentUser.id && (msg as OptimisticMessage).status !== 'uploading' && (
+                          <>
+                              {msg.isRead ? (
+                                  <CheckCheck size={16} className="text-blue-400" />
+                              ) : (
+                                  <Check size={16} className={cn("text-muted-foreground/70", msg.senderId === currentUser.id ? 'text-primary-foreground/70' : 'text-muted-foreground/70')} />
+                              )}
+                          </>
+                      )}
+                    </div>
                 </div>
                 </div>
             ))
@@ -383,3 +507,5 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
+
+    
