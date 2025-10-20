@@ -42,11 +42,11 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
 
   // 1. Get all messages involving the current user
   const messagesSentQuery = useMemoFirebase(
-    () => db ? query(collection(db, 'messages'), where('senderId', '==', currentUser.id)) : null,
+    () => (db && currentUser?.id) ? query(collection(db, 'messages'), where('senderId', '==', currentUser.id)) : null,
     [db, currentUser.id]
   );
   const messagesReceivedQuery = useMemoFirebase(
-    () => db ? query(collection(db, 'messages'), where('receiverId', '==', currentUser.id)) : null,
+    () => (db && currentUser?.id) ? query(collection(db, 'messages'), where('receiverId', '==', currentUser.id)) : null,
     [db, currentUser.id]
   );
 
@@ -55,7 +55,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
   
   // 2. Combine and find unique conversation partners
   const conversations = useMemo(() => {
-    if (!sentMessages || !receivedMessages) return [];
+    if (!sentMessages || !receivedMessages || !currentUser?.id) return [];
     
     const allMessages = [...sentMessages, ...receivedMessages];
     const partnerLastMessage = new Map<string, Message>();
@@ -94,6 +94,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
   }, [partnersData]);
 
   const finalConversations: Conversation[] = useMemo(() => {
+    if (!currentUser?.id) return [];
     return conversations
         .map(msg => {
             const partnerId = msg.senderId === currentUser.id ? msg.receiverId : msg.senderId;

@@ -44,7 +44,7 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
 
   // Fetch all messages for the current user to filter later
   const messagesQuery = useMemoFirebase(() => {
-    if (!db || !currentUser.id) return null;
+    if (!db || !currentUser?.id) return null;
     return query(
       collection(db, 'messages'),
       or(
@@ -58,7 +58,7 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
   const { data: allMessages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
   
   const filteredMessages = useMemo(() => {
-      if (!allMessages || !selectedUserId) return [];
+      if (!allMessages || !selectedUserId || !currentUser?.id) return [];
       return allMessages.filter(msg => 
         (msg.senderId === currentUser.id && msg.receiverId === selectedUserId) ||
         (msg.senderId === selectedUserId && msg.receiverId === currentUser.id)
