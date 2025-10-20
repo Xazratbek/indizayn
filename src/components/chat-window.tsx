@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -131,7 +130,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
 
@@ -168,14 +166,19 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   }, [allMessages, selectedUserId, currentUser.id]);
 
     const getMessageTime = (message: Message | OptimisticMessage): number => {
-        if (!message.createdAt) return 0;
+        const createdAt = message.createdAt;
+        if (!createdAt) return 0;
         // Check if it's a Firestore Timestamp
-        if (message.createdAt instanceof Timestamp) {
-            return message.createdAt.toMillis();
+        if (createdAt instanceof Timestamp) {
+            return createdAt.toMillis();
         }
         // Check if it's a JavaScript Date (from optimistic UI)
-        if (message.createdAt instanceof Date) {
-            return message.createdAt.getTime();
+        if (createdAt instanceof Date) {
+            return createdAt.getTime();
+        }
+        // Fallback for serialized Timestamps (though less likely with onSnapshot)
+        if (typeof createdAt === 'object' && 'seconds' in createdAt && 'nanoseconds' in createdAt) {
+            return (createdAt as Timestamp).toMillis();
         }
         return 0;
     };
@@ -226,25 +229,15 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
     const handleStartRecording = async () => {
         if (isRecording) return;
+        setIsRecording(true);
+        setRecordingTime(0);
 
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream);
-            audioChunksRef.current = [];
-
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                audioChunksRef.current.push(event.data);
-            };
-
-            mediaRecorderRef.current.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                sendAudioMessage(audioBlob);
-                stream.getTracks().forEach(track => track.stop());
-            };
-
+            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            
             mediaRecorderRef.current.start();
-            setIsRecording(true);
-            setRecordingTime(0);
+            
             recordingIntervalRef.current = setInterval(() => {
                 setRecordingTime(prev => prev + 1);
             }, 1000);
@@ -256,16 +249,49 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 title: "Xatolik",
                 description: "Ovoz yozish uchun ruxsat berilmadi yoki qurilmangizda muammo bor."
             });
+            setIsRecording(false);
         }
     };
 
-    const handleStopRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-            if(recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+    const handleStopRecording = async () => {
+        if (!mediaRecorderRef.current || !isRecording) return;
+    
+        // Stop the interval
+        if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+        setIsRecording(false);
+    
+        try {
+            // Wrap the onstop logic in a promise to ensure it completes
+            const audioBlob = await new Promise<Blob>((resolve) => {
+                if (!mediaRecorderRef.current) return;
+    
+                mediaRecorderRef.current.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'audio/webm' });
+                    chunks = []; // Clear chunks for next recording
+                    resolve(blob);
+                };
+    
+                let chunks: BlobPart[] = [];
+                mediaRecorderRef.current.ondataavailable = (e) => {
+                    chunks.push(e.data);
+                };
+    
+                mediaRecorderRef.current.stop();
+                mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            });
+    
+            if (audioBlob.size > 0) {
+                await sendAudioMessage(audioBlob);
+            } else {
+                console.error("Recorded audio blob is empty.");
+                toast({ variant: 'destructive', title: 'Xatolik', description: "Yozib olingan ovoz bo'sh." });
+            }
+        } catch (error) {
+            console.error("Error stopping recording:", error);
+            toast({ variant: 'destructive', title: 'Xatolik', description: "Ovoz yozishni to'xtatishda muammo." });
         }
     };
+    
     
     const handleCancelRecording = () => {
         if (mediaRecorderRef.current && isRecording) {
@@ -341,7 +367,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     setNewMessage('');
     
     try {
-      await addDoc(collection(db, 'messages'), {
+      const messageRef = await addDoc(collection(db, 'messages'), {
         senderId: currentUser.id,
         receiverId: selectedUserId,
         content: text,
