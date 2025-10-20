@@ -79,8 +79,10 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
       if (unreadMessages.length > 0) {
         const batch = writeBatch(db);
         unreadMessages.forEach(msg => {
-          const msgRef = doc(db, 'messages', msg.id);
-          batch.update(msgRef, { isRead: true });
+          if(msg.id) { // ensure message has an id
+            const msgRef = doc(db, 'messages', msg.id);
+            batch.update(msgRef, { isRead: true });
+          }
         });
         batch.commit().catch(console.error);
       }
