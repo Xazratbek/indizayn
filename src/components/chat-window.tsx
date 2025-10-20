@@ -256,18 +256,16 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     const handleStopRecording = async () => {
         if (!mediaRecorderRef.current || !isRecording) return;
     
-        // Stop the interval
         if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
         setIsRecording(false);
     
         try {
-            // Wrap the onstop logic in a promise to ensure it completes
             const audioBlob = await new Promise<Blob>((resolve) => {
                 if (!mediaRecorderRef.current) return;
     
                 mediaRecorderRef.current.onstop = () => {
                     const blob = new Blob(chunks, { type: 'audio/webm' });
-                    chunks = []; // Clear chunks for next recording
+                    chunks = []; 
                     resolve(blob);
                 };
     
@@ -316,7 +314,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
             type: 'audio',
             audioUrl: localAudioUrl,
             content: '',
-            createdAt: new Date(), // Use JS Date for optimistic message
+            createdAt: new Date(), 
             isRead: false,
             status: 'uploading',
         };
@@ -348,9 +346,22 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 createdAt: serverTimestamp(),
             });
             
-             // Remove the successful optimistic message
+             if(partner) {
+                const notificationsRef = collection(db, "notifications");
+                await addDoc(notificationsRef, {
+                  userId: partner.id,
+                  type: 'message',
+                  senderId: currentUser.id,
+                  senderName: currentUser.name || 'Anonim',
+                  senderPhotoURL: currentUser.image || '',
+                  isRead: false,
+                  messageSnippet: "Ovozli xabar",
+                  createdAt: serverTimestamp(),
+                });
+            }
+            
             setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
-            URL.revokeObjectURL(localAudioUrl); // Clean up blob URL
+            URL.revokeObjectURL(localAudioUrl);
 
         } catch (error: any) {
             console.error("Ovozli xabar yuborishda xatolik:", error);
@@ -544,6 +555,4 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
-    
-
     
