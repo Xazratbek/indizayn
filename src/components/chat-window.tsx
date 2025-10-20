@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from 'next-auth';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, writeBatch, or } from 'firebase/firestore';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, writeBatch, or, Timestamp } from 'firebase/firestore';
 import type { Message, Designer } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -44,20 +44,18 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
         audio.addEventListener('timeupdate', setAudioTime);
         audio.addEventListener('ended', () => setIsPlaying(false));
 
+        // This is necessary to load duration for blob URLs
+        if (audioUrl.startsWith('blob:')) {
+            audio.load();
+        }
+
         return () => {
             audio.removeEventListener('loadeddata', setAudioData);
             audio.removeEventListener('timeupdate', setAudioTime);
             audio.removeEventListener('ended', () => setIsPlaying(false));
         };
-    }, []);
-    
-    useEffect(() => {
-        // This is necessary to load duration for blob URLs
-        if (audioUrl.startsWith('blob:') && audioRef.current) {
-            audioRef.current.load();
-        }
     }, [audioUrl]);
-
+    
     const togglePlayPause = () => {
         const audio = audioRef.current;
         if (!audio) return;
@@ -169,17 +167,30 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     )
   }, [allMessages, selectedUserId, currentUser.id]);
 
-  const combinedMessages = useMemo(() => {
-    const finalMessages = [...conversationMessages];
-    
-    optimisticMessages.forEach(optMsg => {
-        if (!finalMessages.some(m => m.id === optMsg.id)) {
-            finalMessages.push(optMsg);
+    const getMessageTime = (message: Message | OptimisticMessage): number => {
+        if (!message.createdAt) return 0;
+        // Check if it's a Firestore Timestamp
+        if (message.createdAt instanceof Timestamp) {
+            return message.createdAt.toMillis();
         }
-    });
+        // Check if it's a JavaScript Date (from optimistic UI)
+        if (message.createdAt instanceof Date) {
+            return message.createdAt.getTime();
+        }
+        return 0;
+    };
 
-    return finalMessages.sort((a,b) => (a.createdAt?.toMillis() || 0) - (b.createdAt?.toMillis() || 0));
-  }, [conversationMessages, optimisticMessages])
+    const combinedMessages = useMemo(() => {
+        const finalMessages: (Message | OptimisticMessage)[] = [...conversationMessages];
+        
+        optimisticMessages.forEach(optMsg => {
+            if (!finalMessages.some(m => m.id === optMsg.id)) {
+                finalMessages.push(optMsg);
+            }
+        });
+
+        return finalMessages.sort((a, b) => getMessageTime(a) - getMessageTime(b));
+    }, [conversationMessages, optimisticMessages]);
 
 
   // Mark messages as read
@@ -279,7 +290,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
             type: 'audio',
             audioUrl: localAudioUrl,
             content: '',
-            createdAt: new Date() as any, // Temporary timestamp
+            createdAt: new Date(), // Use JS Date for optimistic message
             isRead: false,
             status: 'uploading',
         };
@@ -507,5 +518,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
+    
 
     
