@@ -168,9 +168,7 @@ export default function DesignerProfilePage() {
                   <Mail className="mr-2 h-4 w-4" /> Xabar
                 </Button>
               </div>
-            ) : designer.phoneNumber || designer.telegramUrl ? (
-                <div className="flex flex-wrap items-center justify-center gap-2"></div>
-            ): null }
+            ) : null }
           </div>
           {(designer.phoneNumber || designer.telegramUrl) && (
               <div className="mt-6 pt-6 border-t flex flex-wrap items-center justify-center md:justify-start gap-6">
@@ -181,7 +179,7 @@ export default function DesignerProfilePage() {
                   </a>
                 )}
                 {designer.telegramUrl && (
-                  <a href={designer.telegramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
+                  <a href={`https://t.me/${designer.telegramUrl.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
                     <TelegramIcon className="w-5 h-5" />
                     <span>Telegram</span>
                   </a>

@@ -168,7 +168,7 @@ export default function ProfileEditPage() {
       toast({ variant: "success", title: "Muvaffaqiyatli!", description: "Profil yangilandi!" });
       setProfilePic({ file: null, previewUrl: null });
       setCoverPhoto({ file: null, previewUrl: null });
-      router.refresh();
+      router.push(`/designers/${user.id}`);
 
     } catch (err: any) {
       toast({
@@ -274,8 +274,8 @@ export default function ProfileEditPage() {
               <Input id="phoneNumber" type="tel" {...register("phoneNumber")} placeholder="+998 XX XXX XX XX"/>
             </div>
              <div className="space-y-2">
-              <Label htmlFor="telegramUrl">Telegram profili (ixtiyoriy)</Label>
-              <Input id="telegramUrl" type="url" {...register("telegramUrl")} placeholder="https://t.me/foydalanuvchi"/>
+              <Label htmlFor="telegramUrl">Telegram username (ixtiyoriy)</Label>
+              <Input id="telegramUrl" type="text" {...register("telegramUrl")} placeholder="foydalanuvchi_nomi"/>
             </div>
             <Button type="submit" disabled={isSaving}>
               {isSaving && <LoadingPage />}
