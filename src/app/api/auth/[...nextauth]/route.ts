@@ -22,7 +22,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: ONE_WEEK_IN_SECONDS,
   },
   jwt: {
-    maxAge: ONE-WEEK_IN_SECONDS,
+    maxAge: ONE_WEEK_IN_SECONDS,
   },
   ...(isProduction && process.env.NEXTAUTH_URL && {
     cookies: {
