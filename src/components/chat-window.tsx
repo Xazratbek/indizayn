@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -9,11 +10,12 @@ import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft, Mic, Trash2, Loader2, Play, Pause } from 'lucide-react';
+import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft, Mic, Trash2, Loader2, Play, Pause, Camera, SwitchCamera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Slider } from './ui/slider';
+import VideoMessagePlayer from './video-message-player';
 
 // Optimistic UI for messages
 type OptimisticMessage = Message & { status?: 'uploading' | 'sent' | 'failed' };
@@ -43,7 +45,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioUrl }) => {
         audio.addEventListener('timeupdate', setAudioTime);
         audio.addEventListener('ended', () => setIsPlaying(false));
 
-        // This is necessary to load duration for blob URLs
         if (audioUrl.startsWith('blob:')) {
             audio.load();
         }
@@ -126,21 +127,20 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   const [optimisticMessages, setOptimisticMessages] = useState<OptimisticMessage[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
-  // Audio recording state
-  const [isRecording, setIsRecording] = useState(false);
+  const [recordingMode, setRecordingMode] = useState<'audio' | 'video' | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const videoPreviewRef = useRef<HTMLVideoElement>(null);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
 
-  // Fetch partner/recipient's profile data
   const recipientDocRef = useMemoFirebase(
     () => (db && selectedUserId) ? doc(db, 'users', selectedUserId) : null,
     [db, selectedUserId]
   );
   const { data: partner, isLoading: partnerLoading } = useDoc<Designer>(recipientDocRef);
 
-  // Get all messages between the current user and the selected partner
   const messagesQuery = useMemoFirebase(
     () => db && currentUser?.id && selectedUserId
         ? query(
@@ -156,7 +156,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   );
   const { data: allMessages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
   
-  // Filter messages on the client to get the specific conversation
   const conversationMessages = useMemo(() => {
     if (!allMessages || !selectedUserId) return [];
     return allMessages.filter(msg => 
@@ -168,15 +167,12 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     const getMessageTime = (message: Message | OptimisticMessage): number => {
         const createdAt = message.createdAt;
         if (!createdAt) return 0;
-        // Check if it's a Firestore Timestamp
         if (createdAt instanceof Timestamp) {
             return createdAt.toMillis();
         }
-        // Check if it's a JavaScript Date (from optimistic UI)
         if (createdAt instanceof Date) {
             return createdAt.getTime();
         }
-        // Fallback for serialized Timestamps (though less likely with onSnapshot)
         if (typeof createdAt === 'object' && 'seconds' in createdAt && 'nanoseconds' in createdAt) {
             return (createdAt as Timestamp).toMillis();
         }
@@ -196,7 +192,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     }, [conversationMessages, optimisticMessages]);
 
 
-  // Mark messages as read
   useEffect(() => {
     if (db && selectedUserId && currentUser.id && conversationMessages.length > 0) {
       const unreadMessages = conversationMessages.filter(
@@ -206,7 +201,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       if (unreadMessages.length > 0) {
         const batch = writeBatch(db);
         unreadMessages.forEach(msg => {
-          if(msg.id) { // ensure message has an id
+          if(msg.id) { 
             const msgRef = doc(db, 'messages', msg.id);
             batch.update(msgRef, { isRead: true });
           }
@@ -227,14 +222,23 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   }, [combinedMessages]);
 
 
-    const handleStartRecording = async () => {
-        if (isRecording) return;
-        setIsRecording(true);
+    const handleStartRecording = async (mode: 'audio' | 'video') => {
+        if (recordingMode) return;
+        setRecordingMode(mode);
         setRecordingTime(0);
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            const constraints = mode === 'video'
+                ? { audio: true, video: { facingMode } }
+                : { audio: true };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            if (mode === 'video' && videoPreviewRef.current) {
+                videoPreviewRef.current.srcObject = stream;
+            }
+
+            const mimeType = mode === 'video' ? 'video/webm' : 'audio/webm';
+            mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
             
             mediaRecorderRef.current.start();
             
@@ -243,76 +247,83 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
             }, 1000);
 
         } catch (error) {
-            console.error("Audio recording failed:", error);
+            console.error(`${mode} recording failed:`, error);
             toast({
                 variant: 'destructive',
                 title: "Xatolik",
-                description: "Ovoz yozish uchun ruxsat berilmadi yoki qurilmangizda muammo bor."
+                description: `${mode === 'video' ? 'Video' : 'Ovoz'} yozish uchun ruxsat berilmadi yoki qurilmangizda muammo bor.`
             });
-            setIsRecording(false);
+            setRecordingMode(null);
         }
     };
 
     const handleStopRecording = async () => {
-        if (!mediaRecorderRef.current || !isRecording) return;
+        if (!mediaRecorderRef.current || !recordingMode) return;
     
         if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
-        setIsRecording(false);
+        const currentMode = recordingMode;
+        setRecordingMode(null);
     
         try {
-            const audioBlob = await new Promise<Blob>((resolve) => {
+            const mediaBlob = await new Promise<Blob>((resolve) => {
                 if (!mediaRecorderRef.current) return;
-    
-                mediaRecorderRef.current.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'audio/webm' });
-                    chunks = []; 
-                    resolve(blob);
-                };
-    
+                
                 let chunks: BlobPart[] = [];
                 mediaRecorderRef.current.ondataavailable = (e) => {
                     chunks.push(e.data);
                 };
     
+                mediaRecorderRef.current.onstop = () => {
+                    const mimeType = currentMode === 'video' ? 'video/webm' : 'audio/webm';
+                    const blob = new Blob(chunks, { type: mimeType });
+                    resolve(blob);
+                };
+
                 mediaRecorderRef.current.stop();
                 mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
             });
     
-            if (audioBlob.size > 0) {
-                await sendAudioMessage(audioBlob);
+            if (mediaBlob.size > 0) {
+                await sendMediaMessage(mediaBlob, currentMode);
             } else {
-                console.error("Recorded audio blob is empty.");
-                toast({ variant: 'destructive', title: 'Xatolik', description: "Yozib olingan ovoz bo'sh." });
+                toast({ variant: 'destructive', title: 'Xatolik', description: `Yozib olingan ${currentMode} bo'sh.` });
             }
         } catch (error) {
-            console.error("Error stopping recording:", error);
-            toast({ variant: 'destructive', title: 'Xatolik', description: "Ovoz yozishni to'xtatishda muammo." });
+            toast({ variant: 'destructive', title: 'Xatolik', description: `${currentMode} yozishni to'xtatishda muammo.` });
         }
     };
     
-    
     const handleCancelRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
+        if (mediaRecorderRef.current && recordingMode) {
              mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
              mediaRecorderRef.current = null;
         }
-        setIsRecording(false);
+        setRecordingMode(null);
         if(recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
         setRecordingTime(0);
     }
+    
+    const handleSwitchCamera = () => {
+        setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
+        // Restart recording with new camera
+        if (recordingMode === 'video') {
+            handleStopRecording().then(() => handleStartRecording('video'));
+        }
+    };
 
-    const sendAudioMessage = async (audioBlob: Blob) => {
+    const sendMediaMessage = async (mediaBlob: Blob, mode: 'audio' | 'video') => {
         if (!selectedUserId || !db) return;
 
         const optimisticId = `optimistic-${Date.now()}`;
-        const localAudioUrl = URL.createObjectURL(audioBlob);
+        const localMediaUrl = URL.createObjectURL(mediaBlob);
 
         const optimisticMsg: OptimisticMessage = {
             id: optimisticId,
             senderId: currentUser.id,
             receiverId: selectedUserId,
-            type: 'audio',
-            audioUrl: localAudioUrl,
+            type: mode,
+            audioUrl: mode === 'audio' ? localMediaUrl : undefined,
+            videoUrl: mode === 'video' ? localMediaUrl : undefined,
             content: '',
             createdAt: new Date(), 
             isRead: false,
@@ -322,7 +333,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         
         try {
             const formData = new FormData();
-            formData.append('audio', audioBlob, 'voice-message.webm');
+            formData.append(mode, mediaBlob, `message.${mode === 'video' ? 'webm' : 'webm'}`);
 
             const response = await fetch('/api/upload', {
                 method: 'POST',
@@ -331,18 +342,23 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
             const result = await response.json();
 
             if (!response.ok || !result.success) {
-                throw new Error(result.error || "Ovozli xabarni yuklashda xatolik.");
+                throw new Error(`Xabarni yuklashda xatolik.`);
             }
 
-            const audioUrl = result.url;
-
-            await addDoc(collection(db, 'messages'), {
-                senderId: currentUser.id,
+            const mediaUrl = result.url;
+            
+            const messagePayload: Omit<Message, 'id' | 'createdAt'> = {
+                 senderId: currentUser.id,
                 receiverId: selectedUserId,
-                type: 'audio',
-                audioUrl: audioUrl,
+                type: mode,
                 content: '',
                 isRead: false,
+                ...(mode === 'audio' && { audioUrl: mediaUrl }),
+                ...(mode === 'video' && { videoUrl: mediaUrl }),
+            };
+
+            await addDoc(collection(db, 'messages'), {
+               ...messagePayload,
                 createdAt: serverTimestamp(),
             });
             
@@ -355,17 +371,14 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                   senderName: currentUser.name || 'Anonim',
                   senderPhotoURL: currentUser.image || '',
                   isRead: false,
-                  messageSnippet: "Ovozli xabar",
+                  messageSnippet: mode === 'audio' ? "Ovozli xabar" : "Video xabar",
                   createdAt: serverTimestamp(),
                 });
             }
-            
-            // Remove the optimistic message once the real one is sent
             setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
-            URL.revokeObjectURL(localAudioUrl);
+            URL.revokeObjectURL(localMediaUrl);
 
         } catch (error: any) {
-            console.error("Ovozli xabar yuborishda xatolik:", error);
             toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
             setOptimisticMessages(prev => prev.map(m => m.id === optimisticId ? {...m, status: 'failed'} : m));
         }
@@ -379,7 +392,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     setNewMessage('');
     
     try {
-      const messageRef = await addDoc(collection(db, 'messages'), {
+      await addDoc(collection(db, 'messages'), {
         senderId: currentUser.id,
         receiverId: selectedUserId,
         content: text,
@@ -412,6 +425,17 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       setIsSending(false);
     }
   };
+  
+    const handleRecordButtonPress = () => {
+        handleStartRecording('video');
+    };
+    
+    const handleRecordButtonRelease = () => {
+        if(recordingMode === 'video') {
+            handleStopRecording();
+        }
+    };
+
 
   if (!selectedUserId) {
     return (
@@ -486,13 +510,16 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 <div
                     className={cn(
                         'p-2 rounded-lg relative shadow-md',
-                        msg.senderId === currentUser.id
-                        ? 'bg-primary text-primary-foreground rounded-br-none'
-                        : 'bg-background text-foreground rounded-bl-none'
+                         msg.type !== 'video' && (msg.senderId === currentUser.id
+                            ? 'bg-primary text-primary-foreground rounded-br-none'
+                            : 'bg-background text-foreground rounded-bl-none'),
+                        msg.type === 'video' && 'p-0 rounded-full'
                     )}
                 >
                      {msg.type === 'audio' && msg.audioUrl ? (
                         <AudioPlayer audioUrl={msg.audioUrl}/>
+                     ) : msg.type === 'video' && msg.videoUrl ? (
+                        <VideoMessagePlayer videoUrl={msg.videoUrl} />
                      ) : (
                         <p className="pb-4 pr-5">{msg.content}</p>
                      )}
@@ -500,7 +527,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                     <div className="absolute bottom-1 right-2 flex items-center gap-1">
                       {(msg as OptimisticMessage).status === 'uploading' && <Loader2 size={14} className="animate-spin text-primary-foreground/70" />}
                       
-                      {msg.senderId === currentUser.id && (msg as OptimisticMessage).status !== 'uploading' && (
+                      {msg.senderId === currentUser.id && (msg as OptimisticMessage).status !== 'uploading' && msg.type !== 'video' && (
                           <>
                               {msg.isRead ? (
                                   <CheckCheck size={16} className="text-blue-400" />
@@ -515,8 +542,27 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
             ))
         )}
       </ScrollArea>
+
+        {recordingMode === 'video' && (
+            <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center">
+                <div className="relative w-64 h-64">
+                    <div className="absolute inset-0 rounded-full overflow-hidden border-4 border-primary animate-pulse">
+                         <video ref={videoPreviewRef} className="w-full h-full object-cover scale-x-[-1]" autoPlay muted />
+                    </div>
+                    <Button
+                        onClick={handleSwitchCamera}
+                        size="icon"
+                        variant="secondary"
+                        className="absolute bottom-4 left-4 rounded-full z-10"
+                    >
+                        <SwitchCamera />
+                    </Button>
+                </div>
+            </div>
+        )}
+
       <div className="p-4 border-t bg-background">
-         {isRecording ? (
+         {recordingMode === 'audio' ? (
              <div className="flex items-center gap-2">
                  <Button onClick={handleCancelRecording} variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                     <Trash2 />
@@ -546,8 +592,15 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                     <Send className="h-4 w-4" />
                  </Button>
             ) : (
-                 <Button type="button" onClick={handleStartRecording} disabled={isSending}>
-                    <Mic className="h-4 w-4" />
+                 <Button 
+                    type="button" 
+                    onMouseDown={handleRecordButtonPress}
+                    onMouseUp={handleRecordButtonRelease}
+                    onTouchStart={handleRecordButtonPress}
+                    onTouchEnd={handleRecordButtonRelease}
+                    disabled={isSending}
+                >
+                    <Camera className="h-4 w-4" />
                  </Button>
             )}
             </form>

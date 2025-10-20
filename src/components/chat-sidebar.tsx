@@ -13,7 +13,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
-import { Users, Mic } from 'lucide-react';
+import { Users, Mic, Video } from 'lucide-react';
 
 interface ChatSidebarProps {
   currentUser: Session['user'];
@@ -37,6 +37,21 @@ function ConversationSkeleton() {
         </div>
     )
 }
+
+const renderLastMessage = (msg: Message, currentUserId: string) => {
+    const prefix = msg.senderId === currentUserId ? 'Siz: ' : '';
+    switch(msg.type) {
+        case 'text':
+            return prefix + msg.content;
+        case 'audio':
+            return <div className="flex items-center">{prefix}<Mic className="h-4 w-4 mr-1 flex-shrink-0"/> Ovozli xabar</div>;
+        case 'video':
+            return <div className="flex items-center">{prefix}<Video className="h-4 w-4 mr-1 flex-shrink-0"/> Video xabar</div>;
+        default:
+            return '';
+    }
+}
+
 
 export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser }: ChatSidebarProps) {
   const db = useFirestore();
@@ -141,15 +156,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
                         </p>
                     </div>
                      <p className="text-sm text-muted-foreground truncate flex items-center">
-                        {lastMessage.senderId === currentUser.id && 'Siz: '}
-                        {lastMessage.type === 'audio' ? (
-                            <>
-                                <Mic className="h-4 w-4 mr-1 flex-shrink-0"/> 
-                                Ovozli xabar
-                            </>
-                        ) : (
-                            lastMessage.content
-                        )}
+                        {renderLastMessage(lastMessage, currentUser.id)}
                     </p>
                 </div>
             </button>

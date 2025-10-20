@@ -23,9 +23,26 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const imageFile = formData.get('image') as File | null;
     const audioFile = formData.get('audio') as File | null;
-    
-    const file = imageFile || audioFile;
-    const isAudio = !!audioFile;
+    const videoFile = formData.get('video') as File | null;
+
+    let file: File | null = null;
+    let resource_type: 'image' | 'video' = 'image';
+    let folder = 'indizayn_uploads';
+
+    if (imageFile) {
+        file = imageFile;
+        resource_type = 'image';
+        folder = 'indizayn_uploads';
+    } else if (audioFile) {
+        file = audioFile;
+        resource_type = 'video'; // Cloudinary treats audio as video
+        folder = 'indizayn_audio';
+    } else if (videoFile) {
+        file = videoFile;
+        resource_type = 'video';
+        folder = 'indizayn_video';
+    }
+
 
     if (!file) {
       return NextResponse.json({ success: false, error: 'Fayl topilmadi.' }, { status: 400 });
@@ -37,8 +54,8 @@ export async function POST(request: Request) {
     const result = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
             {
-                folder: isAudio ? 'indizayn_audio' : 'indizayn_uploads',
-                resource_type: isAudio ? "video" : "image", // Cloudinary treats audio as video
+                folder: folder,
+                resource_type: resource_type,
             },
             (error, result) => {
                 if (error) {

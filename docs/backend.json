@@ -42,13 +42,14 @@
     "Message": {
       "title": "Message",
       "type": "object",
-      "description": "Represents a direct message between two users, which can be text or audio.",
+      "description": "Represents a direct message between two users, which can be text, audio, or video.",
       "properties": {
         "senderId": { "type": "string", "description": "UID of the message sender." },
         "receiverId": { "type": "string", "description": "UID of the message receiver." },
-        "type": { "type": "string", "enum": ["text", "audio"], "description": "The type of the message." },
+        "type": { "type": "string", "enum": ["text", "audio", "video"], "description": "The type of the message." },
         "content": { "type": "string", "description": "The text content of the message (if type is 'text')." },
         "audioUrl": { "type": "string", "format": "uri", "description": "URL of the audio file (if type is 'audio')." },
+        "videoUrl": { "type": "string", "format": "uri", "description": "URL of the video file (if type is 'video')." },
         "isRead": { "type": "boolean", "description": "Whether the message has been read by the receiver." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of message creation." }
       },
