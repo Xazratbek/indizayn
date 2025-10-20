@@ -10,6 +10,8 @@ import LoadingPage from '../loading';
 import { Button } from '@/components/ui/button';
 import { LogIn } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 export default function MessagesPage() {
   const searchParams = useSearchParams();
@@ -18,6 +20,7 @@ export default function MessagesPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(initialUserId);
   const { data: session, status } = useSession();
   const user = session?.user;
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (initialUserId) {
@@ -44,6 +47,35 @@ export default function MessagesPage() {
     );
   }
 
+  const handleBack = () => setSelectedUserId(null);
+
+  // Mobile layout
+  if (isMobile) {
+    return (
+       <div className="container mx-auto h-[calc(100vh-8.5rem)] py-2">
+           <Card className="h-full overflow-hidden relative">
+              <div className={cn("absolute inset-0 w-full transition-transform duration-300 ease-in-out", selectedUserId ? "-translate-x-full" : "translate-x-0")}>
+                <ChatSidebar
+                  currentUser={user}
+                  selectedUserId={selectedUserId}
+                  onSelectUser={setSelectedUserId}
+                />
+              </div>
+              <div className={cn("absolute inset-0 w-full transition-transform duration-300 ease-in-out", selectedUserId ? "translate-x-0" : "translate-x-full")}>
+                 {selectedUserId && (
+                   <ChatWindow 
+                      currentUser={user}
+                      selectedUserId={selectedUserId}
+                      onBack={handleBack}
+                   />
+                 )}
+              </div>
+           </Card>
+       </div>
+    )
+  }
+
+  // Desktop layout
   return (
     <div className="container mx-auto py-4 md:py-8 h-[calc(100vh-10rem)] md:h-[calc(100vh-8.5rem)]">
         <Card className="h-full grid grid-cols-1 md:grid-cols-[340px_1fr] overflow-hidden">

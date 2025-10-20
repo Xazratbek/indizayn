@@ -10,13 +10,14 @@ import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Send, MessageSquareText, Check, CheckCheck } from 'lucide-react';
+import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 
 interface ChatWindowProps {
   currentUser: Session['user'];
   selectedUserId: string | null;
+  onBack?: () => void;
 }
 
 function MessageSkeleton() {
@@ -28,7 +29,7 @@ function MessageSkeleton() {
     )
 }
 
-export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowProps) {
+export default function ChatWindow({ currentUser, selectedUserId, onBack }: ChatWindowProps) {
   const db = useFirestore();
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -66,7 +67,7 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
   useEffect(() => {
     if (db && selectedUserId && currentUser.id && receivedMessages && receivedMessages.length > 0) {
       const unreadMessages = receivedMessages.filter(
-        msg => !msg.isRead
+        msg => !msg.isRead && msg.senderId === selectedUserId
       );
 
       if (unreadMessages.length > 0) {
@@ -128,6 +129,11 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
     <div className="flex flex-col h-full bg-secondary/30">
       {isLoading && !partner ? (
          <div className="flex items-center gap-3 p-3 border-b bg-background">
+            {onBack && (
+              <Button onClick={onBack} variant="ghost" size="icon" className="md:hidden">
+                  <ArrowLeft />
+              </Button>
+            )}
             <Skeleton className="h-10 w-10 rounded-full" />
             <div className='space-y-1'>
                 <Skeleton className="h-4 w-24" />
@@ -136,6 +142,11 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
         </div>
       ) : partner && (
         <div className="flex items-center gap-3 p-3 border-b bg-background">
+          {onBack && (
+              <Button onClick={onBack} variant="ghost" size="icon" className="md:hidden -ml-2">
+                  <ArrowLeft />
+              </Button>
+          )}
           <Avatar>
             <AvatarImage src={partner.photoURL} alt={partner.name} />
             <AvatarFallback>{partner.name.charAt(0)}</AvatarFallback>
@@ -168,7 +179,7 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
                 </Avatar>
                 <div
                     className={cn(
-                        'p-3 rounded-lg relative',
+                        'p-3 rounded-lg relative shadow-md',
                         msg.senderId === currentUser.id
                         ? 'bg-primary text-primary-foreground rounded-br-none'
                         : 'bg-background text-foreground rounded-bl-none'
@@ -180,7 +191,7 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
                             {msg.isRead ? (
                                 <CheckCheck size={16} className="text-blue-400" />
                             ) : (
-                                <Check size={16} className="text-muted-foreground/70" />
+                                <Check size={16} className={cn("text-muted-foreground/70", msg.senderId === currentUser.id ? 'text-primary-foreground/70' : 'text-muted-foreground/70')} />
                             )}
                         </div>
                     )}
