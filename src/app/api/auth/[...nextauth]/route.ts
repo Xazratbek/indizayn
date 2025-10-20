@@ -22,9 +22,9 @@ export const authOptions: NextAuthOptions = {
     maxAge: ONE_WEEK_IN_SECONDS,
   },
   jwt: {
-    maxAge: ONE_WEEK_IN_SECONDS,
+    maxAge: ONE-WEEK_IN_SECONDS,
   },
-  ...(isProduction && {
+  ...(isProduction && process.env.NEXTAUTH_URL && {
     cookies: {
       sessionToken: {
         name: `__Secure-next-auth.session-token`,
@@ -33,7 +33,7 @@ export const authOptions: NextAuthOptions = {
           sameSite: 'lax',
           path: '/',
           secure: true,
-          domain: new URL(process.env.NEXTAUTH_URL!).hostname
+          domain: new URL(process.env.NEXTAUTH_URL).hostname,
         }
       },
     },
