@@ -34,17 +34,14 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
   const [isSending, setIsSending] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Fetch recipient's data
   const recipientDocRef = useMemoFirebase(
     () => (db && selectedUserId) ? doc(db, 'users', selectedUserId) : null,
     [db, selectedUserId]
   );
   const { data: partner, isLoading: partnerLoading } = useDoc<Designer>(recipientDocRef);
 
-
-  // Fetch all messages for the current user to filter later
   const messagesQuery = useMemoFirebase(() => {
-    if (!db || !currentUser?.id) return null;
+    if (!db || !currentUser?.id || !selectedUserId) return null;
     return query(
       collection(db, 'messages'),
       or(
@@ -53,12 +50,12 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
       ),
       orderBy('createdAt', 'asc')
     );
-  }, [db, currentUser.id]);
+  }, [db, currentUser.id, selectedUserId]);
 
   const { data: allMessages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
   
   const filteredMessages = useMemo(() => {
-      if (!allMessages || !selectedUserId || !currentUser?.id) return [];
+      if (!allMessages || !selectedUserId) return [];
       return allMessages.filter(msg => 
         (msg.senderId === currentUser.id && msg.receiverId === selectedUserId) ||
         (msg.senderId === selectedUserId && msg.receiverId === currentUser.id)
@@ -109,7 +106,15 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
 
   return (
     <div className="flex flex-col h-full bg-secondary/30">
-      {partner && (
+      {isLoading && !partner ? (
+         <div className="flex items-center gap-3 p-3 border-b bg-background">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className='space-y-1'>
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-16" />
+            </div>
+        </div>
+      ) : partner && (
         <div className="flex items-center gap-3 p-3 border-b bg-background">
           <Avatar>
             <AvatarImage src={partner.photoURL} alt={partner.name} />
@@ -122,7 +127,7 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
         </div>
       )}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        {isLoading ? (
+        {messagesLoading ? (
             <div className="space-y-4">
                 <MessageSkeleton />
                 <div className="flex justify-end"><MessageSkeleton /></div>
