@@ -176,13 +176,15 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     const getMessageTime = (message: Message | OptimisticMessage): number => {
         const createdAt = message.createdAt;
         if (!createdAt) return 0;
+
         if (createdAt instanceof Timestamp) {
             return createdAt.toMillis();
         }
         if (createdAt instanceof Date) {
             return createdAt.getTime();
         }
-        if (typeof createdAt === 'object' && 'seconds' in createdAt && 'nanoseconds' in createdAt) {
+        // Handle Firestore-like object from server-side rendering or cache
+        if (typeof createdAt === 'object' && 'seconds' in createdAt && typeof (createdAt as any).seconds === 'number') {
             return (createdAt as Timestamp).toMillis();
         }
         return 0;
@@ -362,6 +364,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                   createdAt: serverTimestamp(),
                 });
             }
+            // Remove the optimistic message once the real one is sent and will be received via snapshot
             setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
             URL.revokeObjectURL(localMediaUrl);
 
@@ -414,7 +417,8 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   };
   
     const onPointerDown = (e: React.PointerEvent) => {
-        if (!isLocked) {
+        if (!newMessage && !isLocked) {
+            e.preventDefault();
             setPointerStart({ x: e.clientX, y: e.clientY });
             setPointerMove({ x: e.clientX, y: e.clientY });
             startRecording();
@@ -628,27 +632,35 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 <>
                 <Input
                     value={newMessage}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                        }
+                    }}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Xabar yozing..."
                     disabled={isSending}
                 />
-                <Button 
-                    type="button" 
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setCurrentRecordingMode(prev => prev === 'audio' ? 'video' : 'audio')}
-                >
-                    <AnimatePresence mode="popLayout">
-                         <motion.div
-                            key={currentRecordingMode}
-                            initial={{ scale: 0, rotate: -90 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            exit={{ scale: 0, rotate: 90 }}
-                         >
-                            {currentRecordingMode === 'audio' ? <Mic/> : <Camera />}
-                         </motion.div>
-                    </AnimatePresence>
-                </Button>
+                 { !newMessage && (
+                    <Button 
+                        type="button" 
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setCurrentRecordingMode(prev => prev === 'audio' ? 'video' : 'audio')}
+                    >
+                        <AnimatePresence mode="popLayout">
+                            <motion.div
+                                key={currentRecordingMode}
+                                initial={{ scale: 0, rotate: -90 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                exit={{ scale: 0, rotate: 90 }}
+                            >
+                                {currentRecordingMode === 'audio' ? <Mic/> : <Camera />}
+                            </motion.div>
+                        </AnimatePresence>
+                    </Button>
+                 )}
                 </>
             )}
 
@@ -667,7 +679,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                             transition={{ delay: 0.5, type: 'spring', stiffness: 300, damping: 15 }}
                             className="absolute bottom-full left-1/2 -translate-x-1/2 p-2 bg-secondary rounded-full shadow-lg"
                          >
-                            <ArrowUp className="text-muted-foreground"/>
+                            <Lock className="text-muted-foreground h-5 w-5"/>
                          </motion.div>
                     )}
                  </AnimatePresence>
@@ -679,9 +691,10 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                     <Button
                         type="button" 
                         size="icon"
+                        onClick={newMessage ? handleSendMessage : undefined}
                         className={cn("rounded-full transition-colors duration-300", isRecording && 'bg-primary/80')}
                     >
-                         {isRecording && !isLocked ? <Lock className="h-4 w-4" /> : newMessage ? <Send/> : currentRecordingMode === 'audio' ? <Mic/> : <Camera/> }
+                        {newMessage ? <Send/> : currentRecordingMode === 'audio' ? <Mic/> : <Camera/> }
                     </Button>
                  </motion.div>
             </div>
@@ -690,5 +703,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
+
+    
 
     
