@@ -13,6 +13,7 @@ import { Button } from './ui/button';
 import { Send, MessageSquareText, Check, CheckCheck, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatWindowProps {
   currentUser: Session['user'];
@@ -31,6 +32,7 @@ function MessageSkeleton() {
 
 export default function ChatWindow({ currentUser, selectedUserId, onBack }: ChatWindowProps) {
   const db = useFirestore();
+  const { toast } = useToast();
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -103,6 +105,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     setIsSending(true);
     
     try {
+      // 1. Save message to 'messages' collection
       await addDoc(collection(db, 'messages'), {
         senderId: currentUser.id,
         receiverId: selectedUserId,
@@ -110,9 +113,31 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         isRead: false,
         createdAt: serverTimestamp(),
       });
+      
+      // 2. Create notification for the recipient
+      if(partner) {
+          const notificationsRef = collection(db, "notifications");
+          await addDoc(notificationsRef, {
+            userId: partner.id,
+            type: 'message',
+            senderId: currentUser.id,
+            senderName: currentUser.name || 'Anonim',
+            senderPhotoURL: currentUser.image || '',
+            isRead: false,
+            messageSnippet: newMessage.substring(0, 50) + (newMessage.length > 50 ? '...' : ''),
+            createdAt: serverTimestamp(),
+          });
+      }
+
       setNewMessage('');
+
     } catch (error) {
       console.error("Xabar yuborishda xatolik:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Xatolik',
+        description: 'Xabarni yuborishda muammo yuz berdi.',
+      });
     } finally {
       setIsSending(false);
     }
