@@ -56,6 +56,8 @@ export default function ProfileEditPage() {
     name: string;
     specialization: string;
     bio: string;
+    phoneNumber: string;
+    telegramUrl: string;
   }>();
 
   useEffect(() => {
@@ -63,6 +65,8 @@ export default function ProfileEditPage() {
       setValue("name", userProfile.name || "");
       setValue("specialization", userProfile.specialization || "");
       setValue("bio", userProfile.bio || "");
+      setValue("phoneNumber", userProfile.phoneNumber || "");
+      setValue("telegramUrl", userProfile.telegramUrl || "");
     }
   }, [userProfile, setValue]);
 
@@ -98,7 +102,7 @@ export default function ProfileEditPage() {
     return result.url;
   };
 
-  const onSubmit = async (data: { name: string; specialization: string; bio: string }) => {
+  const onSubmit = async (data: { name: string; specialization: string; bio: string; phoneNumber: string; telegramUrl: string; }) => {
     if (!user || !userProfile) return;
 
     if (!isDirty && !profilePic.file && !coverPhoto.file) {
@@ -142,6 +146,8 @@ export default function ProfileEditPage() {
       if (dirtyFields.name) updatedData.name = data.name;
       if (dirtyFields.specialization) updatedData.specialization = data.specialization;
       if (dirtyFields.bio) updatedData.bio = data.bio;
+      if (dirtyFields.phoneNumber) updatedData.phoneNumber = data.phoneNumber;
+      if (dirtyFields.telegramUrl) updatedData.telegramUrl = data.telegramUrl;
       if (newPhotoURL && newPhotoURL !== userProfile.photoURL) updatedData.photoURL = newPhotoURL;
       if (newCoverPhotoURL && newCoverPhotoURL !== userProfile.coverPhotoURL) updatedData.coverPhotoURL = newCoverPhotoURL;
 
@@ -262,6 +268,14 @@ export default function ProfileEditPage() {
             <div className="space-y-2">
               <Label htmlFor="bio">Biografiya</Label>
               <Textarea id="bio" {...register("bio")} placeholder="O‘zingiz haqingizda qisqacha yozing..." />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Telefon raqami (ixtiyoriy)</Label>
+              <Input id="phoneNumber" type="tel" {...register("phoneNumber")} placeholder="+998 XX XXX XX XX"/>
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="telegramUrl">Telegram profili (ixtiyoriy)</Label>
+              <Input id="telegramUrl" type="url" {...register("telegramUrl")} placeholder="https://t.me/foydalanuvchi"/>
             </div>
             <Button type="submit" disabled={isSaving}>
               {isSaving && <LoadingPage />}

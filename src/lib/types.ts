@@ -14,6 +14,8 @@ export interface Designer {
   bio?: string;
   subscriberCount: number;
   followers: string[]; // Array of user UIDs
+  phoneNumber?: string;
+  telegramUrl?: string;
   createdAt: Timestamp;
 }
 

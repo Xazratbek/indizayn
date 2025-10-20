@@ -18,6 +18,7 @@ import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { TelegramIcon } from '@/components/icons';
 
 export default function DesignerProfilePage() {
   const params = useParams();
@@ -157,8 +158,8 @@ export default function DesignerProfilePage() {
               <h1 className="font-headline text-4xl font-bold">{designer.name}</h1>
               <p className="text-muted-foreground text-lg">{designer.specialization}</p>
             </div>
-            { status === 'authenticated' && session.user.id !== id && (
-              <div className="flex gap-2">
+            { status === 'authenticated' && session.user.id !== id ? (
+              <div className="flex flex-wrap items-center justify-center gap-2">
                 <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading}>
                   {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
@@ -167,8 +168,26 @@ export default function DesignerProfilePage() {
                   <Mail className="mr-2 h-4 w-4" /> Xabar
                 </Button>
               </div>
-            )}
+            ) : designer.phoneNumber || designer.telegramUrl ? (
+                <div className="flex flex-wrap items-center justify-center gap-2"></div>
+            ): null }
           </div>
+          {(designer.phoneNumber || designer.telegramUrl) && (
+              <div className="mt-6 pt-6 border-t flex flex-wrap items-center justify-center md:justify-start gap-6">
+                {designer.phoneNumber && (
+                  <a href={`tel:${designer.phoneNumber}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
+                    <span className="text-lg">📱</span>
+                    <span>{designer.phoneNumber}</span>
+                  </a>
+                )}
+                {designer.telegramUrl && (
+                  <a href={designer.telegramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
+                    <TelegramIcon className="w-5 h-5" />
+                    <span>Telegram</span>
+                  </a>
+                )}
+              </div>
+            )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t">
               <div className="text-center">
                   <p className="text-2xl font-bold font-headline">{designer.subscriberCount || 0}</p>

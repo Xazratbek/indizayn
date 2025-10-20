@@ -16,6 +16,8 @@
         "bio": { "type": "string", "description": "A short biography of the designer." },
         "subscriberCount": { "type": "number", "description": "Number of users following this designer." },
         "followers": { "type": "array", "items": { "type": "string" }, "description": "List of UIDs of users who follow this designer." },
+        "phoneNumber": { "type": "string", "description": "Designer's contact phone number." },
+        "telegramUrl": { "type": "string", "format": "uri", "description": "Link to the designer's Telegram profile." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of user creation." }
       },
       "required": ["uid", "name", "email", "createdAt", "subscriberCount", "followers"]
