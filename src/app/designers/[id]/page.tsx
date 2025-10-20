@@ -26,6 +26,7 @@ export default function DesignerProfilePage() {
   const { data: session, status } = useSession();
   const user = session?.user;
   const isUserLoading = status === 'loading';
+  const { toast } = useToast();
 
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);

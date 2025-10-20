@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, writeBatch, doc } from 'firebase/firestore';
+import { collection, query, where, orderBy, writeBatch, doc, updateDoc } from 'firebase/firestore';
 import {
   Popover,
   PopoverContent,
@@ -93,6 +93,16 @@ export default function NotificationsDropdown() {
     }
   };
 
+  const handleNotificationClick = async (notification: Notification) => {
+    if (db && !notification.isRead) {
+        const notifRef = doc(db, 'notifications', notification.id);
+        try {
+            await updateDoc(notifRef, { isRead: true });
+        } catch (error) {
+            console.error("Bildirishnomani o'qilgan deb belgilashda xatolik:", error);
+        }
+    }
+  };
 
   const getNotificationLink = (notification: Notification) => {
     switch (notification.type) {
@@ -102,7 +112,6 @@ export default function NotificationsDropdown() {
       case 'follow':
         return `/designers/${notification.senderId}`;
       case 'message':
-        // TODO: This should lead to a messages page/chat with the user
         return `/designers/${notification.senderId}`;
       default:
         return '#';
@@ -179,7 +188,12 @@ export default function NotificationsDropdown() {
             ) : notifications && notifications.length > 0 ? (
                 <div className="divide-y">
                     {notifications.map((notif) => (
-                        <Link key={notif.id} href={getNotificationLink(notif) ?? '#'} className={`block p-4 hover:bg-secondary/50 ${!notif.isRead ? 'bg-blue-500/5' : ''}`}>
+                        <Link 
+                            key={notif.id} 
+                            href={getNotificationLink(notif) ?? '#'} 
+                            className={`block p-4 hover:bg-secondary/50 ${!notif.isRead ? 'bg-blue-500/5' : ''}`}
+                            onClick={() => handleNotificationClick(notif)}
+                        >
                             <div className="flex items-start gap-3">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src={notif.senderPhotoURL} alt={notif.senderName} />
