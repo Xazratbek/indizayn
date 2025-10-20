@@ -360,6 +360,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 });
             }
             
+            // Remove the optimistic message once the real one is sent
             setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
             URL.revokeObjectURL(localAudioUrl);
 
