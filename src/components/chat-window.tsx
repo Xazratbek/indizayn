@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from 'next-auth';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, or, addDoc, serverTimestamp, doc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, writeBatch } from 'firebase/firestore';
 import type { Message, Designer } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -40,19 +40,26 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
   );
   const { data: partner, isLoading: partnerLoading } = useDoc<Designer>(recipientDocRef);
 
-  const messagesQuery = useMemoFirebase(() => {
-    if (!db || !currentUser?.id) return null;
-    return query(
-        collection(db, 'messages'),
-        or(
-          where('senderId', '==', currentUser.id),
-          where('receiverId', '==', currentUser.id)
-        ),
-        orderBy('createdAt', 'asc')
-      );
-  }, [db, currentUser.id]);
+  // Re-using the same logic from sidebar to get all messages related to the user
+  const sentMessagesQuery = useMemoFirebase(
+    () => db && currentUser?.id 
+        ? query(collection(db, 'messages'), where('senderId', '==', currentUser.id), orderBy('createdAt', 'asc'))
+        : null,
+    [db, currentUser.id]
+  );
+  const { data: sentMessages, isLoading: loadingSent } = useCollection<Message>(sentMessagesQuery);
 
-  const { data: allMessages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
+  const receivedMessagesQuery = useMemoFirebase(
+    () => db && currentUser?.id 
+        ? query(collection(db, 'messages'), where('receiverId', '==', currentUser.id), orderBy('createdAt', 'asc'))
+        : null,
+    [db, currentUser.id]
+  );
+  const { data: receivedMessages, isLoading: loadingReceived } = useCollection<Message>(receivedMessagesQuery);
+
+  const allMessages = useMemo(() => {
+    return [...(sentMessages || []), ...(receivedMessages || [])].sort((a,b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0));
+  }, [sentMessages, receivedMessages]);
   
   const filteredMessages = useMemo(() => {
       if (!allMessages || !selectedUserId) return [];
@@ -120,7 +127,7 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
     );
   }
 
-  const isLoading = partnerLoading || messagesLoading;
+  const isLoading = partnerLoading || loadingSent || loadingReceived;
 
   return (
     <div className="flex flex-col h-full bg-secondary/30">
@@ -145,7 +152,7 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
         </div>
       )}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        {messagesLoading ? (
+        {isLoading ? (
             <div className="space-y-4">
                 <MessageSkeleton />
                 <div className="flex justify-end"><MessageSkeleton /></div>
@@ -206,4 +213,3 @@ export default function ChatWindow({ currentUser, selectedUserId }: ChatWindowPr
     </div>
   );
 }
-
