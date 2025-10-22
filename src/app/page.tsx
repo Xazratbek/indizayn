@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -64,27 +65,27 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
 
     const desktopPositions = [
         // Left column
-        { top: '5%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-48 h-36' },
-        { top: '35%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -250]), className: 'w-56 h-40' },
-        { top: '65%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-40 h-56' },
-        { bottom: '5%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -200]), className: 'w-32 h-32' },
+        { top: '5%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-48 h-36' },
+        { top: '35%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-56 h-40' },
+        { top: '65%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-40 h-56' },
+        { bottom: '10%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-32 h-32' },
         // Right column
-        { top: '8%', right: '3%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-44 h-56' },
-        { top: '40%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-36 h-28' },
-        { top: '60%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -300]), className: 'w-56 h-48' },
-        { bottom: '2%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-48 h-40' },
+        { top: '8%', right: '3%', y: useTransform(scrollYProgress, [0, 1], [0, -160]), className: 'w-44 h-56' },
+        { top: '40%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -90]), className: 'w-36 h-28' },
+        { top: '60%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-56 h-48' },
+        { bottom: '8%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-48 h-40' },
         // Smaller ones to fill gaps
-        { top: '15%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-24 h-24' },
-        { top: '50%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-28 h-28' },
+        { top: '15%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -60]), className: 'w-24 h-24' },
+        { top: '50%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-28 h-28' },
     ];
     
     const mobilePositions = [
-        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-32 h-24' },
-        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-28 h-36' },
-        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-36 h-28' },
-        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-40 h-32' },
-        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -200]), className: 'w-24 h-32' },
-        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-28 h-28' },
+        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-32 h-24' },
+        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-28 h-36' },
+        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-36 h-28' },
+        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-40 h-32' },
+        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-24 h-32' },
+        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -70]), className: 'w-28 h-28' },
     ];
 
     const positions = isMobile ? mobilePositions : desktopPositions;
@@ -111,7 +112,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
                         sizes="25vw"
                         data-ai-hint="project image"
                     />
-                     <div className="absolute inset-0 bg-black/10"></div>
+                     <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]"></div>
                 </motion.div>
             ))}
         </div>
