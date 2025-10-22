@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -15,6 +14,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import PortfolioCard from '@/components/portfolio-card';
+import RotatingText from '@/components/RotatingText';
 
 const advantages = [
     {
@@ -65,29 +65,29 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
 
     const desktopPositions = [
         // Chap taraf
-        { top: '5%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-48 h-36', delay: 0 },
-        { top: '38%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -35]), className: 'w-56 h-40', delay: 1.5 },
-        { top: '70%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-40 h-56', delay: 0.5 },
+        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-48 h-36', delay: 0.2 },
+        { top: '40%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-56 h-40', delay: 1.5 },
+        { top: '72%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -12]), className: 'w-40 h-56', delay: 0.7 },
         
         // O'ng taraf
-        { top: '8%', right: '6%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-44 h-56', delay: 0.8 },
-        { top: '45%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-36 h-28', delay: 2.2 },
-        { top: '75%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-56 h-48', delay: 1.2 },
+        { top: '10%', right: '4%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-44 h-56', delay: 0.9 },
+        { top: '48%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-36 h-28', delay: 2.2 },
+        { top: '70%', right: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -18]), className: 'w-56 h-48', delay: 1.4 },
         
-        // Pastki qism
-        { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-32 h-32', delay: 2.5 },
-        { bottom: '8%', right: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-48 h-40', delay: 0.2 },
-        { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
-        { top: '60%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
+        // Qo'shimcha
+        { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-32 h-32 opacity-0 md:opacity-100', delay: 2.5 },
+        { bottom: '8%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-48 h-40 opacity-0 md:opacity-100', delay: 0.4 },
+        { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
+        { top: '60%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -8]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
     ];
     
     const mobilePositions = [
-        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-32 h-24', delay: 0 },
-        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-28 h-36', delay: 1 },
-        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-36 h-28', delay: 0.5 },
-        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -35]), className: 'w-40 h-32', delay: 1.5 },
-        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -60]), className: 'w-24 h-32', delay: 0.2 },
-        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -28]), className: 'w-28 h-28', delay: 2 },
+         { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-32 h-24', delay: 0.2 },
+        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-28 h-36', delay: 1 },
+        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-36 h-28', delay: 0.5 },
+        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -18]), className: 'w-40 h-32', delay: 1.5 },
+        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-24 h-32', delay: 0.4 },
+        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -14]), className: 'w-28 h-28', delay: 2 },
     ];
 
     const positions = isMobile ? mobilePositions : desktopPositions;
@@ -107,14 +107,17 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
                         animationDelay: `${positions[i].delay}s`
                     }}
                 >
-                    <Image
-                        src={project.imageUrl}
-                        alt={project.name}
-                        fill
-                        className="object-cover"
-                        sizes="25vw"
-                        data-ai-hint="project image"
-                    />
+                     <div className="relative w-full h-full">
+                        <Image
+                            src={project.imageUrl}
+                            alt={project.name}
+                            fill
+                            className="object-cover"
+                            sizes="25vw"
+                            data-ai-hint="project image"
+                        />
+                         <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]"></div>
+                    </div>
                 </motion.div>
             ))}
         </div>
@@ -156,9 +159,13 @@ export default function Home() {
                                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
                                 className="text-4xl md:text-6xl font-bold font-headline mb-4"
                             >
-                               <span className="liquid-text">Лучшие авторы Узбекистана</span>
-                               <br />
-                               на <span className="font-bold">InDizayn</span>
+                                <span className="inline-block">Лучшие</span>{' '}
+                                <RotatingText
+                                  texts={['авторы', 'дизайнеры', 'проекты', 'таланты']}
+                                  mainClassName="liquid-text"
+                                />
+                                <br />
+                               <span className="inline-block">Узбекистана на <span className="font-bold">InDizayn</span></span>
                             </motion.h1>
 
                             <motion.p
