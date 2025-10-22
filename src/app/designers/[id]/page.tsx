@@ -7,8 +7,8 @@ import { useDoc, useCollection, useFirestore, useMemoFirebase } from '@/firebase
 import { doc, collection, query, where, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { UserPlus, Mail, UserCheck, Palmtree } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { UserPlus, Mail, UserCheck, Palmtree, Eye, Heart, Users, FolderKanban } from 'lucide-react';
 import PortfolioCard from '@/components/portfolio-card';
 import { useState, useEffect } from 'react';
 import type { Designer, Project } from '@/lib/types';
@@ -16,10 +16,16 @@ import { useToast } from '@/hooks/use-toast';
 import SendMessageDialog from '@/components/send-message-dialog';
 import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { TelegramIcon } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
+
+const StatCard = ({ label, value, icon: Icon }: { label: string; value: number | string; icon: React.ElementType }) => (
+    <Card className="text-center p-4 bg-secondary/50">
+        <Icon className="w-8 h-8 mx-auto text-primary mb-2" />
+        <p className="text-2xl font-bold font-headline">{value}</p>
+        <p className="text-sm text-muted-foreground">{label}</p>
+    </Card>
+);
 
 export default function DesignerProfilePage() {
   const params = useParams();
@@ -133,8 +139,8 @@ export default function DesignerProfilePage() {
   return (
     <>
     <div className="container mx-auto py-8 px-4">
-      <Card className="overflow-hidden mb-12">
-        <div className="h-48 bg-secondary relative">
+      <Card className="overflow-hidden mb-8 shadow-lg">
+        <div className="h-48 md:h-64 bg-secondary relative">
           {designer.coverPhotoURL ? (
             <Image 
               src={designer.coverPhotoURL}
@@ -144,70 +150,74 @@ export default function DesignerProfilePage() {
               priority
             />
           ) : (
-             <div className="w-full h-full bg-gradient-to-r from-sky-100 to-blue-200"></div>
+             <div className="w-full h-full bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900/30 dark:via-purple-900/30 dark:to-pink-900/30"></div>
           )}
         </div>
-        <CardContent className="p-6 relative">
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-20">
-            <div className="relative">
-              <Avatar className="w-32 h-32 border-4 border-background ring-2 ring-primary">
-                {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                <AvatarFallback className="text-4xl">{designer.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <h1 className="font-headline text-4xl font-bold">{designer.name}</h1>
-              {designer.specialization && <Badge variant="secondary" className="mt-1 text-base py-1 px-3">{designer.specialization}</Badge>}
+        <CardContent className="p-6 relative -mt-16">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background ring-4 ring-primary/50">
+              {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+              <AvatarFallback className="text-4xl">{designer.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 text-center md:text-left mt-2 md:mt-8">
+              <h1 className="font-headline text-3xl md:text-4xl font-bold">{designer.name}</h1>
+              {designer.specialization && <p className="text-lg text-muted-foreground">{designer.specialization}</p>}
             </div>
             { status === 'authenticated' && session.user.id !== id ? (
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading}>
-                  {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-4 md:mt-8 w-full md:w-auto">
+                <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading} className="w-full sm:w-auto text-lg py-6 px-8">
+                  {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-5 w-5" /> : <UserPlus className="mr-2 h-5 w-5" />}
                   {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
                 </Button>
-                <Button variant="outline" onClick={() => setIsMessageDialogOpen(true)}>
-                  <Mail className="mr-2 h-4 w-4" /> Xabar
+                <Button variant="outline" onClick={() => setIsMessageDialogOpen(true)} className="w-full sm:w-auto text-lg py-6 px-8">
+                  <Mail className="mr-2 h-5 w-5" /> Xabar
                 </Button>
               </div>
             ) : null }
           </div>
-          {(designer.phoneNumber || designer.telegramUrl) && (
-              <div className="mt-6 pt-6 border-t flex flex-wrap items-center justify-center md:justify-start gap-6">
-                {designer.phoneNumber && (
-                  <a href={`tel:${designer.phoneNumber}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
-                    <span className="text-lg">📱</span>
-                    <span>{designer.phoneNumber}</span>
-                  </a>
-                )}
-                {designer.telegramUrl && (
-                  <a href={`https://t.me/${designer.telegramUrl.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
-                    <TelegramIcon className="w-5 h-5" />
-                    <span>@{designer.telegramUrl.replace('@', '')}</span>
-                  </a>
-                )}
-              </div>
-            )}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t">
-              <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{designer.subscriberCount || 0}</p>
-                  <p className="text-sm text-muted-foreground">Obunachilar</p>
-              </div>
-              <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{designerProjects?.length || 0}</p>
-                  <p className="text-sm text-muted-foreground">Loyihalar</p>
-              </div>
-              <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{totalLikes}</p>
-                  <p className="text-sm text-muted-foreground">Jami Likelar</p>
-              </div>
-              <div className="text-center">
-                  <p className="text-2xl font-bold font-headline">{totalViews}</p>
-                  <p className="text-sm text-muted-foreground">Jami ko'rishlar</p>
-              </div>
-          </div>
         </CardContent>
       </Card>
       
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <StatCard label="Obunachilar" value={designer.subscriberCount || 0} icon={Users} />
+        <StatCard label="Loyihalar" value={designerProjects?.length || 0} icon={FolderKanban} />
+        <StatCard label="Jami Likelar" value={totalLikes} icon={Heart} />
+        <StatCard label="Jami Ko'rishlar" value={totalViews} icon={Eye} />
+      </div>
+
+       {(designer.bio || designer.phoneNumber || designer.telegramUrl) && (
+        <Card className="mb-12">
+            <CardHeader>
+                <CardTitle>Ma'lumot</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                {designer.bio && (
+                    <p className="text-muted-foreground leading-relaxed">{designer.bio}</p>
+                )}
+                {(designer.phoneNumber || designer.telegramUrl) && (
+                    <div className="flex flex-wrap items-center gap-4 pt-4 border-t">
+                        {designer.phoneNumber && (
+                            <Button asChild variant="outline">
+                                <a href={`tel:${designer.phoneNumber}`}>
+                                    <span className="text-lg mr-2">📱</span>
+                                    Telefon
+                                </a>
+                            </Button>
+                        )}
+                        {designer.telegramUrl && (
+                            <Button asChild variant="outline">
+                                <a href={`https://t.me/${designer.telegramUrl.replace('@', '')}`} target="_blank" rel="noopener noreferrer">
+                                    <TelegramIcon className="w-5 h-5 mr-2" />
+                                    Telegram
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+       )}
+
       <h2 className="font-headline text-3xl font-bold mb-8">Loyihalar</h2>
       {designerProjects && designerProjects.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -216,10 +226,17 @@ export default function DesignerProfilePage() {
           ))}
         </div>
       ) : (
-         <div className="text-center py-20 border rounded-lg bg-card shadow-sm">
-            <Palmtree className="mx-auto h-16 w-16 text-muted-foreground/50" />
-            <p className="floating-text text-2xl mt-4">{designer.name} hali hech qanday loyiha yuklamagan.</p>
-             <p className="text-muted-foreground mt-2">Balki siz unga birinchi bo'lib ilhom berarsiz?</p>
+         <div className="text-center py-20 border-2 border-dashed rounded-lg bg-card shadow-sm">
+            <Palmtree className="mx-auto h-16 w-16 text-muted-foreground/30" />
+            <p className="floating-text text-2xl mt-4 text-muted-foreground">{designer.name} hali hech qanday loyiha yuklamagan.</p>
+             <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+                Agar bu sizning profilingiz bo'lsa, o'z ijodingizni namoyish etish uchun birinchi loyihangizni yuklang!
+             </p>
+              {user?.id === designer.id && (
+                <Button asChild className="mt-6">
+                    <a href="/account/new-project">Loyiha Yuklash</a>
+                </Button>
+              )}
         </div>
       )}
     </div>
