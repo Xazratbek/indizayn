@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -73,7 +74,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
         { bottom: '10%', right: '35%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-40 h-48' },
         { top: '55%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-24 h-32' },
         { bottom: '2%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -280]), className: 'w-32 h-40' },
-        { top: '15%', left: '50%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-24 h-24' },
+        { top: '30%', left: '55%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-24 h-24' },
     ];
     
     const mobilePositions = [
@@ -147,11 +148,17 @@ export default function Home() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                            className="text-4xl md:text-6xl font-bold font-headline mb-4"
+                            className="text-4xl md:text-6xl font-bold font-headline mb-4 space-y-2"
                         >
-                           <span className="liquid-text">Лучшие авторы Узбекистана</span>
-                           <br />
-                           на InDizayn
+                           <div><span className="liquid-text">Лучшие авторы Узбекистана</span></div>
+                           <div>
+                            на 
+                            <span className="inline-block ml-4">
+                              <div className="animated-border-box">
+                                <span className="font-headline text-5xl md:text-7xl font-bold text-foreground">InDizayn</span>
+                              </div>
+                            </span>
+                           </div>
                         </motion.h1>
 
                         <motion.p
@@ -249,7 +256,7 @@ export default function Home() {
             viewport={{ once: true, amount: 0.3 }}
             variants={sectionVariants}
         >
-            <div className="px-4 md:px-6 lg:px-8">
+            <div className="container px-4 md:px-6 lg:px-8">
             <div className="text-center mb-12">
                 <h2 className="font-headline text-3xl md:text-4xl font-bold">Platformaning afzalliklari</h2>
                 <p className="text-muted-foreground mt-2">Nima uchun dizaynerlar bizni tanlashadi?</p>

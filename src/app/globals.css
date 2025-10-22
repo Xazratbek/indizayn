@@ -102,7 +102,7 @@
       background-image:
         radial-gradient(1px 1px at 25px 5px, white, rgba(255, 255, 255, 0)),
         radial-gradient(1px 1px at 50px 25px, white, rgba(255, 255, 255, 0)),
-        radial-gradient(1px 1px at 125px 20px, white, rgba(255, 255, 255, 0)),
+        radial-gradient(1.5px 1.5px at 125px 20px, white, rgba(255, 255, 255, 0)),
         radial-gradient(1.5px 1.5px at 100px 55px, white, rgba(255, 255, 255, 0)),
         radial-gradient(1.5px 1.5px at 25px 85px, white, rgba(255, 255, 255, 0)),
         radial-gradient(2px 2px at 110px 80px, white, rgba(255, 255, 255, 0)),
@@ -153,6 +153,7 @@
   }
 
   .animated-border-box > * {
+    @apply bg-background rounded-md px-4 py-2;
     height: 100%;
   }
 
