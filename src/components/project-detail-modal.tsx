@@ -42,14 +42,6 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
                 transition={{ duration: 0.3, ease: 'easeOut' }}
                 className="relative h-full flex flex-col"
               >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClose}
-                    className="absolute top-2 right-2 z-50 bg-background/50 hover:bg-background rounded-full"
-                  >
-                    <X />
-                  </Button>
                   <div className="flex-1 overflow-y-auto">
                     <ModalContext.Provider value={{ projectId }}>
                         <ProjectDetailsPage />
