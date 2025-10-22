@@ -1,15 +1,15 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
 import type { Designer } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Users2, Search, SlidersHorizontal, PackageSearch, X } from "lucide-react";
+import { UserPlus, Users2, Search, SlidersHorizontal, PackageSearch } from "lucide-react";
 import Link from "next/link";
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, where, limit, startAfter, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { PREDEFINED_SPECIALIZATIONS } from '@/lib/predefined-tags';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/sheet";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
+import LoadingPage from '../loading';
 
 const DESIGNERS_PER_PAGE = 12;
 
@@ -40,56 +42,90 @@ function DesignerCardSkeleton() {
     );
 }
 
-
 export default function DesignersPage() {
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
-  const [visibleCount, setVisibleCount] = useState(DESIGNERS_PER_PAGE);
+  
+  const [pages, setPages] = useState<QueryDocumentSnapshot<DocumentData>[]>([]);
+  const [allDesigners, setAllDesigners] = useState<Designer[]>([]);
+  const [hasMore, setHasMore] = useState(true);
 
-  const designersQuery = useMemoFirebase(() => 
-    db ? query(collection(db, 'users'), orderBy('subscriberCount', 'desc')) : null, 
-  [db]);
-  const { data: designers, isLoading } = useCollection<Designer>(designersQuery);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const isIntersecting = useIntersectionObserver(loadMoreRef);
+
+  const designersQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    let q = query(collection(db, 'users'), orderBy('subscriberCount', 'desc'));
+    
+    if(selectedSpecs.length > 0) {
+      q = query(q, where('specialization', 'in', selectedSpecs));
+    }
+
+    q = query(q, limit(DESIGNERS_PER_PAGE));
+    
+    const lastDoc = pages[pages.length - 1];
+    if(lastDoc) {
+      q = query(q, startAfter(lastDoc));
+    }
+    return q;
+  }, [db, selectedSpecs, pages]);
+
+  const { data: newDesigners, isLoading, snapshot } = useCollection<Designer>(designersQuery);
+
+  const loadMore = useCallback(() => {
+    if (snapshot && snapshot.docs.length > 0) {
+      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      setPages(prev => [...prev, lastDoc]);
+    }
+  }, [snapshot]);
+
+  useEffect(() => {
+    if (isIntersecting && hasMore && !isLoading) {
+      loadMore();
+    }
+  }, [isIntersecting, hasMore, isLoading, loadMore]);
+
+  useEffect(() => {
+    if (newDesigners) {
+      setAllDesigners(prev => {
+        const newDesignerIds = new Set(newDesigners.map(d => d.id));
+        const filteredPrev = prev.filter(d => !newDesignerIds.has(d.id));
+        return [...filteredPrev, ...newDesigners].sort((a,b) => b.subscriberCount - a.subscriberCount);
+      });
+    }
+    if (snapshot) {
+      setHasMore(snapshot.docs.length === DESIGNERS_PER_PAGE);
+    }
+  }, [newDesigners, snapshot]);
   
   const filteredDesigners = useMemo(() => {
-    if (!designers) return [];
-
-    let filtered = designers;
+    if (!allDesigners) return [];
+    if (!searchTerm) return allDesigners;
+    
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    return allDesigners.filter(d =>
+        d.name.toLowerCase().includes(lowerCaseSearchTerm) ||
+        (d.specialization?.toLowerCase().includes(lowerCaseSearchTerm) ?? false)
+    );
+  }, [allDesigners, searchTerm]);
 
-    // Filter by both search term (name or specialization) and selected specs
-    filtered = filtered.filter(d => {
-        const nameMatch = d.name.toLowerCase().includes(lowerCaseSearchTerm);
-        const specMatch = d.specialization?.toLowerCase().includes(lowerCaseSearchTerm) ?? false;
-        const searchCondition = nameMatch || specMatch;
 
-        const specFilterCondition = selectedSpecs.length > 0 
-            ? d.specialization && selectedSpecs.includes(d.specialization)
-            : true;
-        
-        return searchCondition && specFilterCondition;
-    });
-
-    return filtered;
-
-  }, [designers, searchTerm, selectedSpecs]);
-
-  const paginatedDesigners = useMemo(() => {
-    return filteredDesigners.slice(0, visibleCount);
-  }, [filteredDesigners, visibleCount]);
-
-  const handleLoadMore = () => {
-    setVisibleCount(prevCount => prevCount + DESIGNERS_PER_PAGE);
+  const resetAndFilter = () => {
+    setAllDesigners([]);
+    setPages([]);
+    setHasMore(true);
   };
   
   const handleSpecToggle = (spec: string) => {
     setSelectedSpecs(prev => 
       prev.includes(spec) ? prev.filter(s => s !== spec) : [...prev, spec]
     );
-    setVisibleCount(DESIGNERS_PER_PAGE); // Reset visible count on filter change
   }
 
+  const applyFilters = () => {
+    resetAndFilter();
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -106,13 +142,10 @@ export default function DesignersPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                     type="search"
-                    placeholder="Ism yoki mutaxassislik bo'yicha qidirish..."
+                    placeholder="Ism bo'yicha qidirish..."
                     className="w-full pl-10 h-12"
                     value={searchTerm}
-                    onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setVisibleCount(DESIGNERS_PER_PAGE);
-                    }}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </div>
             <Sheet>
@@ -141,7 +174,7 @@ export default function DesignersPage() {
                 </div>
                 <SheetFooter>
                     <SheetClose asChild>
-                        <Button className="w-full">Qo'llash</Button>
+                        <Button className="w-full" onClick={applyFilters}>Qo'llash</Button>
                     </SheetClose>
                 </SheetFooter>
               </SheetContent>
@@ -149,14 +182,14 @@ export default function DesignersPage() {
          </div>
       </div>
       
-      {isLoading ? (
+      {isLoading && allDesigners.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {Array.from({length: 8}).map((_, i) => <DesignerCardSkeleton key={i} />)}
+            {Array.from({length: 12}).map((_, i) => <DesignerCardSkeleton key={i} />)}
         </div>
-      ) : paginatedDesigners && paginatedDesigners.length > 0 ? (
+      ) : filteredDesigners && filteredDesigners.length > 0 ? (
         <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {paginatedDesigners.map((designer) => (
+            {filteredDesigners.map((designer) => (
                 <Link key={designer.id} href={`/designers/${designer.id}`}>
                 <Card className="text-center hover:shadow-xl transition-shadow duration-300 h-full">
                     <CardContent className="p-6 flex flex-col items-center justify-center h-full">
@@ -174,30 +207,21 @@ export default function DesignersPage() {
                 </Link>
             ))}
             </div>
-             {visibleCount < filteredDesigners.length && (
-                <div className="mt-12 text-center">
-                    <Button onClick={handleLoadMore}>Ko'proq yuklash</Button>
-                </div>
-            )}
+            <div ref={loadMoreRef} className="h-10 mt-8">
+                {isLoading && allDesigners.length > 0 && (
+                     <div className="flex justify-center items-center">
+                        <LoadingPage />
+                     </div>
+                )}
+            </div>
         </>
-      ) : searchTerm || selectedSpecs.length > 0 ? (
+      ) : (
          <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
             <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground/50" />
             <p className="floating-text text-2xl mt-4">Hech qanday dizayner topilmadi.</p>
             <p className="text-muted-foreground mt-2">Qidiruv so'zini yoki filtrlarni o'zgartirib ko'ring.</p>
         </div>
-      ) : (
-         <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
-            <Users2 className="mx-auto h-16 w-16 text-muted-foreground/50" />
-            <p className="floating-text text-2xl mt-4">Hozircha dizaynerlar yo'q.</p>
-            <p className="text-muted-foreground mt-2 mb-6">Balki siz birinchisi bo'larsiz?</p>
-            <Button asChild>
-                <Link href="/auth">Hamjamiyatga Qo'shilish</Link>
-            </Button>
-        </div>
       )}
     </div>
   );
 }
-
-    

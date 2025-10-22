@@ -17,6 +17,7 @@ export const useIntersectionObserver = (
 
     const observer = new IntersectionObserver(
       ([entry]) => {
+        // Update state when element's intersection status changes
         setIsIntersecting(entry.isIntersecting);
       },
       { ...options }
@@ -31,5 +32,3 @@ export const useIntersectionObserver = (
 
   return isIntersecting;
 };
-
-    

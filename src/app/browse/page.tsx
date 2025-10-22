@@ -74,9 +74,16 @@ export default function BrowsePage() {
   useEffect(() => {
     if (newProjects) {
         setAllProjects(prev => {
-             const newProjectIds = new Set(newProjects.map(p => p.id));
-             const filteredPrev = prev.filter(p => !newProjectIds.has(p.id));
-             return [...filteredPrev, ...newProjects].sort((a,b) => {
+             // Create a Set of new project IDs for efficient lookup
+            const newProjectIds = new Set(newProjects.map(p => p.id));
+            
+            // Filter out any projects in the previous state that are also in the new batch
+            const filteredPrev = prev.filter(p => !newProjectIds.has(p.id));
+
+            const combined = [...filteredPrev, ...newProjects];
+
+            // Sort the combined array based on the current sort order
+             return combined.sort((a,b) => {
                  if (sortBy === 'latest') return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
                  if (sortBy === 'popular') return b.likeCount - a.likeCount;
                  return b.viewCount - a.viewCount;
@@ -93,7 +100,7 @@ export default function BrowsePage() {
     if (isIntersecting && hasMore && !isLoading) {
       loadMore();
     }
-  }, [isIntersecting, hasMore, isLoading]);
+  }, [isIntersecting, hasMore, isLoading, loadMore]);
 
   const loadMore = useCallback(() => {
     if (snapshot && snapshot.docs.length > 0) {
@@ -113,6 +120,8 @@ export default function BrowsePage() {
     if (!allProjects) return [];
     if (!searchTerm) return allProjects;
 
+    // This filtering is now only client-side for the currently loaded projects.
+    // For a full-text search solution, a dedicated search service like Algolia would be needed.
     return allProjects.filter(project =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
@@ -237,5 +246,3 @@ export default function BrowsePage() {
     </>
   );
 }
-
-    
