@@ -1,4 +1,3 @@
-
 "use client";
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -494,5 +493,3 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
-
-    
