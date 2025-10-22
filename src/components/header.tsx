@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -16,9 +17,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useSession, signIn, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { Skeleton } from "./ui/skeleton"
 import NotificationsDropdown from "./notifications-dropdown"
+import { cn } from "@/lib/utils"
 
 export function Header() {
   const isMobile = useIsMobile();
@@ -26,6 +28,7 @@ export function Header() {
   const user = session?.user;
   const isUserLoading = status === 'loading';
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
@@ -36,33 +39,30 @@ export function Header() {
     signIn('google');
   }
 
+  const navItems = [
+    { href: "/browse", label: "Loyihalar" },
+    { href: "/designers", label: "Dizaynerlar" },
+    { href: "/messages", label: "Xabarlar" },
+    { href: "/about", label: "Haqida" },
+  ];
+
   const navContent = isMobile === undefined ? null : (
     !isMobile ? (
       <nav className="flex items-center gap-6 text-sm">
-        <Link
-          href="/browse"
-          className="transition-colors hover:text-foreground/80 text-foreground/60"
-        >
-          Loyihalar
-        </Link>
-        <Link
-          href="/designers"
-          className="transition-colors hover:text-foreground/80 text-foreground/60"
-        >
-          Dizaynerlar
-        </Link>
-        <Link
-          href="/messages"
-          className="transition-colors hover:text-foreground/80 text-foreground/60"
-        >
-          Xabarlar
-        </Link>
-        <Link
-          href="/about"
-          className="transition-colors hover:text-foreground/80 text-foreground/60"
-        >
-          Haqida
-        </Link>
+        {navItems.map((item) => (
+           <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "transition-colors hover:text-foreground/80",
+                pathname.startsWith(item.href)
+                  ? "text-foreground font-semibold"
+                  : "text-foreground/60"
+              )}
+            >
+              {item.label}
+            </Link>
+        ))}
       </nav>
     ) : null
   );
