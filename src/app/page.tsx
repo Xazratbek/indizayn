@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -5,13 +6,13 @@ import { MoveRight, Palette, UserCheck, ThumbsUp, Loader2, ImageOff } from 'luci
 import { Button } from '@/components/ui/button';
 import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useTime, useTransform } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import { useSession, signIn } from 'next-auth/react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import LoadingPage from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -45,64 +46,61 @@ const sectionVariants = {
 };
 
 const HeroShowcase = ({ projects }: { projects: Project[] }) => {
-    const gridRef = useRef<HTMLDivElement>(null);
-    const { scrollYProgress } = useScroll({
-        target: gridRef,
-        offset: ['start start', 'end start'],
-    });
-
-    const rotateX = useTransform(scrollYProgress, [0, 1], [0, 45]);
-    const translateY = useTransform(scrollYProgress, [0, 1], [0, -100]);
-    const scale = useTransform(scrollYProgress, [0, 1], [1, 0.85]);
+    const time = useTime();
+    const rotate = useTransform(time, [0, 20000], [0, 360], { clamp: false });
     
-    // Ensure we have at least 9 projects to display by looping if necessary
+    // Ensure we have a specific number of projects for the carousel
+    const numProjects = 9;
     const displayProjects = [...projects];
-    while (displayProjects.length > 0 && displayProjects.length < 9) {
-        displayProjects.push(...projects.slice(0, 9 - displayProjects.length));
+    while (displayProjects.length > 0 && displayProjects.length < numProjects) {
+        displayProjects.push(...projects.slice(0, numProjects - displayProjects.length));
     }
+    
+    const carouselRadius = 380; // Adjust this for circle size
 
-
-    const firstColumn = displayProjects.slice(0, 3);
-    const secondColumn = displayProjects.slice(3, 6);
-    const thirdColumn = displayProjects.slice(6, 9);
-
-    const renderColumn = (columnProjects: Project[], y: number) => (
-        <motion.div className="relative flex flex-col gap-4 w-[30%]" style={{ y }}>
-            {columnProjects.map((project, index) => (
-                <div key={`${project.id}-${index}`} className="aspect-[4/3] relative rounded-lg overflow-hidden shadow-xl">
-                    <Image
-                        src={project.imageUrl}
-                        alt={project.name}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 30vw, 30vw"
-                        data-ai-hint="project image"
-                    />
-                </div>
-            ))}
-        </motion.div>
-    );
+    if (displayProjects.length === 0) return null;
 
     return (
-        <div ref={gridRef} className="w-full h-[120vh] relative -mt-[20vh]">
+        <div className="w-full h-full flex items-center justify-center">
             <motion.div
-                className="sticky top-0 h-screen flex justify-center items-center overflow-hidden"
+                className="relative w-full h-full"
                 style={{
+                    transformStyle: 'preserve-3d',
                     perspective: '1000px',
-                    translateY
                 }}
             >
                 <motion.div
-                    className="flex gap-2 md:gap-4 w-full md:w-[70%]"
+                    className="absolute w-full h-full"
                     style={{
-                        rotateX,
-                        scale,
                         transformStyle: 'preserve-3d',
+                        rotateY: rotate,
                     }}
                 >
-                    {renderColumn(firstColumn, -40)}
-                    {renderColumn(secondColumn, 80)}
-                    {renderColumn(thirdColumn, -40)}
+                    {displayProjects.map((project, i) => {
+                        const angle = (i / numProjects) * 360;
+                        return (
+                            <motion.div
+                                key={`${project.id}-${i}`}
+                                className="absolute w-[280px] h-[210px] top-[calc(50%-105px)] left-[calc(50%-140px)]"
+                                style={{
+                                    transform: `rotateY(${angle}deg) translateZ(${carouselRadius}px)`,
+                                }}
+                            >
+                                <div className="aspect-[4/3] relative w-full h-full rounded-lg overflow-hidden shadow-2xl">
+                                    <Image
+                                        src={project.imageUrl}
+                                        alt={project.name}
+                                        fill
+                                        className="object-cover"
+                                        sizes="300px"
+                                        data-ai-hint="project image"
+                                    />
+                                    {/* Dimming overlay */}
+                                    <div className="absolute inset-0 bg-black/30"></div>
+                                </div>
+                            </motion.div>
+                        );
+                    })}
                 </motion.div>
             </motion.div>
         </div>
@@ -136,7 +134,7 @@ export default function Home() {
     <div className="flex flex-col">
        {!user && !isUserLoading ? (
             <>
-                <section className="relative w-full h-[60vh] md:h-auto bg-background overflow-hidden">
+                <section className="relative w-full h-[80vh] md:h-screen bg-background overflow-hidden">
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
                       <motion.h1
                           initial={{ opacity: 0, y: 20 }}
@@ -176,7 +174,9 @@ export default function Home() {
                             )}
                         </motion.div>
                     </div>
-                    {featuredProjects && <HeroShowcase projects={featuredProjects} />}
+                    <div className="absolute inset-0 z-0 opacity-50 md:opacity-100">
+                        {featuredProjects && <HeroShowcase projects={featuredProjects} />}
+                    </div>
                 </section>
             </>
         ) : null}
