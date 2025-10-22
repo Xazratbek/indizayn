@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import ProjectDetailsPage from "@/app/projects/[id]/page";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from 'lucide-react';
@@ -30,7 +30,11 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
             className="max-w-7xl w-full h-[95vh] p-0 overflow-hidden flex flex-col"
             onInteractOutside={onClose}
           >
-              <motion.div
+            <DialogTitle className="sr-only">Loyiha Tafsilotlari</DialogTitle>
+            <DialogDescription className="sr-only">
+                Loyiha haqida to'liq ma'lumotni ko'rish uchun qalqib chiquvchi oyna.
+            </DialogDescription>
+            <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 50 }}
