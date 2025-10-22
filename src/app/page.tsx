@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -56,7 +55,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const numProjects = isMobile ? 6 : 10; // Reduced from 11 to 10
+    const numProjects = isMobile ? 6 : 10;
     const displayProjects = [...projects];
     while (displayProjects.length > 0 && displayProjects.length < numProjects) {
         displayProjects.push(...projects.slice(0, numProjects - displayProjects.length));
@@ -64,16 +63,19 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     if (displayProjects.length === 0) return null;
 
     const desktopPositions = [
-        { top: '5%', left: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-48 h-36' },
-        { top: '10%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -250]), className: 'w-48 h-64' },
-        { top: '35%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -200]), className: 'w-56 h-56' },
-        { top: '65%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -300]), className: 'w-44 h-56' },
-        { top: '70%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-64 h-48' },
-        { bottom: '5%', left: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-36 h-36' },
-        { bottom: '10%', right: '35%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-40 h-48' },
-        { top: '55%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-24 h-32' },
-        { bottom: '2%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -280]), className: 'w-32 h-40' },
-        { top: '30%', left: '55%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-24 h-24' },
+        // Left column
+        { top: '5%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-48 h-36' },
+        { top: '35%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -250]), className: 'w-56 h-40' },
+        { top: '65%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-40 h-56' },
+        { bottom: '5%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -200]), className: 'w-32 h-32' },
+        // Right column
+        { top: '8%', right: '3%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-44 h-56' },
+        { top: '40%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-36 h-28' },
+        { top: '60%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -300]), className: 'w-56 h-48' },
+        { bottom: '2%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-48 h-40' },
+        // Smaller ones to fill gaps
+        { top: '15%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-24 h-24' },
+        { top: '50%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-28 h-28' },
     ];
     
     const mobilePositions = [
@@ -142,7 +144,7 @@ export default function Home() {
             <>
                 <section className="relative w-full h-[80vh] md:h-screen bg-background overflow-hidden">
                     {featuredProjects && <FloatingShowcase projects={featuredProjects} />}
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4 bg-background/30 dark:bg-background/50 backdrop-blur-sm">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4 bg-transparent">
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
