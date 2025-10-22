@@ -1,7 +1,7 @@
 
 "use client";
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -99,7 +99,7 @@ export default function ProjectDetailsPage() {
   );
   const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
 
-  // Check if current user has liked this project
+  // Check current user has liked this project
   useEffect(() => {
     if (user && project?.likes) {
       setIsLiked(project.likes.includes(user.id));
@@ -399,11 +399,33 @@ export default function ProjectDetailsPage() {
                   <div className="flex justify-around text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <Heart className="w-4 h-4" />
-                      <span>{project.likeCount || 0} Likes</span>
+                      <AnimatePresence mode="popLayout">
+                          <motion.span
+                            key={project.likeCount}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                          >
+                            {project.likeCount || 0}
+                          </motion.span>
+                      </AnimatePresence>
+                      <span className='ml-1'>Likes</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <Eye className="w-4 h-4" />
-                      <span>{project.viewCount || 0} Ko'rishlar</span>
+                       <AnimatePresence mode="popLayout">
+                          <motion.span
+                            key={project.viewCount}
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                          >
+                           {project.viewCount || 0}
+                          </motion.span>
+                       </AnimatePresence>
+                      <span className='ml-1'>Ko'rishlar</span>
                     </div>
                   </div>
                 </CardContent>

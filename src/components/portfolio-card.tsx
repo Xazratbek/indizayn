@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from './ui/skeleton';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -45,7 +45,7 @@ function PortfolioCardSkeleton({ className }: { className?: string }) {
     return (
         <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full", className)}>
             <CardContent className="p-0">
-                <Skeleton className="aspect-video w-full" />
+                <div className="aspect-video w-full" />
                 <div className="p-4 space-y-3">
                     <Skeleton className="h-5 w-3/4" />
                     <div className="flex items-center gap-2">
@@ -152,11 +152,31 @@ export default function PortfolioCard({ project, className, showAdminControls = 
                 <div className="absolute bottom-2 right-2 flex items-center gap-3 text-xs text-white bg-black/30 backdrop-blur-sm px-2 py-1 rounded-md">
                     <div className="flex items-center gap-1">
                         <Heart className="w-3 h-3" />
-                        <span>{project.likeCount || 0}</span>
+                        <AnimatePresence mode="popLayout">
+                          <motion.span
+                              key={project.likeCount}
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 10 }}
+                              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                          >
+                              {project.likeCount || 0}
+                          </motion.span>
+                        </AnimatePresence>
                     </div>
                     <div className="flex items-center gap-1">
                         <Eye className="w-3 h-3" />
-                        <span>{project.viewCount || 0}</span>
+                         <AnimatePresence mode="popLayout">
+                          <motion.span
+                              key={project.viewCount}
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 10 }}
+                              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                          >
+                              {project.viewCount || 0}
+                          </motion.span>
+                        </AnimatePresence>
                     </div>
                 </div>
             </Link>
