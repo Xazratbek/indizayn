@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Heart, Eye, Pencil, Trash2, User, Users } from 'lucide-react';
 import type { Project, Designer } from '@/lib/types';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Skeleton } from './ui/skeleton';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -26,6 +26,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 
@@ -66,32 +71,6 @@ export default function PortfolioCard({ project, className, showAdminControls = 
   , [db, project]);
   const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
   
-  const ref = useRef<HTMLDivElement>(null);
-
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const mouseXSpring = useSpring(x, { stiffness: 300, damping: 20 });
-  const mouseYSpring = useSpring(y, { stiffness: 300, damping: 20 });
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ['7.5deg', '-7.5deg']);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ['-7.5deg', '7.5deg']);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (!ref.current) return;
-    const { left, top, width, height } = ref.current.getBoundingClientRect();
-    const mouseX = e.clientX - left;
-    const mouseY = e.clientY - top;
-    const xPct = mouseX / width - 0.5;
-    const yPct = mouseY / height - 0.5;
-    x.set(xPct);
-    y.set(yPct);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-  };
   
   const createQueryString = (paramsToUpdate: { [key: string]: string }) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -149,26 +128,15 @@ export default function PortfolioCard({ project, className, showAdminControls = 
 
   return (
     <motion.div
-      ref={ref}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      whileHover={{ scale: 1.03 }}
-      style={{
-        rotateX,
-        rotateY,
-        transformStyle: 'preserve-3d',
-      }}
+      whileHover={{ scale: 1.03, z: 10 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="relative"
     >
-      <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full bg-card", className)} style={{transform: 'translateZ(75px)', transformStyle: 'preserve-3d'}}>
+      <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full bg-card", className)}>
         <CardContent className="p-0">
           <div className="aspect-[4/3] relative overflow-hidden rounded-t-lg">
             <Link href={projectLink} onClick={handleClick} scroll={false} className="block w-full h-full">
                <motion.div
-                 style={{
-                   transform: 'translateZ(50px)',
-                   transformStyle: 'preserve-3d',
-                 }}
                  className="absolute inset-0"
                >
                   <Image
@@ -224,20 +192,58 @@ export default function PortfolioCard({ project, className, showAdminControls = 
             )}
           </div>
 
-          <div className="p-4" style={{transform: 'translateZ(40px)'}}>
+          <div className="p-4">
             <Link href={projectLink} onClick={handleClick} scroll={false}>
               <h3 className="font-headline font-bold text-lg truncate group-hover:text-primary transition-colors">{project.name}</h3>
             </Link>
-            <div className="flex items-center gap-2 mt-2">
-              <Link href={`/designers/${designer.id}`} className="flex items-center gap-2">
-                <Avatar className="h-6 w-6">
-                  {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                  <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{designer.name}</span>
-              </Link>
-              {designer.specialization && <Badge variant="secondary" className="text-xs">{designer.specialization}</Badge>}
-            </div>
+            <HoverCard>
+                <HoverCardTrigger asChild>
+                     <div className="flex items-center gap-2 mt-2">
+                        <Link href={`/designers/${designer.id}`} className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                            <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{designer.name}</span>
+                        </Link>
+                        {designer.specialization && <Badge variant="secondary" className="text-xs">{designer.specialization}</Badge>}
+                    </div>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80">
+                    <div className="flex flex-col space-y-4">
+                        <div className="h-20 bg-secondary relative rounded-t-md">
+                            {designer.coverPhotoURL && (
+                                <Image 
+                                src={designer.coverPhotoURL}
+                                alt={`${designer.name}ning muqova surati`}
+                                fill
+                                className="w-full h-full object-cover rounded-t-md"
+                                />
+                            )}
+                        </div>
+                        <div className="flex justify-between items-start">
+                            <div className="flex gap-4">
+                                <Avatar className="h-16 w-16 -mt-10 border-4 border-popover">
+                                    <AvatarImage src={designer.photoURL} />
+                                    <AvatarFallback className="text-2xl">{designer.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <h4 className="text-sm font-semibold">{designer.name}</h4>
+                                    <p className="text-sm text-muted-foreground">{designer.specialization}</p>
+                                </div>
+                            </div>
+                            <Button asChild variant="secondary" size="sm">
+                                <Link href={`/designers/${designer.id}`}>Profil</Link>
+                            </Button>
+                        </div>
+                        <div className="flex items-center pt-2 gap-4">
+                            <div className="flex items-center text-sm text-muted-foreground">
+                                <Users className="mr-1 h-4 w-4" /> {designer.subscriberCount || 0} obunachi
+                            </div>
+                        </div>
+                    </div>
+                </HoverCardContent>
+            </HoverCard>
           </div>
         </CardContent>
       </Card>
