@@ -159,7 +159,7 @@ export default function PortfolioCard({ project, className, showAdminControls = 
       }}
       className="relative"
     >
-      <Card className={cn("overflow-hidden group transition-shadow duration-300 hover:shadow-xl w-full h-full bg-card", className)} style={{transform: 'translateZ(75px)', transformStyle: 'preserve-3d'}}>
+      <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full bg-card", className)} style={{transform: 'translateZ(75px)', transformStyle: 'preserve-3d'}}>
         <CardContent className="p-0">
           <div className="aspect-[4/3] relative overflow-hidden rounded-t-lg">
             <Link href={projectLink} onClick={handleClick} scroll={false} className="block w-full h-full">
@@ -175,7 +175,7 @@ export default function PortfolioCard({ project, className, showAdminControls = 
                     alt={project.name}
                     fill
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                     data-ai-hint="project image"
                   />
                </motion.div>
@@ -243,4 +243,3 @@ export default function PortfolioCard({ project, className, showAdminControls = 
     </motion.div>
   );
 }
-

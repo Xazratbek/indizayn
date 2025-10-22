@@ -75,6 +75,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  .card {
+     @apply shadow-md transition-shadow duration-300;
+  }
+  .card:hover {
+      @apply shadow-xl;
+  }
 }
 
 @layer utilities {
