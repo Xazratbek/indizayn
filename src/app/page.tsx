@@ -14,6 +14,7 @@ import { useSession, signIn } from 'next-auth/react';
 import { useState, useRef, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
+import PortfolioCard from '@/components/portfolio-card';
 
 const advantages = [
     {
@@ -46,28 +47,46 @@ const sectionVariants = {
 const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     const ref = useRef(null);
     const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+    const [isMobile, setIsMobile] = useState(false);
 
-    // Ensure we have enough projects to display, loop if necessary
-    const numProjects = 11;
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const numProjects = isMobile ? 6 : 11;
     const displayProjects = [...projects];
     while (displayProjects.length > 0 && displayProjects.length < numProjects) {
         displayProjects.push(...projects.slice(0, numProjects - displayProjects.length));
     }
     if (displayProjects.length === 0) return null;
 
-    const positions = [
-        { top: '5%', left: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-32 h-24 md:w-48 md:h-36' },
-        { top: '10%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -250]), className: 'w-40 h-52 md:w-48 md:h-64' },
-        { top: '35%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -200]), className: 'w-40 h-40 md:w-56 md:h-56' },
-        { top: '30%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-24 h-24 md:w-32 md:h-32' },
-        { top: '65%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -300]), className: 'w-36 h-48 md:w-44 md:h-56' },
-        { top: '70%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-48 h-36 md:w-64 md:h-48' },
-        { bottom: '5%', left: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-28 h-28 md:w-36 md:h-36' },
-        { bottom: '10%', right: '35%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-32 h-40 md:w-40 md:h-48' },
-        { top: '55%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-20 h-28 md:w-24 md:h-32' },
-        { bottom: '2%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -280]), className: 'w-28 h-36 md:w-32 md:h-40' },
-        { top: '15%', left: '45%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-20 h-20 md:w-24 md:h-24' },
+    const desktopPositions = [
+        { top: '5%', left: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-48 h-36' },
+        { top: '10%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -250]), className: 'w-48 h-64' },
+        { top: '35%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -200]), className: 'w-56 h-56' },
+        { top: '30%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-32 h-32' },
+        { top: '65%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -300]), className: 'w-44 h-56' },
+        { top: '70%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-64 h-48' },
+        { bottom: '5%', left: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-36 h-36' },
+        { bottom: '10%', right: '35%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-40 h-48' },
+        { top: '55%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-24 h-32' },
+        { bottom: '2%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -280]), className: 'w-32 h-40' },
+        { top: '15%', left: '45%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-24 h-24' },
     ];
+    
+    const mobilePositions = [
+        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-32 h-24' },
+        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-28 h-36' },
+        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-36 h-28' },
+        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-40 h-32' },
+        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -200]), className: 'w-24 h-32' },
+        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-28 h-28' },
+    ];
+
+    const positions = isMobile ? mobilePositions : desktopPositions;
 
     return (
         <div ref={ref} className="absolute inset-0 z-0 h-full w-full">
@@ -91,6 +110,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
                         sizes="25vw"
                         data-ai-hint="project image"
                     />
+                     <div className="absolute inset-0 bg-black/10"></div>
                 </motion.div>
             ))}
         </div>
@@ -123,7 +143,7 @@ export default function Home() {
             <>
                 <section className="relative w-full h-[80vh] md:h-screen bg-background overflow-hidden">
                     {featuredProjects && <FloatingShowcase projects={featuredProjects} />}
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4 bg-background/30 dark:bg-background/50 backdrop-blur-sm">
                         <motion.h1
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
