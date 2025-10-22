@@ -64,7 +64,7 @@ export default function ProjectDetailsPage() {
   const { toast } = useToast();
 
    const autoplayPlugin = useRef(
-    Autoplay({ delay: 2000, stopOnInteraction: true })
+    Autoplay({ delay: 4000, stopOnInteraction: true })
   );
 
 
