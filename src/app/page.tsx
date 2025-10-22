@@ -66,17 +66,16 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     const desktopPositions = [
         { top: '5%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-48 h-36', delay: 0 },
         { top: '38%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-56 h-40', delay: 1.5 },
-        { top: '65%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-40 h-56', delay: 0.5 },
+        { top: '70%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-40 h-56', delay: 0.5 },
         
         { top: '8%', right: '6%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-44 h-56', delay: 0.8 },
         { top: '45%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-36 h-28', delay: 2.2 },
-        { top: '68%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-56 h-48', delay: 1.2 },
+        { top: '75%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-56 h-48', delay: 1.2 },
         
-        // Smaller images to fill gaps
-        { bottom: '5%', left: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-32 h-32', delay: 2.5 },
-        { bottom: '8%', right: '12%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-48 h-40', delay: 0.2 },
+        { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-32 h-32', delay: 2.5 },
+        { bottom: '8%', right: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-48 h-40', delay: 0.2 },
         { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
-        { top: '60%', right: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
+        { top: '60%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
     ];
     
     const mobilePositions = [
@@ -113,7 +112,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
                         sizes="25vw"
                         data-ai-hint="project image"
                     />
-                     <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
+                     <div className="absolute inset-0 bg-black/10"></div>
                 </motion.div>
             ))}
         </div>
@@ -146,49 +145,52 @@ export default function Home() {
             <>
                 <section className="relative w-full h-[80vh] md:h-screen bg-background overflow-hidden">
                     {featuredProjects && <FloatingShowcase projects={featuredProjects} />}
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4 bg-transparent">
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                            className="text-4xl md:text-6xl font-bold font-headline mb-4"
-                        >
-                           <span className="liquid-text">Лучшие авторы Узбекистана</span>
-                           <br />
-                           на <span className="font-bold">InDizayn</span>
-                        </motion.h1>
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 bg-background/30 backdrop-blur-lg"></div>
+                        <div className="relative z-20 text-center p-4">
+                            <motion.h1
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                                className="text-4xl md:text-6xl font-bold font-headline mb-4"
+                            >
+                               <span className="liquid-text">Лучшие авторы Узбекистана</span>
+                               <br />
+                               на <span className="font-bold">InDizayn</span>
+                            </motion.h1>
 
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-                            className="mt-4 max-w-xl text-lg text-muted-foreground"
-                        >
-                          Комплексная платформа, которая поможет нанимателям и авторам ориентироваться в творческом мире: от поиска вдохновения до общения.
-                        </motion.p>
-                      
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-                            className="mt-8 flex flex-col sm:flex-row gap-4"
-                        >
-                            {isSigningIn ? (
-                                <div className="flex flex-col items-center gap-4">
-                                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                                    <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
-                                </div>
-                            ) : (
-                                <>
-                                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={() => router.push('/account/new-project')}>
-                                      Loyiha joylash
-                                  </Button>
-                                   <Button size="lg" variant="secondary" className="py-7" onClick={() => router.push('/designers')}>
-                                      Dizaynerlarni ko'rish
-                                  </Button>
-                                </>
-                            )}
-                        </motion.div>
+                            <motion.p
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+                                className="mt-4 max-w-xl text-lg text-foreground/80"
+                            >
+                              Комплексная платформа, которая поможет нанимателям и авторам ориентироваться в творческом мире: от поиска вдохновения до общения.
+                            </motion.p>
+                          
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
+                                className="mt-8 flex flex-col sm:flex-row gap-4 justify-center"
+                            >
+                                {isSigningIn ? (
+                                    <div className="flex flex-col items-center gap-4">
+                                        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                                        <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                      <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={() => router.push('/account/new-project')}>
+                                          Loyiha joylash
+                                      </Button>
+                                       <Button size="lg" variant="secondary" className="py-7" onClick={() => router.push('/designers')}>
+                                          Dizaynerlarni ko'rish
+                                      </Button>
+                                    </>
+                                )}
+                            </motion.div>
+                        </div>
                     </div>
                 </section>
             </>
