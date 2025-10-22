@@ -64,7 +64,7 @@ export default function ProjectDetailsPage() {
   const { toast } = useToast();
 
    const autoplayPlugin = useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true })
+    Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
   );
 
 
@@ -283,8 +283,6 @@ export default function ProjectDetailsPage() {
                   <Carousel 
                     className="w-full mb-6"
                     plugins={[autoplayPlugin.current]}
-                    onMouseEnter={autoplayPlugin.current.stop}
-                    onMouseLeave={autoplayPlugin.current.reset}
                   >
                       <CarouselContent>
                       {projectImages.map((url, index) => (
@@ -497,3 +495,5 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
+
+    
