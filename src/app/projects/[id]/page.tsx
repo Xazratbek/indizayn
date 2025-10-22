@@ -284,7 +284,7 @@ export default function ProjectDetailsPage() {
                               alt={`${project.name} - ${index + 1}`}
                               fill
                               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 66vw"
-                              className="object-contain"
+                              className="object-cover"
                               data-ai-hint="project image"
                               priority={index === 0}
                               />
