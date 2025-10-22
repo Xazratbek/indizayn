@@ -11,8 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Skeleton } from './ui/skeleton';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -149,36 +149,6 @@ export default function PortfolioCard({ project, className, showAdminControls = 
                   />
                </motion.div>
                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                <div className="absolute bottom-2 right-2 flex items-center gap-3 text-xs text-white bg-black/30 backdrop-blur-sm px-2 py-1 rounded-md">
-                    <div className="flex items-center gap-1">
-                        <Heart className="w-3 h-3" />
-                        <AnimatePresence mode="popLayout">
-                          <motion.span
-                              key={project.likeCount}
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 10 }}
-                              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-                          >
-                              {project.likeCount || 0}
-                          </motion.span>
-                        </AnimatePresence>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
-                         <AnimatePresence mode="popLayout">
-                          <motion.span
-                              key={project.viewCount}
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 10 }}
-                              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-                          >
-                              {project.viewCount || 0}
-                          </motion.span>
-                        </AnimatePresence>
-                    </div>
-                </div>
             </Link>
             {showAdminControls && (
                   <div className="absolute top-2 right-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
@@ -212,13 +182,10 @@ export default function PortfolioCard({ project, className, showAdminControls = 
             )}
           </div>
 
-          <div className="p-4">
-            <Link href={projectLink} onClick={handleClick} scroll={false}>
-              <h3 className="font-headline font-bold text-lg truncate group-hover:text-primary transition-colors">{project.name}</h3>
-            </Link>
+          <div className="p-4 flex items-center justify-between">
             <HoverCard>
                 <HoverCardTrigger asChild>
-                     <div className="flex items-center gap-2 mt-2">
+                     <div className="flex items-center gap-2">
                         <Link href={`/designers/${designer.id}`} className="flex items-center gap-2">
                             <Avatar className="h-6 w-6">
                             {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
@@ -226,7 +193,6 @@ export default function PortfolioCard({ project, className, showAdminControls = 
                             </Avatar>
                             <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{designer.name}</span>
                         </Link>
-                        {designer.specialization && <Badge variant="secondary" className="text-xs">{designer.specialization}</Badge>}
                     </div>
                 </HoverCardTrigger>
                 <HoverCardContent className="w-80">
@@ -264,6 +230,32 @@ export default function PortfolioCard({ project, className, showAdminControls = 
                     </div>
                 </HoverCardContent>
             </HoverCard>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                    <Heart className="w-4 h-4" />
+                    <motion.span
+                        key={project.likeCount}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                    >
+                        {project.likeCount || 0}
+                    </motion.span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" />
+                    <motion.span
+                        key={project.viewCount}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                    >
+                        {project.viewCount || 0}
+                    </motion.span>
+                </div>
+            </div>
           </div>
         </CardContent>
       </Card>
