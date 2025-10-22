@@ -48,8 +48,8 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
         }
     }, [isExpanded]);
 
-    const togglePlay = (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const togglePlay = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
         const video = videoRef.current;
         if (!video) return;
 
@@ -67,7 +67,7 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
             setIsExpanded(true);
         } else {
             // In expanded view, clicking the container toggles play/pause
-            togglePlay({} as React.MouseEvent);
+            togglePlay();
         }
     }
 
