@@ -64,27 +64,30 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     if (displayProjects.length === 0) return null;
 
     const desktopPositions = [
-        { top: '5%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-48 h-36', delay: 0 },
-        { top: '38%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-56 h-40', delay: 1.5 },
-        { top: '70%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-40 h-56', delay: 0.5 },
+        // Chap taraf
+        { top: '5%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-48 h-36', delay: 0 },
+        { top: '38%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -35]), className: 'w-56 h-40', delay: 1.5 },
+        { top: '70%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-40 h-56', delay: 0.5 },
         
-        { top: '8%', right: '6%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-44 h-56', delay: 0.8 },
-        { top: '45%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-36 h-28', delay: 2.2 },
-        { top: '75%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-56 h-48', delay: 1.2 },
+        // O'ng taraf
+        { top: '8%', right: '6%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-44 h-56', delay: 0.8 },
+        { top: '45%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-36 h-28', delay: 2.2 },
+        { top: '75%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-56 h-48', delay: 1.2 },
         
-        { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-32 h-32', delay: 2.5 },
-        { bottom: '8%', right: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-48 h-40', delay: 0.2 },
-        { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
-        { top: '60%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
+        // Pastki qism
+        { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-32 h-32', delay: 2.5 },
+        { bottom: '8%', right: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-48 h-40', delay: 0.2 },
+        { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
+        { top: '60%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
     ];
     
     const mobilePositions = [
-        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-32 h-24', delay: 0 },
-        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-28 h-36', delay: 1 },
-        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-36 h-28', delay: 0.5 },
-        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-40 h-32', delay: 1.5 },
-        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-24 h-32', delay: 0.2 },
-        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -18]), className: 'w-28 h-28', delay: 2 },
+        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-32 h-24', delay: 0 },
+        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-28 h-36', delay: 1 },
+        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-36 h-28', delay: 0.5 },
+        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -35]), className: 'w-40 h-32', delay: 1.5 },
+        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -60]), className: 'w-24 h-32', delay: 0.2 },
+        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -28]), className: 'w-28 h-28', delay: 2 },
     ];
 
     const positions = isMobile ? mobilePositions : desktopPositions;
@@ -112,7 +115,6 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
                         sizes="25vw"
                         data-ai-hint="project image"
                     />
-                     <div className="absolute inset-0 bg-black/10"></div>
                 </motion.div>
             ))}
         </div>
@@ -146,7 +148,7 @@ export default function Home() {
                 <section className="relative w-full h-[80vh] md:h-screen bg-background overflow-hidden">
                     {featuredProjects && <FloatingShowcase projects={featuredProjects} />}
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-                        <div className="absolute inset-0 bg-background/30 backdrop-blur-lg"></div>
+                        <div className="absolute inset-0 bg-background/30 backdrop-blur-sm"></div>
                         <div className="relative z-20 text-center p-4">
                             <motion.h1
                                 initial={{ opacity: 0, y: 20 }}
@@ -297,5 +299,7 @@ export default function Home() {
 
     </div>
   );
+
+    
 
     
