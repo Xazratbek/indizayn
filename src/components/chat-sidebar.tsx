@@ -14,6 +14,7 @@ import { uz } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Skeleton } from './ui/skeleton';
 import { Users, Mic, Video, Camera } from 'lucide-react';
+import { Badge } from './ui/badge';
 
 interface ChatSidebarProps {
   currentUser: Session['user'];
@@ -24,6 +25,7 @@ interface ChatSidebarProps {
 interface Conversation {
     partner: Designer;
     lastMessage: Message;
+    unreadCount: number;
 }
 
 function ConversationSkeleton() {
@@ -56,7 +58,6 @@ const renderLastMessage = (msg: Message, currentUserId: string) => {
 export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser }: ChatSidebarProps) {
   const db = useFirestore();
 
-  // 1. Get all messages involving the current user in real-time
   const allMessagesQuery = useMemoFirebase(
     () => db && currentUser?.id 
         ? query(
@@ -72,24 +73,30 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
   );
   const { data: allMessages, isLoading: loadingMessages } = useCollection<Message>(allMessagesQuery);
 
-  // 2. From all messages, derive the latest message for each conversation partner
-  const partnerLastMessage = useMemo(() => {
-    if (!allMessages || !currentUser.id) return new Map<string, Message>();
+  const conversationsData = useMemo(() => {
+    if (!allMessages || !currentUser.id) return { partnerLastMessage: new Map(), partnerUnreadCount: new Map() };
     
-    const map = new Map<string, Message>();
+    const partnerLastMessage = new Map<string, Message>();
+    const partnerUnreadCount = new Map<string, number>();
+
     allMessages.forEach(msg => {
       const partnerId = msg.senderId === currentUser.id ? msg.receiverId : msg.senderId;
-      if (!map.has(partnerId)) {
-        map.set(partnerId, msg);
+      
+      if (!partnerLastMessage.has(partnerId)) {
+        partnerLastMessage.set(partnerId, msg);
+      }
+
+      if (msg.senderId === partnerId && !msg.isRead) {
+        partnerUnreadCount.set(partnerId, (partnerUnreadCount.get(partnerId) || 0) + 1);
       }
     });
-    return map;
+    return { partnerLastMessage, partnerUnreadCount };
   }, [allMessages, currentUser.id]);
 
-  // 3. Get the unique IDs of all partners
+  const { partnerLastMessage, partnerUnreadCount } = conversationsData;
+
   const partnerIds = useMemo(() => Array.from(partnerLastMessage.keys()), [partnerLastMessage]);
 
-  // 4. Fetch the user data for all partners in real-time
   const partnersQuery = useMemoFirebase(
     () => (db && partnerIds.length > 0) 
         ? query(collection(db, 'users'), where('__name__', 'in', partnerIds))
@@ -98,27 +105,25 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
   );
   const { data: partnersData, isLoading: loadingPartners } = useCollection<Designer>(partnersQuery);
 
-  // 5. Create a quickly searchable map of partner data
   const partnersMap = useMemo(() => {
     const map = new Map<string, Designer>();
     partnersData?.forEach(p => map.set(p.id, p));
     return map;
   }, [partnersData]);
 
-  // 6. Combine partner data and last message data to create the final conversation list
   const finalConversations: Conversation[] = useMemo(() => {
     return Array.from(partnerLastMessage.entries())
       .map(([partnerId, lastMessage]) => {
         const partner = partnersMap.get(partnerId);
+        const unreadCount = partnerUnreadCount.get(partnerId) || 0;
         if (partner) {
-          return { partner, lastMessage };
+          return { partner, lastMessage, unreadCount };
         }
         return null;
       })
       .filter((c): c is Conversation => c !== null)
-      // Sort again here because partner data might arrive at a different time
       .sort((a, b) => (b.lastMessage.createdAt?.toMillis() ?? 0) - (a.lastMessage.createdAt?.toMillis() ?? 0));
-  }, [partnerLastMessage, partnersMap]);
+  }, [partnerLastMessage, partnersMap, partnerUnreadCount]);
   
   const isLoading = loadingMessages || (partnerIds.length > 0 && loadingPartners);
 
@@ -135,7 +140,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
                 <ConversationSkeleton />
             </div>
         ) : finalConversations.length > 0 ? (
-           finalConversations.map(({ partner, lastMessage }) => (
+           finalConversations.map(({ partner, lastMessage, unreadCount }) => (
             <button
                 key={partner.id}
                 onClick={() => onSelectUser(partner.id)}
@@ -144,10 +149,17 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
                     selectedUserId === partner.id && 'bg-secondary'
                 )}
             >
-                <Avatar className="h-12 w-12">
-                    <AvatarImage src={partner.photoURL} alt={partner.name} />
-                    <AvatarFallback>{partner.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                    <Avatar className="h-12 w-12">
+                        <AvatarImage src={partner.photoURL} alt={partner.name} />
+                        <AvatarFallback>{partner.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    {unreadCount > 0 && (
+                        <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center rounded-full p-0 text-xs">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                        </Badge>
+                    )}
+                </div>
                 <div className="flex-1 overflow-hidden">
                     <div className="flex justify-between items-center">
                         <p className="font-semibold truncate">{partner.name}</p>
@@ -155,7 +167,7 @@ export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser 
                             {lastMessage.createdAt ? formatDistanceToNowStrict(lastMessage.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}
                         </p>
                     </div>
-                     <div className="text-sm text-muted-foreground truncate flex items-center">
+                     <div className={cn("text-sm truncate flex items-center", unreadCount > 0 ? "text-foreground font-semibold" : "text-muted-foreground")}>
                         {renderLastMessage(lastMessage, currentUser.id)}
                     </div>
                 </div>

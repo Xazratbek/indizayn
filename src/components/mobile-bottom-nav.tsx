@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Home, LayoutGrid, Users, User, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from 'framer-motion';
 
 const navItems = [
   { href: "/", label: "Bosh Sahifa", icon: Home },
@@ -20,30 +21,27 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const isMobile = useIsMobile();
 
-  if (isMobile === false) { 
+  if (isMobile === false || isMobile === undefined) { 
     return null;
-  }
-  
-  if (isMobile === undefined) {
-      return null;
   }
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background/80 border-t border-border/40 backdrop-blur-lg supports-[backdrop-filter]:bg-background/80 z-50">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-background/80 border-t border-border/20 backdrop-blur-lg shadow-2xl shadow-black z-50">
       <nav className="h-full">
         <ul className="flex h-full items-center justify-around">
           {navItems.map((item) => {
             const isActive = (item.href === "/" && pathname === "/") || (item.href !== "/" && pathname.startsWith(item.href));
             return (
               <li key={item.href} className="flex-1">
-                <Link href={item.href} className="flex flex-col items-center justify-center h-full">
-                  <div className={cn(
-                      "flex flex-col items-center justify-center gap-1 transition-all duration-300 ease-in-out",
-                      isActive ? 'transform -translate-y-2' : ''
-                  )}>
+                <Link href={item.href} className="flex flex-col items-center justify-center h-full relative">
+                  <motion.div
+                    className="flex flex-col items-center gap-1"
+                    animate={{ y: isActive ? -8 : 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                  >
                     <item.icon
                       className={cn(
-                        "w-6 h-6 transition-all duration-200",
+                        "w-6 h-6 transition-colors",
                         isActive
                           ? "text-primary"
                           : "text-muted-foreground"
@@ -51,13 +49,13 @@ export function MobileBottomNav() {
                     />
                     <span
                       className={cn(
-                        "text-xs font-medium transition-all duration-200",
+                        "text-[10px] font-medium transition-colors",
                         isActive ? "text-primary" : "text-muted-foreground"
                       )}
                     >
                       {item.label}
                     </span>
-                  </div>
+                  </motion.div>
                 </Link>
               </li>
             );

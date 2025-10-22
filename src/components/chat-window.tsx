@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -16,8 +17,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Slider } from './ui/slider';
 import VideoMessagePlayer from './video-message-player';
 import { motion, AnimatePresence } from 'framer-motion';
+import { format, isSameDay } from 'date-fns';
+import { uz } from 'date-fns/locale';
 
-// Optimistic UI for messages
 type OptimisticMessage = Message & { status?: 'uploading' | 'sent' | 'failed' };
 
 interface AudioPlayerProps {
@@ -181,10 +183,9 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         if (createdAt instanceof Timestamp) {
             return createdAt.toMillis();
         }
-        if (createdAt instanceof Date) { // For optimistic messages
+        if (createdAt instanceof Date) { 
             return createdAt.getTime();
         }
-        // For Firestore-like objects that are not Timestamp instances
         if (typeof createdAt === 'object' && 'seconds' in createdAt && typeof (createdAt as any).seconds === 'number') {
             return (createdAt as any as Timestamp).toMillis();
         }
@@ -233,11 +234,11 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     }
   }, [combinedMessages]);
 
-    useEffect(() => {
-        if (isRecording && recordingMode === 'video' && videoPreviewRef.current && streamRef.current) {
-            videoPreviewRef.current.srcObject = streamRef.current;
-        }
-    }, [isRecording, recordingMode]);
+  useEffect(() => {
+      if (isRecording && recordingMode === 'video' && videoPreviewRef.current && streamRef.current) {
+          videoPreviewRef.current.srcObject = streamRef.current;
+      }
+  }, [isRecording, recordingMode, streamRef.current]);
 
 
   const startRecording = async () => {
@@ -287,7 +288,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                     drawToCanvas();
                 }
 
-                streamToRecord = canvas.captureStream(30); // 30 FPS
+                streamToRecord = canvas.captureStream(30);
                 stream.getAudioTracks().forEach(track => streamToRecord.addTrack(track.clone()));
             } else {
                 streamToRecord = stream;
@@ -396,7 +397,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
             const mediaUrl = result.url;
             
-            await addDoc(collection(db, 'messages'), {
+            const newDocRef = await addDoc(collection(db, 'messages'), {
                 senderId: currentUser.id,
                 receiverId: selectedUserId,
                 type: mode,
@@ -421,7 +422,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 });
             }
             setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
-            // URL.revokeObjectURL(localMediaUrl); // Don't revoke immediately, pleyer might still need it
 
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Xatolik', description: error.message });
@@ -436,7 +436,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     setNewMessage('');
     
     try {
-      await addDoc(collection(db, 'messages'), {
+      const newDocRef = await addDoc(collection(db, 'messages'), {
         senderId: currentUser.id,
         receiverId: selectedUserId,
         content: text,
@@ -471,30 +471,84 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     const handleSwitchCamera = () => {
         setFacingMode(prev => {
             const newMode = prev === 'user' ? 'environment' : 'user';
-            // Restart recording with the new camera
             if (isRecording) {
                 stopRecording().then(() => {
-                    // We need to pass the new mode to startRecording, but it doesn't accept arguments.
-                    // So we update state and rely on the next render. But we can't wait for a render.
-                    // A better way is to restart it directly with new constraints
-                    const restartWithNewCamera = async () => {
-                        try {
-                            const constraints = { audio: true, video: { facingMode: newMode } };
-                            const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                             streamRef.current = stream; // Update stream ref
-                             startRecording(); // This will use the new stream
-                        } catch (error) {
-                             console.error("Camera switch failed:", error);
-                        }
-                    }
-                    // This is hacky, but we need to ensure the state update is processed.
-                    // A better refactor is needed for a cleaner approach.
                     setTimeout(startRecording, 100);
                 })
             }
             return newMode;
         });
     };
+
+    const renderMessagesWithDateSeparators = () => {
+        let lastDate: Date | null = null;
+        const messageElements: React.ReactNode[] = [];
+
+        combinedMessages.forEach((msg, index) => {
+            const msgDate = (msg.createdAt as Timestamp)?.toDate();
+            if (!msgDate) {
+                 messageElements.push(renderMessage(msg));
+                 return;
+            };
+
+            if (!lastDate || !isSameDay(msgDate, lastDate)) {
+                messageElements.push(
+                    <div key={`date-${msg.id}`} className="text-center text-xs text-muted-foreground my-4">
+                        {format(msgDate, 'd MMMM, yyyy', { locale: uz })}
+                    </div>
+                );
+            }
+            lastDate = msgDate;
+            messageElements.push(renderMessage(msg));
+        });
+        return messageElements;
+    }
+
+    const renderMessage = (msg: Message | OptimisticMessage) => (
+         <div
+            key={msg.id}
+            className={cn(
+                'flex items-end gap-2 my-2 max-w-[80%] clear-both',
+                msg.senderId === currentUser.id ? 'ml-auto flex-row-reverse' : 'mr-auto'
+            )}
+        >
+            <Avatar className="h-6 w-6">
+                <AvatarImage src={msg.senderId === currentUser.id ? currentUser.image ?? '' : partner?.photoURL} />
+                <AvatarFallback>{msg.senderId === currentUser.id ? currentUser.name?.charAt(0) : partner?.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div
+                className={cn(
+                    'p-2 rounded-lg relative shadow-md',
+                        msg.type !== 'video' && (msg.senderId === currentUser.id
+                        ? 'bg-primary text-primary-foreground rounded-br-none'
+                        : 'bg-background text-foreground rounded-bl-none'),
+                    msg.type === 'video' && 'p-0 bg-transparent shadow-none'
+                )}
+            >
+                    {msg.type === 'audio' && msg.audioUrl ? (
+                    <AudioPlayer audioUrl={msg.audioUrl}/>
+                    ) : msg.type === 'video' && msg.videoUrl ? (
+                    <VideoMessagePlayer videoUrl={msg.videoUrl} />
+                    ) : (
+                    <p className="pb-4 pr-5">{msg.content}</p>
+                    )}
+                
+                <div className="absolute bottom-1 right-2 flex items-center gap-1">
+                    {(msg as OptimisticMessage).status === 'uploading' && <Loader2 size={14} className="animate-spin text-primary-foreground/70" />}
+                    
+                    {msg.senderId === currentUser.id && (msg as OptimisticMessage).status !== 'uploading' && msg.type !== 'video' && (
+                        <>
+                            {msg.isRead ? (
+                                <CheckCheck size={16} className="text-blue-400" />
+                            ) : (
+                                <Check size={16} className={cn("text-muted-foreground/70", msg.senderId === currentUser.id ? 'text-primary-foreground/70' : 'text-muted-foreground/70')} />
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
     
   if (!selectedUserId) {
     return (
@@ -562,51 +616,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 <MessageSkeleton />
             </div>
         ) : (
-            combinedMessages.map(msg => (
-                <div
-                    key={msg.id}
-                    className={cn(
-                        'flex items-end gap-2 my-2 max-w-[80%] clear-both',
-                        msg.senderId === currentUser.id ? 'ml-auto flex-row-reverse' : 'mr-auto'
-                    )}
-                >
-                <Avatar className="h-6 w-6">
-                    <AvatarImage src={msg.senderId === currentUser.id ? currentUser.image ?? '' : partner?.photoURL} />
-                    <AvatarFallback>{msg.senderId === currentUser.id ? currentUser.name?.charAt(0) : partner?.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div
-                    className={cn(
-                        'p-2 rounded-lg relative shadow-md',
-                         msg.type !== 'video' && (msg.senderId === currentUser.id
-                            ? 'bg-primary text-primary-foreground rounded-br-none'
-                            : 'bg-background text-foreground rounded-bl-none'),
-                        msg.type === 'video' && 'p-0 bg-transparent shadow-none' // videos have their own bg/shadow
-                    )}
-                >
-                     {msg.type === 'audio' && msg.audioUrl ? (
-                        <AudioPlayer audioUrl={msg.audioUrl}/>
-                     ) : msg.type === 'video' && msg.videoUrl ? (
-                        <VideoMessagePlayer videoUrl={msg.videoUrl} />
-                     ) : (
-                        <p className="pb-4 pr-5">{msg.content}</p>
-                     )}
-                    
-                    <div className="absolute bottom-1 right-2 flex items-center gap-1">
-                      {(msg as OptimisticMessage).status === 'uploading' && <Loader2 size={14} className="animate-spin text-primary-foreground/70" />}
-                      
-                      {msg.senderId === currentUser.id && (msg as OptimisticMessage).status !== 'uploading' && msg.type !== 'video' && (
-                          <>
-                              {msg.isRead ? (
-                                  <CheckCheck size={16} className="text-blue-400" />
-                              ) : (
-                                  <Check size={16} className={cn("text-muted-foreground/70", msg.senderId === currentUser.id ? 'text-primary-foreground/70' : 'text-muted-foreground/70')} />
-                              )}
-                          </>
-                      )}
-                    </div>
-                </div>
-                </div>
-            ))
+            renderMessagesWithDateSeparators()
         )}
       </ScrollArea>
         
@@ -618,7 +628,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
              initial={{ opacity: 0 }}
              animate={{ opacity: 1 }}
              exit={{ opacity: 0 }}
-             className="absolute inset-0 flex items-center justify-center z-10"
+             className="absolute inset-0 flex items-center justify-center z-10 bg-black/80"
            >
               <div className="relative w-full h-full max-w-[400px] max-h-[400px]">
                   <motion.div 
@@ -710,4 +720,3 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
-
