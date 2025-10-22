@@ -83,11 +83,11 @@ export default function EditProjectPage() {
       const newFiles = Array.from(files);
       const totalFiles = imagePreviews.length - (imagePreviews.filter(p => p.startsWith('blob:')).length) + newFiles.length;
 
-      if (totalFiles > 10) {
+      if (totalFiles > 20) {
         toast({
           variant: "destructive",
           title: "Xatolik",
-          description: "Maksimal 10 ta rasm yuklashingiz mumkin.",
+          description: "Maksimal 20 ta rasm yuklashingiz mumkin.",
         });
         return;
       }
@@ -288,7 +288,7 @@ export default function EditProjectPage() {
 
                              </div>
                              <div className="space-y-2">
-                                 <Label>Loyiha rasmlari ({imagePreviews.length}/10)</Label>
+                                 <Label>Loyiha rasmlari ({imagePreviews.length}/20)</Label>
                                  <ScrollArea className="h-72 w-full">
                                      <div className="grid grid-cols-3 sm:grid-cols-3 gap-2 pr-4">
                                          {imagePreviews.map((preview, index) => (
