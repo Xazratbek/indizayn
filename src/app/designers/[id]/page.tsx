@@ -97,7 +97,7 @@ export default function DesignerProfilePage() {
             toast({ variant: "success", description: `${designer?.name} ga obuna bo'ldingiz.` });
 
             // Create notification for the followed user
-            if (designer.id !== user.id && (!session || (session as any).isSuhbatOynasida !== true)) { // Don't notify self
+            if (designer.id !== user.id ) { 
               const notificationsRef = collection(db, "notifications");
               await addDoc(notificationsRef, {
                   userId: designer.id,
@@ -129,9 +129,11 @@ export default function DesignerProfilePage() {
     return <LoadingPage />;
   }
   
-  if (!designer) {
+  if (!designer && !isDesignerLoading) {
     return <div className="flex h-[80vh] items-center justify-center"><p>Dizayner topilmadi.</p></div>;
   }
+
+  if (!designer) return null;
 
   const totalLikes = designerProjects?.reduce((acc, p) => acc + p.likeCount, 0) || 0;
   const totalViews = designerProjects?.reduce((acc, p) => acc + p.viewCount, 0) || 0;
@@ -154,7 +156,7 @@ export default function DesignerProfilePage() {
           )}
         </div>
         <CardContent className="p-4 md:p-6 relative">
-          <div className="flex flex-col items-center -mt-16">
+          <div className="flex flex-col items-center -mt-16 md:-mt-20">
             <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background ring-4 ring-primary/50">
               {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
               <AvatarFallback className="text-4xl">{designer.name.charAt(0)}</AvatarFallback>
@@ -164,12 +166,12 @@ export default function DesignerProfilePage() {
               {designer.specialization && <p className="text-lg text-muted-foreground">{designer.specialization}</p>}
             </div>
              { status === 'authenticated' && session.user.id !== id ? (
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-4 w-full md:w-auto">
-                <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading} className="w-full sm:w-auto text-lg py-6 px-8">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-4 w-full">
+                <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading} className="w-full text-lg py-6 sm:w-auto sm:text-base sm:py-2">
                   {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-5 w-5" /> : <UserPlus className="mr-2 h-5 w-5" />}
                   {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
                 </Button>
-                <Button variant="outline" onClick={() => setIsMessageDialogOpen(true)} className="w-full sm:w-auto text-lg py-6 px-8">
+                <Button variant="outline" onClick={() => setIsMessageDialogOpen(true)} className="w-full text-lg py-6 sm:w-auto sm:text-base sm:py-2">
                   <Mail className="mr-2 h-5 w-5" /> Xabar
                 </Button>
               </div>
@@ -251,5 +253,3 @@ export default function DesignerProfilePage() {
     </>
   );
 }
-
-    

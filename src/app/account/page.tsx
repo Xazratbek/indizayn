@@ -50,7 +50,7 @@ export default function AccountDashboardPage() {
     signIn('google');
   }
 
-  if (isUserLoading) {
+  if (isUserLoading || (status === 'authenticated' && isLoading)) {
     return (
         <div className="container mx-auto py-8 px-4">
              <Card className="overflow-hidden mb-8">
@@ -90,7 +90,8 @@ export default function AccountDashboardPage() {
     );
   }
   
-  if (!designer && status === 'authenticated') {
+  // This state can happen if the user document hasn't been created in time after a new signup
+  if (!designer && status === 'authenticated' && !isDesignerLoading) {
     return (
         <div className="flex h-[80vh] items-center justify-center">
             <div className='text-center'>
