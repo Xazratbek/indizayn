@@ -3,21 +3,20 @@
 
 import Link from 'next/link';
 import { MoveRight, Palette, UserCheck, ThumbsUp, Loader2, ImageOff } from 'lucide-react';
-import ThreeShowcase from '@/components/three-showcase';
 import { Button } from '@/components/ui/button';
 import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import { useSession, signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import LoadingPage from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-
+import Image from 'next/image';
 
 const advantages = [
     {
@@ -46,6 +45,67 @@ const sectionVariants = {
   }
 };
 
+const HeroShowcase = ({ projects }: { projects: Project[] }) => {
+    const gridRef = useRef<HTMLDivElement>(null);
+    const { scrollYProgress } = useScroll({
+        target: gridRef,
+        offset: ['start start', 'end start'],
+    });
+
+    const rotateX = useTransform(scrollYProgress, [0, 1], [0, 45]);
+    const translateY = useTransform(scrollYProgress, [0, 1], [0, -100]);
+    const scale = useTransform(scrollYProgress, [0, 1], [1, 0.85]);
+
+    const firstColumn = projects.slice(0, 3);
+    const secondColumn = projects.slice(3, 6);
+    const thirdColumn = projects.slice(6, 9);
+    
+    if (projects.length < 9) return null;
+
+    const renderColumn = (columnProjects: Project[], y: number) => (
+        <motion.div className="relative flex flex-col gap-4 w-[30%]" style={{ y: y }}>
+            {columnProjects.map((project) => (
+                <div key={project.id} className="aspect-[4/3] relative rounded-lg overflow-hidden shadow-xl">
+                    <Image
+                        src={project.imageUrl}
+                        alt={project.name}
+                        fill
+                        className="object-cover"
+                        sizes="30vw"
+                        data-ai-hint="project image"
+                    />
+                </div>
+            ))}
+        </motion.div>
+    );
+
+    return (
+        <div ref={gridRef} className="w-full h-[120vh] relative -mt-[20vh] hidden md:block">
+            <motion.div
+                className="sticky top-0 h-screen flex justify-center items-center overflow-hidden"
+                style={{
+                    perspective: '1000px',
+                    translateY
+                }}
+            >
+                <motion.div
+                    className="flex gap-4 w-[90%] md:w-[70%]"
+                    style={{
+                        rotateX,
+                        scale,
+                        transformStyle: 'preserve-3d',
+                    }}
+                >
+                    {renderColumn(firstColumn, -40)}
+                    {renderColumn(secondColumn, 80)}
+                    {renderColumn(thirdColumn, -40)}
+                </motion.div>
+            </motion.div>
+        </div>
+    );
+};
+
+
 export default function Home() {
   const { data: session, status } = useSession();
   const user = session?.user;
@@ -55,7 +115,7 @@ export default function Home() {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   const featuredProjectsQuery = useMemoFirebase(() =>
-    db ? query(collection(db, 'projects'), orderBy('viewCount', 'desc'), limit(4)) : null
+    db ? query(collection(db, 'projects'), orderBy('viewCount', 'desc'), limit(9)) : null
   , [db]);
   const { data: featuredProjects, isLoading: areProjectsLoading } = useCollection<Project>(featuredProjectsQuery);
 
@@ -65,52 +125,56 @@ export default function Home() {
   };
 
   const isLoading = areProjectsLoading || isUserLoading;
+  
+  const displayProjects = featuredProjects?.slice(0, 4) || [];
 
   return (
     <div className="flex flex-col">
        {!user && !isUserLoading ? (
-            <section className="relative w-full h-[60vh] md:h-[80vh] bg-background">
-                <ThreeShowcase />
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-                  <motion.h1
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                      className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
-                  >
-                      inDizayn-ga Xush Kelibsiz!
-                  </motion.h1>
+            <>
+                <section className="relative w-full h-[60vh] md:h-auto bg-background overflow-hidden">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
+                      <motion.h1
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                          className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
+                      >
+                          inDizayn-ga Xush Kelibsiz!
+                      </motion.h1>
 
-                  <motion.p
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-                      className="mt-4 max-w-2xl text-lg text-muted-foreground"
-                  >
-                      Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
-                  </motion.p>
-                  
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-                        className="mt-8"
-                    >
-                        {isSigningIn ? (
-                            <div className="flex flex-col items-center gap-4">
-                                <Loader2 className="h-10 w-10 text-primary animate-spin" />
-                                <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
-                            </div>
-                        ) : (
-                            <div className="animated-border-box">
-                                <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={handleStartClick} disabled={isSigningIn}>
-                                    Boshlash <MoveRight className="ml-2" />
-                                </Button>
-                            </div>
-                        )}
-                    </motion.div>
-                </div>
-            </section>
+                      <motion.p
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+                          className="mt-4 max-w-2xl text-lg text-muted-foreground"
+                      >
+                          Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
+                      </motion.p>
+                      
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
+                            className="mt-8"
+                        >
+                            {isSigningIn ? (
+                                <div className="flex flex-col items-center gap-4">
+                                    <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                                    <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
+                                </div>
+                            ) : (
+                                <div className="animated-border-box">
+                                    <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={handleStartClick} disabled={isSigningIn}>
+                                        Boshlash <MoveRight className="ml-2" />
+                                    </Button>
+                                </div>
+                            )}
+                        </motion.div>
+                    </div>
+                    {featuredProjects && <HeroShowcase projects={featuredProjects} />}
+                </section>
+            </>
         ) : null}
 
 
@@ -144,10 +208,10 @@ export default function Home() {
                     </Card>
                 ))}
              </div>
-          ) : featuredProjects && featuredProjects.length > 0 ? (
+          ) : displayProjects && displayProjects.length > 0 ? (
             <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                {featuredProjects.map(project => (
+                {displayProjects.map(project => (
                     <PortfolioCard key={project.id} project={project} />
                 ))}
                 </div>
