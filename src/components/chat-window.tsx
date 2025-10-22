@@ -271,7 +271,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 if (ctx) {
                     const drawToCanvas = () => {
                         if (!video.paused && !video.ended) {
-                            // Flip the canvas horizontally if it's the front camera
                             if (facingMode === 'user') {
                                 ctx.save();
                                 ctx.scale(-1, 1);
@@ -619,7 +618,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
              initial={{ opacity: 0 }}
              animate={{ opacity: 1 }}
              exit={{ opacity: 0 }}
-             className="absolute inset-0 bg-black flex items-center justify-center z-10"
+             className="absolute inset-0 flex items-center justify-center z-10"
            >
               <div className="relative w-full h-full max-w-[400px] max-h-[400px]">
                   <motion.div 
@@ -711,3 +710,5 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
+
+    
