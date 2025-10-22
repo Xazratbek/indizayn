@@ -4,18 +4,15 @@
 import Link from 'next/link';
 import { MoveRight, Palette, UserCheck, ThumbsUp, Loader2, ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import PortfolioCard from '@/components/portfolio-card';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { motion, useTime, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import { useSession, signIn } from 'next-auth/react';
 import { useState, useRef, useEffect } from 'react';
-import LoadingPage from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 import Image from 'next/image';
 
 const advantages = [
@@ -45,94 +42,60 @@ const sectionVariants = {
   }
 };
 
-const HeroShowcase = ({ projects }: { projects: Project[] }) => {
-    const time = useTime();
-    const rotate = useTransform(time, [0, 40000], [0, 360], { clamp: false });
 
-    const [carouselConfig, setCarouselConfig] = useState({
-        radius: 280,
-        imageWidth: 240,
-        imageHeight: 180, // 4:3 ratio
-    });
+const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
+    const ref = useRef(null);
+    const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
 
-    useEffect(() => {
-        const updateCarouselConfig = () => {
-            const width = window.innerWidth;
-            if (width < 640) { // small mobile
-                setCarouselConfig({ radius: 160, imageWidth: 160, imageHeight: 120 });
-            } else if (width < 768) { // large mobile
-                setCarouselConfig({ radius: 220, imageWidth: 200, imageHeight: 150 });
-            } else if (width < 1024) { // tablet
-                setCarouselConfig({ radius: 280, imageWidth: 240, imageHeight: 180 });
-            } else { // desktop
-                setCarouselConfig({ radius: 380, imageWidth: 280, imageHeight: 210 });
-            }
-        };
-
-        updateCarouselConfig();
-        window.addEventListener('resize', updateCarouselConfig);
-        return () => window.removeEventListener('resize', updateCarouselConfig);
-    }, []);
-    
-    const numProjects = 9;
+    // Ensure we have enough projects to display, loop if necessary
+    const numProjects = 11;
     const displayProjects = [...projects];
     while (displayProjects.length > 0 && displayProjects.length < numProjects) {
         displayProjects.push(...projects.slice(0, numProjects - displayProjects.length));
     }
-    
     if (displayProjects.length === 0) return null;
 
+    const positions = [
+        { top: '5%', left: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-32 h-24 md:w-48 md:h-36' },
+        { top: '10%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -250]), className: 'w-40 h-52 md:w-48 md:h-64' },
+        { top: '35%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -200]), className: 'w-40 h-40 md:w-56 md:h-56' },
+        { top: '30%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-24 h-24 md:w-32 md:h-32' },
+        { top: '65%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -300]), className: 'w-36 h-48 md:w-44 md:h-56' },
+        { top: '70%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-48 h-36 md:w-64 md:h-48' },
+        { bottom: '5%', left: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-28 h-28 md:w-36 md:h-36' },
+        { bottom: '10%', right: '35%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-32 h-40 md:w-40 md:h-48' },
+        { top: '55%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-20 h-28 md:w-24 md:h-32' },
+        { bottom: '2%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -280]), className: 'w-28 h-36 md:w-32 md:h-40' },
+        { top: '15%', left: '45%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-20 h-20 md:w-24 md:h-24' },
+    ];
+
     return (
-        <div className="w-full h-full flex items-center justify-center">
-            <motion.div
-                className="relative w-full h-full"
-                style={{
-                    transformStyle: 'preserve-3d',
-                    perspective: '1000px',
-                }}
-            >
+        <div ref={ref} className="absolute inset-0 z-0 h-full w-full">
+            {displayProjects.slice(0, numProjects).map((project, i) => (
                 <motion.div
-                    className="absolute w-full h-full"
+                    key={`${project.id}-${i}`}
+                    className={`absolute rounded-lg shadow-lg overflow-hidden ${positions[i].className}`}
                     style={{
-                        transformStyle: 'preserve-3d',
-                        rotateY: rotate,
+                        top: positions[i].top,
+                        left: positions[i].left,
+                        right: positions[i].right,
+                        bottom: positions[i].bottom,
+                        y: positions[i].y
                     }}
                 >
-                    {displayProjects.map((project, i) => {
-                        const angle = (i / numProjects) * 360;
-                        return (
-                            <motion.div
-                                key={`${project.id}-${i}`}
-                                className="absolute"
-                                style={{
-                                    width: `${carouselConfig.imageWidth}px`,
-                                    height: `${carouselConfig.imageHeight}px`,
-                                    top: `calc(50% - ${carouselConfig.imageHeight / 2}px)`,
-                                    left: `calc(50% - ${carouselConfig.imageWidth / 2}px)`,
-                                    transform: `rotateY(${angle}deg) translateZ(${carouselConfig.radius}px)`,
-                                }}
-                            >
-                                <div className="aspect-[4/3] relative w-full h-full rounded-lg overflow-hidden shadow-2xl">
-                                    <Image
-                                        src={project.imageUrl}
-                                        alt={project.name}
-                                        fill
-                                        className="object-cover"
-                                        sizes={`${carouselConfig.imageWidth}px`}
-                                        data-ai-hint="project image"
-                                    />
-                                    {/* Dimming overlay */}
-                                    <div className="absolute inset-0 bg-black/30"></div>
-                                </div>
-                            </motion.div>
-                        );
-                    })}
+                    <Image
+                        src={project.imageUrl}
+                        alt={project.name}
+                        fill
+                        className="object-cover"
+                        sizes="25vw"
+                        data-ai-hint="project image"
+                    />
                 </motion.div>
-            </motion.div>
+            ))}
         </div>
     );
 };
-
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -159,30 +122,33 @@ export default function Home() {
        {!user && !isUserLoading ? (
             <>
                 <section className="relative w-full h-[80vh] md:h-screen bg-background overflow-hidden">
+                    {featuredProjects && <FloatingShowcase projects={featuredProjects} />}
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center p-4">
-                      <motion.h1
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                          className="text-4xl md:text-6xl font-bold font-headline mb-4 liquid-text"
-                      >
-                          inDizayn-ga Xush Kelibsiz!
-                      </motion.h1>
+                        <motion.h1
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                            className="text-4xl md:text-6xl font-bold font-headline mb-4"
+                        >
+                           <span className="liquid-text">Лучшие авторы Узбекистана</span>
+                           <br />
+                           на InDizayn
+                        </motion.h1>
 
-                      <motion.p
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-                          className="mt-4 max-w-2xl text-lg text-muted-foreground"
-                      >
-                          Dizaynerlar uchun o'z ishlarini namoyish etish, ilhomlanish va global hamjamiyat bilan bog'lanish uchun eng zo'r platforma.
-                      </motion.p>
+                        <motion.p
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+                            className="mt-4 max-w-xl text-lg text-muted-foreground"
+                        >
+                          Комплексная платформа, которая поможет нанимателям и авторам ориентироваться в творческом мире: от поиска вдохновения до общения.
+                        </motion.p>
                       
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-                            className="mt-8"
+                            className="mt-8 flex flex-col sm:flex-row gap-4"
                         >
                             {isSigningIn ? (
                                 <div className="flex flex-col items-center gap-4">
@@ -190,80 +156,75 @@ export default function Home() {
                                     <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
                                 </div>
                             ) : (
-                                <div className="animated-border-box">
-                                    <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={handleStartClick} disabled={isSigningIn}>
-                                        Boshlash <MoveRight className="ml-2" />
-                                    </Button>
-                                </div>
+                                <>
+                                  <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={() => router.push('/account/new-project')}>
+                                      Loyiha joylash
+                                  </Button>
+                                   <Button size="lg" variant="secondary" className="py-7" onClick={() => router.push('/designers')}>
+                                      Dizaynerlarni ko'rish
+                                  </Button>
+                                </>
                             )}
                         </motion.div>
                     </div>
-                    <div className="absolute inset-0 z-0">
-                        {featuredProjects && <HeroShowcase projects={featuredProjects} />}
-                    </div>
                 </section>
             </>
-        ) : null}
-
-
-      <motion.section 
-        className="py-16 md:py-24 bg-secondary/50"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.2 }}
-        variants={sectionVariants}
-      >
-        <div className="px-4 md:px-6 lg:px-8">
-          
-          {isLoading ? (
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                {Array.from({ length: 12 }).map((_, i) => (
-                    <Card key={i} className="overflow-hidden w-full h-full">
-                      <CardContent className="p-0">
-                        <Skeleton className="aspect-video w-full" />
-                        <div className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Skeleton className="h-6 w-6 rounded-full" />
-                                <Skeleton className="h-4 w-24" />
-                            </div>
-                            <div className="flex items-center gap-3">
-                               <Skeleton className="h-4 w-8" />
-                               <Skeleton className="h-4 w-8" />
-                            </div>
+        ) : (
+           <section 
+                className="py-16 md:py-24"
+              >
+                <div className="px-4 md:px-6 lg:px-8">
+                  
+                  {isLoading ? (
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {Array.from({ length: 12 }).map((_, i) => (
+                            <Card key={i} className="overflow-hidden w-full h-full">
+                              <CardContent className="p-0">
+                                <Skeleton className="aspect-video w-full" />
+                                <div className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Skeleton className="h-6 w-6 rounded-full" />
+                                        <Skeleton className="h-4 w-24" />
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                       <Skeleton className="h-4 w-8" />
+                                       <Skeleton className="h-4 w-8" />
+                                    </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                        ))}
+                     </div>
+                  ) : featuredProjects && featuredProjects.length > 0 ? (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {featuredProjects.map(project => (
+                            <PortfolioCard key={project.id} project={project} />
+                        ))}
                         </div>
-                      </CardContent>
-                    </Card>
-                ))}
-             </div>
-          ) : featuredProjects && featuredProjects.length > 0 ? (
-            <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {featuredProjects.map(project => (
-                    <PortfolioCard key={project.id} project={project} />
-                ))}
+                         <div className="text-center mt-12">
+                            <Button asChild variant="outline">
+                            <Link href="/browse">Barcha Loyihalarni Ko'rish</Link>
+                            </Button>
+                        </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
+                        <ImageOff className="mx-auto h-16 w-16 text-muted-foreground/50" />
+                        <p className="floating-text text-2xl mt-4">Hozircha loyihalar yo'q.</p>
+                        <p className="text-muted-foreground mt-2 mb-6">Birinchi loyihani yuklagan siz bo'ling!</p>
+                         <Button asChild>
+                            <Link href="/account/new-project">Loyiha Yuklash</Link>
+                        </Button>
+                    </div>
+                  )}
                 </div>
-                 <div className="text-center mt-12">
-                    <Button asChild variant="outline">
-                    <Link href="/browse">Barcha Loyihalarni Ko'rish</Link>
-                    </Button>
-                </div>
-            </>
-          ) : (
-            <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
-                <ImageOff className="mx-auto h-16 w-16 text-muted-foreground/50" />
-                <p className="floating-text text-2xl mt-4">Hozircha loyihalar yo'q.</p>
-                <p className="text-muted-foreground mt-2 mb-6">Birinchi loyihani yuklagan siz bo'ling!</p>
-                 <Button asChild>
-                    <Link href="/account/new-project">Loyiha Yuklash</Link>
-                </Button>
-            </div>
-          )}
-        </div>
-      </motion.section>
+            </section>
+        )}
       
       {!user && !isUserLoading && (
         <motion.section 
-            className="py-16 md:py-24 bg-background"
+            className="py-16 md:py-24 bg-secondary/50"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
