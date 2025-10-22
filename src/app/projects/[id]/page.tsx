@@ -278,7 +278,7 @@ export default function ProjectDetailsPage() {
                       <CarouselContent>
                       {projectImages.map((url, index) => (
                           <CarouselItem key={index}>
-                          <div className="aspect-[4/3] relative overflow-hidden rounded-lg bg-secondary/30 cursor-pointer" onClick={() => openLightbox(index)}>
+                          <div className="aspect-video relative overflow-hidden rounded-lg bg-secondary/30 cursor-pointer" onClick={() => openLightbox(index)}>
                               <Image
                               src={url}
                               alt={`${project.name} - ${index + 1}`}

@@ -45,7 +45,7 @@ function PortfolioCardSkeleton({ className }: { className?: string }) {
     return (
         <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full", className)}>
             <CardContent className="p-0">
-                <Skeleton className="aspect-[4/3] w-full" />
+                <Skeleton className="aspect-video w-full" />
                 <div className="p-4 space-y-3">
                     <Skeleton className="h-5 w-3/4" />
                     <div className="flex items-center gap-2">
@@ -134,7 +134,7 @@ export default function PortfolioCard({ project, className, showAdminControls = 
     >
       <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full bg-card", className)}>
         <CardContent className="p-0">
-          <div className="aspect-[4/3] relative overflow-hidden rounded-t-lg">
+          <div className="aspect-video relative overflow-hidden rounded-t-lg">
             <Link href={projectLink} onClick={handleClick} scroll={false} className="block w-full h-full">
                <motion.div
                  className="absolute inset-0"
