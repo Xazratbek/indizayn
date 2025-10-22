@@ -56,7 +56,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    const numProjects = isMobile ? 6 : 11;
+    const numProjects = isMobile ? 6 : 10; // Reduced from 11 to 10
     const displayProjects = [...projects];
     while (displayProjects.length > 0 && displayProjects.length < numProjects) {
         displayProjects.push(...projects.slice(0, numProjects - displayProjects.length));
@@ -67,7 +67,6 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
         { top: '5%', left: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-48 h-36' },
         { top: '10%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -250]), className: 'w-48 h-64' },
         { top: '35%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -200]), className: 'w-56 h-56' },
-        { top: '30%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-32 h-32' },
         { top: '65%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -300]), className: 'w-44 h-56' },
         { top: '70%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-64 h-48' },
         { bottom: '5%', left: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-36 h-36' },
@@ -148,17 +147,11 @@ export default function Home() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                            className="text-4xl md:text-6xl font-bold font-headline mb-4 space-y-2"
+                            className="text-4xl md:text-6xl font-bold font-headline mb-4"
                         >
-                           <div><span className="liquid-text">Лучшие авторы Узбекистана</span></div>
-                           <div>
-                            на 
-                            <span className="inline-block ml-4">
-                              <div className="animated-border-box">
-                                <span className="font-headline text-5xl md:text-7xl font-bold text-foreground">InDizayn</span>
-                              </div>
-                            </span>
-                           </div>
+                           <span className="liquid-text">Лучшие авторы Узбекистана</span>
+                           <br />
+                           на <span className="font-bold">InDizayn</span>
                         </motion.h1>
 
                         <motion.p
