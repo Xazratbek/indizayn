@@ -19,6 +19,7 @@ import VideoMessagePlayer from './video-message-player';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, isSameDay } from 'date-fns';
 import { uz } from 'date-fns/locale';
+import Link from 'next/link';
 
 type OptimisticMessage = Message & { status?: 'uploading' | 'sent' | 'failed' };
 
@@ -598,14 +599,16 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                   <ArrowLeft />
               </Button>
           )}
-          <Avatar>
-            <AvatarImage src={partner.photoURL} alt={partner.name} />
-            <AvatarFallback>{partner.name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-bold">{partner.name}</p>
-            <p className="text-xs text-muted-foreground">{partner.specialization}</p>
-          </div>
+          <Link href={`/designers/${partner.id}`} className="flex items-center gap-3 group">
+            <Avatar>
+              <AvatarImage src={partner.photoURL} alt={partner.name} />
+              <AvatarFallback>{partner.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-bold group-hover:underline">{partner.name}</p>
+              <p className="text-xs text-muted-foreground">{partner.specialization}</p>
+            </div>
+          </Link>
         </div>
       )}
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
@@ -628,7 +631,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
              initial={{ opacity: 0 }}
              animate={{ opacity: 1 }}
              exit={{ opacity: 0 }}
-             className="absolute inset-0 flex items-center justify-center z-10 bg-black/80"
+             className="absolute inset-0 flex items-center justify-center z-10"
            >
               <div className="relative w-full h-full max-w-[400px] max-h-[400px]">
                   <motion.div 
