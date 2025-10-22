@@ -74,11 +74,7 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
     const handleToggleSize = (e: React.MouseEvent) => {
         e.stopPropagation();
         setIsExpanded(!isExpanded);
-        if(isExpanded && videoRef.current) {
-            videoRef.current.pause();
-            setIsPlaying(false);
-        }
-    }
+    };
 
 
     return (
@@ -120,7 +116,7 @@ const VideoMessagePlayer: React.FC<VideoMessagePlayerProps> = ({ videoUrl }) => 
                         exit={{ opacity: 0 }}
                         className="absolute inset-0 bg-black/30 flex items-center justify-center"
                     >
-                         <div className="w-12 h-12 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center" onClick={togglePlay}>
+                         <div className="w-12 h-12 bg-white/30 rounded-full flex items-center justify-center" onClick={togglePlay}>
                             <Play className="w-6 h-6 text-white" />
                         </div>
                     </motion.div>
