@@ -13,7 +13,7 @@ import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc, DocumentData } from "firebase/firestore";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { Upload } from "lucide-react";
+import { Upload, ArrowLeft } from "lucide-react";
 import type { Designer } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -196,6 +196,11 @@ export default function ProfileEditPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
+      <div className="relative mb-4 md:hidden">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute -left-2 -top-6">
+            <ArrowLeft className="h-5 w-5" />
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Profilni Tahrirlash</CardTitle>
@@ -287,3 +292,5 @@ export default function ProfileEditPage() {
     </div>
   );
 }
+
+    

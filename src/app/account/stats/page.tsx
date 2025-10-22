@@ -6,7 +6,7 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Project, Designer } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Eye, Heart, Users, BarChart3, PieChart } from 'lucide-react';
+import { Eye, Heart, Users, BarChart3, PieChart, ArrowLeft } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useSession } from 'next-auth/react';
@@ -84,7 +84,10 @@ export default function MyStatsPage() {
 
     return (
         <div className="container mx-auto py-8 px-4">
-             <div className="text-center mb-12">
+             <div className="text-center mb-12 relative">
+                <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute left-0 top-1/2 -translate-y-1/2 md:hidden">
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
                 <h1 className="font-headline text-4xl md:text-5xl font-bold">Mening Statistikam</h1>
                 <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
                     Ijodingiz qanday natijalar keltirayotganini kuzatib boring.
@@ -136,3 +139,5 @@ export default function MyStatsPage() {
         </div>
     )
 }
+
+    
