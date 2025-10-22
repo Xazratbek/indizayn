@@ -8,18 +8,20 @@ import { doc, collection, query, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { LayoutDashboard, BarChart2, PlusSquare, Pencil, LogIn, Loader2 } from 'lucide-react';
+import { LayoutDashboard, BarChart2, PlusSquare, Pencil, LogIn, Loader2, Users, FolderKanban, Heart, Eye } from 'lucide-react';
 import type { Designer, Project } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession, signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import LoadingPage from '../loading';
+import { Separator } from '@/components/ui/separator';
 
-const StatCard = ({ label, value }: { label: string; value: number | string }) => (
-    <div className="text-center bg-secondary p-4 rounded-lg">
+const StatCard = ({ label, value, icon: Icon }: { label: string; value: number | string; icon: React.ElementType }) => (
+     <div className="flex-1 text-center p-4">
+        <Icon className="w-8 h-8 mx-auto text-primary mb-2" />
         <p className="text-2xl font-bold font-headline">{value}</p>
-        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className="text-sm text-muted-foreground hidden md:block">{label}</p>
     </div>
 );
 
@@ -159,12 +161,17 @@ export default function AccountDashboardPage() {
         </CardContent>
       </Card>
       
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="Obunachilar" value={designer.subscriberCount || 0} />
-        <StatCard label="Loyihalar" value={designerProjects?.length || 0} />
-        <StatCard label="Jami Likelar" value={totalLikes} />
-        <StatCard label="Jami Ko'rishlar" value={totalViews} />
-      </div>
+      <Card className="mb-12">
+        <div className="flex flex-row justify-around">
+            <StatCard label="Obunachilar" value={designer.subscriberCount || 0} icon={Users} />
+            <Separator orientation="vertical" className="h-24 my-auto" />
+            <StatCard label="Loyihalar" value={designerProjects?.length || 0} icon={FolderKanban} />
+             <Separator orientation="vertical" className="h-24 my-auto" />
+            <StatCard label="Jami Likelar" value={totalLikes} icon={Heart} />
+             <Separator orientation="vertical" className="h-24 my-auto" />
+            <StatCard label="Jami Ko'rishlar" value={totalViews} icon={Eye} />
+        </div>
+      </Card>
 
     </div>
   );
