@@ -27,13 +27,14 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
       <AnimatePresence>
         {!!projectId && (
           <DialogContent
-            className="max-w-7xl w-full h-[95vh] p-0 overflow-hidden flex flex-col"
+            className="max-w-7xl w-full h-[95vh] p-0 flex flex-col"
             onInteractOutside={onClose}
           >
-            <DialogTitle className="sr-only">Loyiha Tafsilotlari</DialogTitle>
-            <DialogDescription className="sr-only">
+             <DialogTitle className="sr-only">Loyiha tafsilotlari</DialogTitle>
+             <DialogDescription className="sr-only">
                 Loyiha haqida to'liq ma'lumotni ko'rish uchun qalqib chiquvchi oyna.
             </DialogDescription>
+
             <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
