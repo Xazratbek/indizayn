@@ -57,7 +57,7 @@
 
 ---
 
-## KIRISH BO'LIMI
+## 1. KIRISH
 
 ### Mavzuning dolzarbligi va zaruriyati
 
@@ -100,9 +100,9 @@ Ushbu maqsadga erishish uchun quyidagi **vazifalar** belgilab olindi:
 
 ---
 
-## ADABIYOTLAR TAHLILI BO'LIMI
+## 2. ADABIYOTLAR VA TEXNOLOGIYALAR TAHLILI
 
-Bu bo'limda dizaynerlar uchun mavjud portfolio platformalari tahlil qilinadi va bizning "inDizayn" loyihamizning bozordagi o'rnini aniqlash uchun ularning yutuq va kamchiliklari solishtiriladi.
+Bu bo'limda dizaynerlar uchun mavjud portfolio platformalari tahlil qilinadi va "inDizayn" loyihasining bozordagi o'rnini aniqlash uchun ularning yutuq va kamchiliklari solishtiriladi.
 
 ### 2.1. Mavjud platformalar tahlili
 
@@ -144,7 +144,7 @@ Bu tahlillar "inDizayn" loyihasining talablariga Firebase va Cloudinary kombinat
 
 ---
 
-## TEXNOLOGIYALAR TANLASH BO'LIMI
+## 3. AMALIY QISM: LOYIHANI ISHLAB CHIQISH
 
 ### 3.1. Dasturiy ta'minotni ishlab chiqish texnologik stackini tanlashni ilmiy asoslash
 
@@ -171,13 +171,11 @@ Loyihaning muvaffaqiyati ko'p jihatdan to'g'ri tanlangan texnologiyalar to'plami
     *   **On-the-fly Transformation:** Cloudinary'ning eng katta afzalligi — bu rasmlarni URL orqali real vaqt rejimida o'zgartirish imkoniyatidir. Masalan, bitta asl rasmni yuklab, uni turli o'lchamlarda (kichik thumbnail, o'rta, katta) va formatlarda (masalan, avtomatik ravishda WebP'ga o'girish) hech qanday backend kodi yozmasdan olish mumkin. Bu saytning yuklanish tezligini keskin oshiradi.
     *   **Content Delivery Network (CDN):** Barcha fayllar global CDN orqali yetkazib beriladi, bu esa dunyoning istalgan nuqtasidan fayllarning tez yuklanishini ta'minlaydi.
 
----
-
-## FUNKSIONALLIK TAHLILI BO'LIMI
+### 3.2. Funksionallik tahlili
 
 Bu bo'limda platformaning asosiy funksiyalarining texnik amalga oshirilishi, xususan, Firebase Firestore'dan qanday foydalanilgani batafsil ko'rib chiqiladi.
 
-### Firebase Firestore Kolleksiya Tuzilishi:
+#### Firebase Firestore Kolleksiya Tuzilishi:
 
 *   `/users/{userId}` - Foydalanuvchilar (dizaynerlar va ish beruvchilar) profillari.
 *   `/projects/{projectId}` - Dizaynerlar tomonidan yuklangan portfolio loyihalari.
@@ -186,7 +184,7 @@ Bu bo'limda platformaning asosiy funksiyalarining texnik amalga oshirilishi, xus
 *   `/messages/{messageId}` - Ikki foydalanuvchi o'rtasidagi xabarlar.
 *   `/notifications/{notificationId}` - Foydalanuvchilar uchun bildirishnomalar (like, follow, comment, message).
 
-### Qidiruv/Filtrlash Algoritmlari:
+#### Qidiruv/Filtrlash Algoritmlari:
 
 Hozirgi bosqichda qidiruv va filtrlash asosan klient tomonida (client-side) amalga oshirilgan. `useCollection` hook'i orqali ma'lum bir kolleksiyadagi ma'lumotlar (masalan, barcha dizaynerlar) olinadi va keyin JavaScript `filter()` va `sort()` metodlari yordamida qayta ishlanadi.
 
@@ -197,7 +195,7 @@ Hozirgi bosqichda qidiruv va filtrlash asosan klient tomonida (client-side) amal
 
 **Kelajakdagi Rivojlanish:** Foydalanuvchilar soni keskin ortganda, klient tomonidagi filtrlash samarasiz bo'lib qoladi. Keyingi bosqichda Algolia yoki Elasticsearch kabi maxsus qidiruv xizmatlarini integratsiya qilish yoki Firestore'ning murakkabroq so'rov (`query`) imkoniyatlaridan foydalanish kerak bo'ladi.
 
-### Real-time Chat Tizimi:
+#### Real-time Chat Tizimi:
 
 Chat tizimi Firestore'ning real-time imkoniyatlariga to'liq asoslanadi.
 
@@ -211,11 +209,11 @@ Chat tizimi Firestore'ning real-time imkoniyatlariga to'liq asoslanadi.
 
 ---
 
-## DIAGRAMMALAR VA UML BO'LIMI
+### 3.3. Diagrammalar va UML
 
 *(Ushbu bo'limda diagrammalar matn ko'rinishida tasvirlangan. Haqiqiy diplom ishida bularni grafik vositalar yordamida chizish kerak bo'ladi).*
 
-### Use Case (Foydalanish Varianti) Diagrammasi:
+#### Use Case (Foydalanish Varianti) Diagrammasi:
 
 *   **Aktorlar:**
     *   Tizimga kirmagan foydalanuvchi (Mehmon)
@@ -237,7 +235,7 @@ Chat tizimi Firestore'ning real-time imkoniyatlariga to'liq asoslanadi.
         *   Boshqa foydalanuvchilar bilan chatda yozishish (matn, audio, video)
         *   Bildirishnomalarni ko'rish
 
-### Database ER (Entity-Relationship) Diagrammasi (Firestore uchun):
+#### Database ER (Entity-Relationship) Diagrammasi (Firestore uchun):
 
 ```
 [User] --< (has many) -- [Project]
@@ -258,24 +256,43 @@ Chat tizimi Firestore'ning real-time imkoniyatlariga to'liq asoslanadi.
 
 ---
 
-## AMALIY QISM
+### 3.4. Amaliy qismdan namunalar
 
 *(Ushbu bo'limda loyihadan olingan kod parchalari va interfeys skrinshotlari (matnli tasviri) keltiriladi).*
 
-### React Komponentlari (Wireframe/Prototip Tasviri)
-
-**`PortfolioCard.tsx` komponenti:**
+#### React Komponenti (`PortfolioCard.tsx`):
 Bu komponent bitta loyihani kartochka ko'rinishida aks ettiradi.
 *   Yuqori qism: Loyihaning asosiy rasmi (`Image`), `like` va `view` sonlari.
 *   Pastki qism: Loyiha nomi, dizayner avatari va ismi, mutaxassisligi (`Badge`).
 
-**`ChatWindow.tsx` komponenti:**
-Bu komponent chat interfeysini to'liq o'z ichiga oladi.
-*   Header: Suhbatdoshning rasmi va ismi.
-*   Body: Xabarlar tarixi (`ScrollArea`). O'zining xabarlari o'ngda, suhbatdoshning xabarlari chapda. Audio va video xabarlar uchun maxsus pleyerlar.
-*   Footer: Matn kiritish maydoni (`Textarea`), yuborish tugmasi (`Button`), ovozli/video xabar yozish tugmalari.
+```jsx
+// src/components/portfolio-card.tsx
+// ... (imports)
+export default function PortfolioCard({ project }) {
+  // ... (hooks)
+  return (
+    <Card>
+      <CardContent>
+        <Image src={project.imageUrl} alt={project.name} />
+        <div>
+          <span>{project.likeCount}</span>
+          <span>{project.viewCount}</span>
+        </div>
+      </CardContent>
+      <div>
+        <h3>{project.name}</h3>
+        <div>
+          <Avatar src={designer.photoURL} />
+          <span>{designer.name}</span>
+          <Badge>{designer.specialization}</Badge>
+        </div>
+      </div>
+    </Card>
+  );
+}
+```
 
-### Firebase Xavfsizlik Qoidalari (`firestore.rules`) Test Rejasi
+#### Firebase Xavfsizlik Qoidalari (`firestore.rules`) Test Rejasi
 
 Xavfsizlik qoidalarini testlash uchun Firebase Emulator Suite'dan foydalaniladi.
 
@@ -293,7 +310,7 @@ Xavfsizlik qoidalarini testlash uchun Firebase Emulator Suite'dan foydalaniladi.
 
 ---
 
-## XULOSA BO'LIMI
+## 4. XULOSA VA TAVSIYALAR
 
 Ushbu bitiruv malakaviy ishi doirasida "inDizayn" deb nomlangan, dizaynerlar uchun ixtisoslashtirilgan portfolio platformasi muvaffaqiyatli ishlab chiqildi. Tadqiqot va amaliyot natijasida quyidagi xulosalarga kelindi:
 
