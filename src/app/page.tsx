@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -66,13 +65,11 @@ const HeroShowcase = ({ projects }: { projects: Project[] }) => {
     const firstColumn = displayProjects.slice(0, 3);
     const secondColumn = displayProjects.slice(3, 6);
     const thirdColumn = displayProjects.slice(6, 9);
-    
-    if (firstColumn.length === 0) return null;
 
     const renderColumn = (columnProjects: Project[], y: number) => (
         <motion.div className="relative flex flex-col gap-4 w-[30%]" style={{ y }}>
             {columnProjects.map((project, index) => (
-                <div key={`${project.id}-${index}`} className="aspect-video relative rounded-lg overflow-hidden shadow-xl">
+                <div key={`${project.id}-${index}`} className="aspect-[4/3] relative rounded-lg overflow-hidden shadow-xl">
                     <Image
                         src={project.imageUrl}
                         alt={project.name}
