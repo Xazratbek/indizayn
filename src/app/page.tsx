@@ -64,28 +64,27 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     if (displayProjects.length === 0) return null;
 
     const desktopPositions = [
-        // Left column
-        { top: '5%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-48 h-36' },
-        { top: '35%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-56 h-40' },
-        { top: '65%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-40 h-56' },
-        { bottom: '10%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-32 h-32' },
-        // Right column
-        { top: '8%', right: '3%', y: useTransform(scrollYProgress, [0, 1], [0, -160]), className: 'w-44 h-56' },
-        { top: '40%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -90]), className: 'w-36 h-28' },
-        { top: '60%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-56 h-48' },
-        { bottom: '8%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-48 h-40' },
-        // Smaller ones to fill gaps
-        { top: '15%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -60]), className: 'w-24 h-24' },
-        { top: '50%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-28 h-28' },
+        { top: '10%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-48 h-36', delay: 0 },
+        { top: '40%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-56 h-40', delay: 1.5 },
+        { top: '70%', left: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-40 h-56', delay: 0.5 },
+        { bottom: '5%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-32 h-32', delay: 2.5 },
+        
+        { top: '12%', right: '3%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-44 h-56', delay: 0.8 },
+        { top: '45%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-36 h-28', delay: 2.2 },
+        { top: '65%', right: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -60]), className: 'w-56 h-48', delay: 1.2 },
+        { bottom: '8%', right: '7%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-48 h-40', delay: 0.2 },
+        
+        { top: '18%', left: '18%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-24 h-24', delay: 3 },
+        { top: '55%', right: '15%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-28 h-28', delay: 1.8 },
     ];
     
     const mobilePositions = [
-        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-32 h-24' },
-        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -120]), className: 'w-28 h-36' },
-        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -150]), className: 'w-36 h-28' },
-        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -100]), className: 'w-40 h-32' },
-        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -180]), className: 'w-24 h-32' },
-        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -70]), className: 'w-28 h-28' },
+        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-32 h-24', delay: 0 },
+        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-28 h-36', delay: 1 },
+        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-36 h-28', delay: 0.5 },
+        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-40 h-32', delay: 1.5 },
+        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-24 h-32', delay: 0.2 },
+        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -18]), className: 'w-28 h-28', delay: 2 },
     ];
 
     const positions = isMobile ? mobilePositions : desktopPositions;
@@ -95,13 +94,14 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
             {displayProjects.slice(0, numProjects).map((project, i) => (
                 <motion.div
                     key={`${project.id}-${i}`}
-                    className={`absolute rounded-lg shadow-lg overflow-hidden ${positions[i].className}`}
+                    className={`absolute rounded-lg shadow-lg overflow-hidden float-anim ${positions[i].className}`}
                     style={{
                         top: positions[i].top,
                         left: positions[i].left,
                         right: positions[i].right,
                         bottom: positions[i].bottom,
-                        y: positions[i].y
+                        y: positions[i].y,
+                        animationDelay: `${positions[i].delay}s`
                     }}
                 >
                     <Image
