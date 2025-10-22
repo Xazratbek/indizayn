@@ -128,7 +128,7 @@ export default function DesignersPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="py-8 px-4 md:px-6 lg:px-8">
       <div className="text-center mb-8">
         <h1 className="font-headline text-4xl md:text-5xl font-bold">Bizning Dizaynerlarimiz</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
@@ -136,7 +136,7 @@ export default function DesignersPage() {
         </p>
       </div>
 
-       <div className="sticky top-16 md:top-[68px] z-40 bg-background/80 backdrop-blur-lg -mx-4 px-4 py-4 mb-8 border-b">
+       <div className="sticky top-14 md:top-[68px] z-40 bg-background/80 backdrop-blur-lg -mx-4 px-4 py-4 mb-8 border-b">
          <div className="flex flex-col md:flex-row gap-4 justify-center max-w-2xl mx-auto">
             <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -225,3 +225,5 @@ export default function DesignersPage() {
     </div>
   );
 }
+
+    

@@ -54,7 +54,7 @@ export default function AccountDashboardPage() {
 
   if (isUserLoading || (status === 'authenticated' && isLoading)) {
     return (
-        <div className="container mx-auto py-8 px-4">
+        <div className="py-8 px-4 md:px-6 lg:px-8">
              <Card className="overflow-hidden mb-8">
                 <Skeleton className="h-48 w-full"/>
                 <CardContent className="p-6 relative">
@@ -110,7 +110,7 @@ export default function AccountDashboardPage() {
   const totalViews = designerProjects?.reduce((acc, p) => acc + p.viewCount, 0) || 0;
   
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="py-8 px-4 md:px-6 lg:px-8">
       <Card className="overflow-hidden mb-8">
         <div className="h-48 bg-secondary relative">
           {designer.coverPhotoURL ? (
@@ -176,3 +176,5 @@ export default function AccountDashboardPage() {
     </div>
   );
 }
+
+    

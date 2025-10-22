@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from './ui/skeleton';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -45,12 +45,15 @@ function PortfolioCardSkeleton({ className }: { className?: string }) {
     return (
         <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full", className)}>
             <CardContent className="p-0">
-                <div className="aspect-video w-full" />
-                <div className="p-4 space-y-3">
-                    <Skeleton className="h-5 w-3/4" />
+                <Skeleton className="aspect-video w-full" />
+                 <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Skeleton className="h-6 w-6 rounded-full" />
-                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                       <Skeleton className="h-4 w-8" />
+                       <Skeleton className="h-4 w-8" />
                     </div>
                 </div>
             </CardContent>
@@ -233,27 +236,31 @@ export default function PortfolioCard({ project, className, showAdminControls = 
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                     <Heart className="w-4 h-4" />
-                    <motion.span
+                    <AnimatePresence mode="popLayout">
+                        <motion.span
                         key={project.likeCount}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                    >
+                        transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                        >
                         {project.likeCount || 0}
-                    </motion.span>
+                        </motion.span>
+                    </AnimatePresence>
                 </div>
                 <div className="flex items-center gap-1">
                     <Eye className="w-4 h-4" />
-                    <motion.span
+                     <AnimatePresence mode="popLayout">
+                        <motion.span
                         key={project.viewCount}
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                    >
+                        transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                        >
                         {project.viewCount || 0}
-                    </motion.span>
+                        </motion.span>
+                    </AnimatePresence>
                 </div>
             </div>
           </div>
@@ -262,3 +269,5 @@ export default function PortfolioCard({ project, className, showAdminControls = 
     </motion.div>
   );
 }
+
+    

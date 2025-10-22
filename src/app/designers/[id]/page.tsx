@@ -140,7 +140,7 @@ export default function DesignerProfilePage() {
   
   return (
     <>
-    <div className="container mx-auto py-8 px-4">
+    <div className="py-8 px-4 md:px-6 lg:px-8">
       <Card className="overflow-hidden mb-8 shadow-lg">
         <div className="h-32 md:h-64 bg-secondary relative">
           {designer.coverPhotoURL ? (

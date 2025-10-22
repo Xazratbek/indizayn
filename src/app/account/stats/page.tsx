@@ -83,7 +83,7 @@ export default function MyStatsPage() {
 
 
     return (
-        <div className="container mx-auto py-8 px-4">
+        <div className="py-8 px-4 md:px-6 lg:px-8">
              <div className="mb-12 flex items-center justify-center relative">
                 <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute left-0 md:hidden">
                     <ArrowLeft className="h-5 w-5" />
@@ -141,3 +141,5 @@ export default function MyStatsPage() {
         </div>
     )
 }
+
+    

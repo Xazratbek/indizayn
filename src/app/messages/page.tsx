@@ -52,7 +52,7 @@ export default function MessagesPage() {
   // Mobile layout
   if (isMobile) {
     return (
-       <div className="container mx-auto h-[calc(100vh-7rem)] py-2">
+       <div className="h-[calc(100vh-7rem)] py-2 px-2">
            <Card className="h-full overflow-hidden relative">
               <div className={cn("absolute inset-0 w-full transition-transform duration-300 ease-in-out h-full", selectedUserId ? "-translate-x-full" : "translate-x-0")}>
                 <ChatSidebar
@@ -77,7 +77,7 @@ export default function MessagesPage() {
 
   // Desktop layout
   return (
-    <div className="container mx-auto py-4 md:py-8 h-[calc(100vh-10rem)] md:h-[calc(100vh-8.5rem)]">
+    <div className="py-4 md:py-8 px-4 md:px-6 lg:px-8 h-[calc(100vh-10rem)] md:h-[calc(100vh-8.5rem)]">
         <Card className="h-full grid grid-cols-1 md:grid-cols-[340px_1fr] overflow-hidden">
             <ChatSidebar
             currentUser={user}
@@ -92,3 +92,5 @@ export default function MessagesPage() {
     </div>
   );
 }
+
+    

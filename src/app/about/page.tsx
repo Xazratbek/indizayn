@@ -1,9 +1,10 @@
+
 import { Users, Target, Eye } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function AboutPage() {
   return (
-    <div className="container mx-auto py-16 px-4">
+    <div className="py-16 px-4 md:px-6 lg:px-8">
       <div className="text-center mb-16">
         <h1 className="font-headline text-4xl md:text-5xl font-bold">inDizayn Haqida</h1>
         <p className="text-muted-foreground mt-4 max-w-3xl mx-auto text-lg">
@@ -47,3 +48,5 @@ export default function AboutPage() {
     </div>
   );
 }
+
+    

@@ -262,7 +262,7 @@ export default function ProjectDetailsPage() {
         exit={{ opacity: 0, y: 20 }}
         transition={{ duration: 0.3 }}
       >
-      <div className="container mx-auto max-w-6xl py-8 px-4">
+      <div className="max-w-6xl py-8 px-4 md:px-6 lg:px-8 mx-auto">
         { !isModal && (
             <div className="relative mb-4 md:hidden">
                 <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute -left-2 top-0">
@@ -494,3 +494,5 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
+
+    

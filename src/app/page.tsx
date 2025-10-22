@@ -74,7 +74,6 @@ const HeroShowcase = ({ projects }: { projects: Project[] }) => {
         return () => window.removeEventListener('resize', updateCarouselConfig);
     }, []);
     
-    // Ensure we have a specific number of projects for the carousel
     const numProjects = 9;
     const displayProjects = [...projects];
     while (displayProjects.length > 0 && displayProjects.length < numProjects) {
@@ -201,7 +200,7 @@ export default function Home() {
                             )}
                         </motion.div>
                     </div>
-                    <div className="absolute inset-0 z-0 opacity-50 md:opacity-100">
+                    <div className="absolute inset-0 z-0">
                         {featuredProjects && <HeroShowcase projects={featuredProjects} />}
                     </div>
                 </section>
@@ -216,7 +215,7 @@ export default function Home() {
         viewport={{ once: true, amount: 0.2 }}
         variants={sectionVariants}
       >
-        <div className="container mx-auto px-4">
+        <div className="px-4 md:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-headline text-3xl md:text-4xl font-bold">Trenddagi Loyihalar</h2>
             <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan eng ko'p ko'rilgan loyihalar.</p>
@@ -228,12 +227,15 @@ export default function Home() {
                     <Card key={i} className="overflow-hidden w-full h-full">
                       <CardContent className="p-0">
                         <Skeleton className="aspect-video w-full" />
-                        <div className="p-4 space-y-3">
-                          <Skeleton className="h-5 w-3/4" />
-                          <div className="flex items-center gap-2">
-                            <Skeleton className="h-6 w-6 rounded-full" />
-                            <Skeleton className="h-4 w-1/2" />
-                          </div>
+                        <div className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Skeleton className="h-6 w-6 rounded-full" />
+                                <Skeleton className="h-4 w-24" />
+                            </div>
+                            <div className="flex items-center gap-3">
+                               <Skeleton className="h-4 w-8" />
+                               <Skeleton className="h-4 w-8" />
+                            </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -273,7 +275,7 @@ export default function Home() {
             viewport={{ once: true, amount: 0.3 }}
             variants={sectionVariants}
         >
-            <div className="container mx-auto px-4">
+            <div className="px-4 md:px-6 lg:px-8">
             <div className="text-center mb-12">
                 <h2 className="font-headline text-3xl md:text-4xl font-bold">Platformaning afzalliklari</h2>
                 <p className="text-muted-foreground mt-2">Nima uchun dizaynerlar bizni tanlashadi?</p>
@@ -316,3 +318,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
