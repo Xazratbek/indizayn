@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -63,31 +64,31 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     }
     if (displayProjects.length === 0) return null;
 
-    const desktopPositions = [
+     const desktopPositions = [
         // Left Side
-        { top: '10%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-48 h-36', delay: 0.2 },
-        { top: '40%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-56 h-40', delay: 1.5 },
-        { top: '70%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -12]), className: 'w-40 h-56', delay: 0.7 },
+        { top: '10%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-48 h-36', delay: 0.2 },
+        { top: '40%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-56 h-40', delay: 1.5 },
+        { top: '70%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-40 h-56', delay: 0.7 },
         
         // Right Side
-        { top: '12%', right: '4%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-44 h-56', delay: 0.9 },
-        { top: '45%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-36 h-28', delay: 2.2 },
-        { top: '68%', right: '1%', y: useTransform(scrollYProgress, [0, 1], [0-18]), className: 'w-56 h-48', delay: 1.4 },
+        { top: '12%', right: '4%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-44 h-56', delay: 0.9 },
+        { top: '45%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-36 h-28', delay: 2.2 },
+        { top: '68%', right: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -35]), className: 'w-56 h-48', delay: 1.4 },
         
         // Additional
-        { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-32 h-32 opacity-0 md:opacity-100', delay: 2.5 },
-        { bottom: '8%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-48 h-40 opacity-0 md:opacity-100', delay: 0.4 },
-        { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
-        { top: '55%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -8]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
+        { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-32 h-32 opacity-0 md:opacity-100', delay: 2.5 },
+        { bottom: '8%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-48 h-40 opacity-0 md:opacity-100', delay: 0.4 },
+        { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
+        { top: '55%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
     ];
     
     const mobilePositions = [
-        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-32 h-24', delay: 0.2 },
-        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-28 h-36', delay: 1 },
-        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-36 h-28', delay: 0.5 },
-        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -18]), className: 'w-40 h-32', delay: 1.5 },
-        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-24 h-32', delay: 0.4 },
-        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -14]), className: 'w-28 h-28', delay: 2 },
+        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-32 h-24', delay: 0.2 },
+        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-28 h-36', delay: 1 },
+        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-36 h-28', delay: 0.5 },
+        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -35]), className: 'w-40 h-32', delay: 1.5 },
+        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -60]), className: 'w-24 h-32', delay: 0.4 },
+        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -28]), className: 'w-28 h-28', delay: 2 },
     ];
 
     const positions = isMobile ? mobilePositions : desktopPositions;
@@ -116,7 +117,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
                             sizes="25vw"
                             data-ai-hint="project image"
                         />
-                         <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]"></div>
+                         <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
                     </div>
                 </motion.div>
             ))}
@@ -320,5 +321,7 @@ export default function Home() {
     
 
 
+
+    
 
     
