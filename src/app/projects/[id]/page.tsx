@@ -247,7 +247,8 @@ export default function ProjectDetailsPage() {
     return <div className="flex h-[80vh] items-center justify-center"><p>Loyiha topilmadi yoki yuklashda xatolik yuz berdi.</p></div>;
   }
 
-  if (!designer) {
+  // Handle case where designer is not found after loading
+  if (!designer && !isDesignerLoading) {
      return <div className="flex h-[80vh] items-center justify-center"><p>Dizayner ma'lumotlari topilmadi.</p></div>;
   }
   
@@ -381,20 +382,22 @@ export default function ProjectDetailsPage() {
           {/* Sidebar */}
           <div className="w-full lg:w-1/4">
             <div className="sticky top-20 space-y-6">
-              <Card>
-                <CardContent className="p-4">
-                  <Link href={`/designers/${designer.id}`} className="flex items-center gap-3 group">
-                    <Avatar className="h-12 w-12">
-                      {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                      <AvatarFallback>{designer.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold group-hover:underline">{designer.name}</p>
-                      <p className="text-sm text-muted-foreground">{designer.specialization}</p>
-                    </div>
-                  </Link>
-                </CardContent>
-              </Card>
+              {designer && (
+                <Card>
+                  <CardContent className="p-4">
+                    <Link href={`/designers/${designer.id}`} className="flex items-center gap-3 group">
+                      <Avatar className="h-12 w-12">
+                        {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                        <AvatarFallback>{designer.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold group-hover:underline">{designer.name}</p>
+                        <p className="text-sm text-muted-foreground">{designer.specialization}</p>
+                      </div>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardContent className="p-4 space-y-4">
