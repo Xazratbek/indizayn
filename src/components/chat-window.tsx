@@ -272,14 +272,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                     const drawToCanvas = () => {
                          if (!video.paused && !video.ended) {
                             ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            if (facingMode === 'user') {
-                                 ctx.save();
-                                 ctx.scale(-1, 1);
-                                 ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-                                 ctx.restore();
-                            } else {
-                                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                            }
+                            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                          }
                          if (streamRef.current) {
                             requestAnimationFrame(drawToCanvas);
@@ -619,7 +612,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
              initial={{ opacity: 0, scale: 0.5 }}
              animate={{ opacity: 1, scale: 1 }}
              exit={{ opacity: 0, scale: 0.5 }}
-             className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10"
+             className="absolute inset-0 bg-black/80 flex items-center justify-center z-10"
            >
               <div className="relative w-72 h-72">
                   <div className="absolute inset-0 rounded-full overflow-hidden border-4 border-primary animate-pulse">
