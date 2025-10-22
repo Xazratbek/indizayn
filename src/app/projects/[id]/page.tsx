@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Eye, Heart, Calendar, Wrench, ArrowLeft, MessageSquare, Send, Tag } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Project, Designer, Comment } from '@/lib/types';
@@ -25,6 +25,7 @@ import { useModalContext } from '@/components/project-detail-modal';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import Autoplay from "embla-carousel-autoplay"
 
 
 function CommentSkeleton() {
@@ -61,6 +62,10 @@ export default function ProjectDetailsPage() {
   const [newComment, setNewComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const { toast } = useToast();
+
+   const autoplayPlugin = useRef(
+    Autoplay({ delay: 2000, stopOnInteraction: true })
+  );
 
 
   // Fetch project details and increment view count
@@ -274,7 +279,12 @@ export default function ProjectDetailsPage() {
               </CardHeader>
               <CardContent>
                 {projectImages && projectImages.length > 0 && (
-                  <Carousel className="w-full mb-6">
+                  <Carousel 
+                    className="w-full mb-6"
+                    plugins={[autoplayPlugin.current]}
+                    onMouseEnter={autoplayPlugin.current.stop}
+                    onMouseLeave={autoplayPlugin.current.reset}
+                  >
                       <CarouselContent>
                       {projectImages.map((url, index) => (
                           <CarouselItem key={index}>
