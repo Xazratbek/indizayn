@@ -233,11 +233,11 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     }
   }, [combinedMessages]);
 
-  useEffect(() => {
-    if (isRecording && recordingMode === 'video' && videoPreviewRef.current && streamRef.current) {
-      videoPreviewRef.current.srcObject = streamRef.current;
-    }
-  }, [isRecording, recordingMode]);
+    useEffect(() => {
+        if (isRecording && recordingMode === 'video' && videoPreviewRef.current && streamRef.current) {
+            videoPreviewRef.current.srcObject = streamRef.current;
+        }
+    }, [isRecording, recordingMode]);
 
 
   const startRecording = async () => {
@@ -270,13 +270,20 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
                     const drawToCanvas = () => {
-                         if (!video.paused && !video.ended) {
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                         }
-                         if (streamRef.current) {
+                        if (!video.paused && !video.ended) {
+                            // Flip the canvas horizontally if it's the front camera
+                            if (facingMode === 'user') {
+                                ctx.save();
+                                ctx.scale(-1, 1);
+                                ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+                                ctx.restore();
+                            } else {
+                                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                            }
+                        }
+                        if (streamRef.current) {
                             requestAnimationFrame(drawToCanvas);
-                         }
+                        }
                     }
                     drawToCanvas();
                 }
@@ -609,13 +616,16 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       <AnimatePresence>
         {isRecording && recordingMode === 'video' && (
            <motion.div 
-             initial={{ opacity: 0, scale: 0.5 }}
-             animate={{ opacity: 1, scale: 1 }}
-             exit={{ opacity: 0, scale: 0.5 }}
-             className="absolute inset-0 bg-black/80 flex items-center justify-center z-10"
+             initial={{ opacity: 0 }}
+             animate={{ opacity: 1 }}
+             exit={{ opacity: 0 }}
+             className="absolute inset-0 bg-black flex items-center justify-center z-10"
            >
-              <div className="relative w-72 h-72">
-                  <div className="absolute inset-0 rounded-full overflow-hidden border-4 border-primary animate-pulse">
+              <div className="relative w-full h-full max-w-[400px] max-h-[400px]">
+                  <motion.div 
+                    layoutId="video-recorder"
+                    className="absolute inset-0 rounded-full overflow-hidden border-4 border-primary animate-pulse"
+                  >
                         <video 
                         ref={videoPreviewRef} 
                         className={cn("w-full h-full object-cover", facingMode === 'user' && 'scale-x-[-1]')}
@@ -623,7 +633,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                         muted 
                         playsInline
                         />
-                  </div>
+                  </motion.div>
               </div>
            </motion.div>
         )}
@@ -701,5 +711,3 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
-
-    
