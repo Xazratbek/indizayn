@@ -64,17 +64,17 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     if (displayProjects.length === 0) return null;
 
     const desktopPositions = [
-        // Chap taraf
-        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-48 h-36', delay: 0.2 },
-        { top: '40%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-56 h-40', delay: 1.5 },
-        { top: '72%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -12]), className: 'w-40 h-56', delay: 0.7 },
+        // Left Side
+        { top: '10%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-48 h-36', delay: 0.2 },
+        { top: '45%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-56 h-40', delay: 1.5 },
+        { top: '75%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -12]), className: 'w-40 h-56', delay: 0.7 },
         
-        // O'ng taraf
-        { top: '10%', right: '4%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-44 h-56', delay: 0.9 },
-        { top: '48%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-36 h-28', delay: 2.2 },
-        { top: '70%', right: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -18]), className: 'w-56 h-48', delay: 1.4 },
+        // Right Side
+        { top: '12%', right: '4%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-44 h-56', delay: 0.9 },
+        { top: '50%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-36 h-28', delay: 2.2 },
+        { top: '72%', right: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -18]), className: 'w-56 h-48', delay: 1.4 },
         
-        // Qo'shimcha
+        // Additional
         { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-32 h-32 opacity-0 md:opacity-100', delay: 2.5 },
         { bottom: '8%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-48 h-40 opacity-0 md:opacity-100', delay: 0.4 },
         { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
@@ -82,7 +82,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     ];
     
     const mobilePositions = [
-         { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-32 h-24', delay: 0.2 },
+        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-32 h-24', delay: 0.2 },
         { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-28 h-36', delay: 1 },
         { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-36 h-28', delay: 0.5 },
         { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -18]), className: 'w-40 h-32', delay: 1.5 },
@@ -162,7 +162,15 @@ export default function Home() {
                                 <span className="inline-block">Лучшие</span>{' '}
                                 <RotatingText
                                   texts={['авторы', 'дизайнеры', 'проекты', 'таланты']}
-                                  mainClassName="liquid-text"
+                                  mainClassName="px-3 py-1 bg-primary text-primary-foreground overflow-hidden justify-center rounded-lg"
+                                  staggerFrom={"last"}
+                                  initial={{ y: "100%" }}
+                                  animate={{ y: 0 }}
+                                  exit={{ y: "-120%" }}
+                                  staggerDuration={0.025}
+                                  splitLevelClassName="overflow-hidden pb-1"
+                                  transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                                  rotationInterval={2000}
                                 />
                                 <br />
                                <span className="inline-block">Узбекистана на <span className="font-bold">InDizayn</span></span>
@@ -310,3 +318,4 @@ export default function Home() {
     
 
     
+
