@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -73,7 +72,7 @@ export function Header() {
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <Logo className="h-6 w-6 text-primary" />
-            <span className="hidden font-bold sm:inline-block font-headline">
+            <span className="hidden font-bold sm:inline-block font-headline text-lg">
               inDizayn
             </span>
           </Link>
@@ -145,5 +144,3 @@ export function Header() {
     </header>
   )
 }
-
-    
