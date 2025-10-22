@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -74,7 +73,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
         { bottom: '10%', right: '35%', y: useTransform(scrollYProgress, [0, 1], [0, -220]), className: 'w-40 h-48' },
         { top: '55%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-24 h-32' },
         { bottom: '2%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -280]), className: 'w-32 h-40' },
-        { top: '15%', left: '45%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-24 h-24' },
+        { top: '15%', left: '50%', y: useTransform(scrollYProgress, [0, 1], [0, -80]), className: 'w-24 h-24' },
     ];
     
     const mobilePositions = [
@@ -191,9 +190,9 @@ export default function Home() {
             </>
         ) : (
            <section 
-                className="py-16 md:py-24"
+                className="py-16 md:py-24 px-4 md:px-6 lg:px-8"
               >
-                <div className="px-4 md:px-6 lg:px-8">
+                
                   
                   {isLoading ? (
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -238,7 +237,7 @@ export default function Home() {
                         </Button>
                     </div>
                   )}
-                </div>
+                
             </section>
         )}
       

@@ -1,4 +1,3 @@
-
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -17,6 +16,9 @@ export default {
       },
     },
     extend: {
+      fontWeight: {
+        normal: '500',
+      },
       fontFamily: {
         body: ['var(--font-roboto)', 'sans-serif'],
         headline: ['var(--font-montserrat)', 'sans-serif'],
