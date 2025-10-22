@@ -117,7 +117,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
                             sizes="25vw"
                             data-ai-hint="project image"
                         />
-                         <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
+                         <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]"></div>
                     </div>
                 </motion.div>
             ))}
@@ -158,22 +158,22 @@ export default function Home() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-                                className="text-4xl md:text-6xl font-bold font-headline mb-4"
+                                className="text-4xl md:text-6xl font-bold font-headline mb-4 flex flex-wrap justify-center items-center gap-x-2"
                             >
                                 <span className="inline-block">Лучшие</span>{' '}
                                 <RotatingText
                                   texts={['авторы', 'дизайнеры', 'проекты', 'таланты']}
-                                  mainClassName="px-2 sm:px-2 md:px-3 bg-primary text-primary-foreground overflow-hidden py-0.5 sm:py-1 md:py-2 justify-center rounded-lg"
+                                  mainClassName="px-2 sm:px-2 md:px-2 bg-primary text-primary-foreground overflow-hidden py-0 justify-center rounded-lg"
                                   staggerFrom={"last"}
                                   initial={{ y: "100%" }}
                                   animate={{ y: 0 }}
                                   exit={{ y: "-120%" }}
                                   staggerDuration={0.025}
-                                  splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+                                  splitLevelClassName="overflow-hidden"
                                   transition={{ type: "spring", damping: 25, stiffness: 300 }}
                                   rotationInterval={2000}
                                 />
-                                <br />
+                                <br className="md:hidden" />
                                <span className="inline-block">Узбекистана на <span className="font-bold">InDizayn</span></span>
                             </motion.h1>
 
@@ -321,6 +321,8 @@ export default function Home() {
     
 
 
+
+    
 
     
 
