@@ -66,19 +66,19 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     const desktopPositions = [
         // Left Side
         { top: '10%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-48 h-36', delay: 0.2 },
-        { top: '45%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-56 h-40', delay: 1.5 },
-        { top: '75%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -12]), className: 'w-40 h-56', delay: 0.7 },
+        { top: '40%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-56 h-40', delay: 1.5 },
+        { top: '70%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -12]), className: 'w-40 h-56', delay: 0.7 },
         
         // Right Side
         { top: '12%', right: '4%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-44 h-56', delay: 0.9 },
-        { top: '50%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-36 h-28', delay: 2.2 },
-        { top: '72%', right: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -18]), className: 'w-56 h-48', delay: 1.4 },
+        { top: '45%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -10]), className: 'w-36 h-28', delay: 2.2 },
+        { top: '68%', right: '1%', y: useTransform(scrollYProgress, [0, 1], [0-18]), className: 'w-56 h-48', delay: 1.4 },
         
         // Additional
         { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-32 h-32 opacity-0 md:opacity-100', delay: 2.5 },
         { bottom: '8%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-48 h-40 opacity-0 md:opacity-100', delay: 0.4 },
         { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
-        { top: '60%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -8]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
+        { top: '55%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -8]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
     ];
     
     const mobilePositions = [
@@ -162,14 +162,14 @@ export default function Home() {
                                 <span className="inline-block">Лучшие</span>{' '}
                                 <RotatingText
                                   texts={['авторы', 'дизайнеры', 'проекты', 'таланты']}
-                                  mainClassName="px-3 py-1 bg-primary text-primary-foreground overflow-hidden justify-center rounded-lg"
+                                  mainClassName="px-2 sm:px-2 md:px-3 bg-primary text-primary-foreground overflow-hidden py-0.5 sm:py-1 md:py-2 justify-center rounded-lg"
                                   staggerFrom={"last"}
                                   initial={{ y: "100%" }}
                                   animate={{ y: 0 }}
                                   exit={{ y: "-120%" }}
                                   staggerDuration={0.025}
-                                  splitLevelClassName="overflow-hidden pb-1"
-                                  transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                                  splitLevelClassName="overflow-hidden pb-0.5 sm:pb-1 md:pb-1"
+                                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
                                   rotationInterval={2000}
                                 />
                                 <br />
@@ -319,3 +319,6 @@ export default function Home() {
 
     
 
+
+
+    
