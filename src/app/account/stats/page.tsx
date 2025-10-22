@@ -84,14 +84,16 @@ export default function MyStatsPage() {
 
     return (
         <div className="container mx-auto py-8 px-4">
-             <div className="text-center mb-12 relative">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute left-0 top-1/2 -translate-y-1/2 md:hidden">
+             <div className="mb-12 flex items-center justify-center relative">
+                <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute left-0 md:hidden">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <h1 className="font-headline text-4xl md:text-5xl font-bold">Mening Statistikam</h1>
-                <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-                    Ijodingiz qanday natijalar keltirayotganini kuzatib boring.
-                </p>
+                <div className="text-center">
+                    <h1 className="font-headline text-3xl md:text-5xl font-bold">Mening Statistikam</h1>
+                    <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
+                        Ijodingiz qanday natijalar keltirayotganini kuzatib boring.
+                    </p>
+                </div>
             </div>
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
@@ -139,5 +141,3 @@ export default function MyStatsPage() {
         </div>
     )
 }
-
-    

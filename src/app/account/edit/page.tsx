@@ -196,15 +196,15 @@ export default function ProfileEditPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
-      <div className="relative mb-4 md:hidden">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute -left-2 -top-6">
-            <ArrowLeft className="h-5 w-5" />
-        </Button>
-      </div>
       <Card>
-        <CardHeader>
-          <CardTitle>Profilni Tahrirlash</CardTitle>
-          <CardDescription>Bu yerda ommaviy profilingizni yangilashingiz mumkin.</CardDescription>
+        <CardHeader className="relative flex-row items-center justify-center text-center">
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute left-2 md:hidden">
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex-1">
+                <CardTitle>Profilni Tahrirlash</CardTitle>
+                <CardDescription>Bu yerda ommaviy profilingizni yangilashingiz mumkin.</CardDescription>
+            </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -292,5 +292,3 @@ export default function ProfileEditPage() {
     </div>
   );
 }
-
-    
