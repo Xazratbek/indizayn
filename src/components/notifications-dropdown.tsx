@@ -9,9 +9,10 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  PopoverClose,
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, UserPlus, MessageSquare, CheckCheck } from 'lucide-react';
+import { Bell, Heart, UserPlus, MessageSquare, CheckCheck, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -166,17 +167,25 @@ export default function NotificationsDropdown() {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="font-medium">Bildirishnomalar</h3>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleMarkAllRead}
-            disabled={isMarkingRead || unreadNotifications.length === 0}
-          >
-            <CheckCheck className="h-4 w-4 mr-2" />
-            Barchasini o'qish
-          </Button>
+        <div className="flex items-center justify-between p-3 border-b">
+          <h3 className="font-medium text-sm">Bildirishnomalar</h3>
+          <div className='flex items-center'>
+            <Button 
+                variant="ghost" 
+                size="icon"
+                className='h-7 w-7' 
+                onClick={handleMarkAllRead}
+                disabled={isMarkingRead || unreadNotifications.length === 0}
+                title="Barchasini o'qish"
+            >
+                <CheckCheck className="h-4 w-4" />
+            </Button>
+             <PopoverClose asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <X className="h-4 w-4" />
+                </Button>
+            </PopoverClose>
+          </div>
         </div>
         <ScrollArea className="h-96">
             {isLoading ? (
@@ -188,35 +197,36 @@ export default function NotificationsDropdown() {
             ) : notifications && notifications.length > 0 ? (
                 <div className="divide-y">
                     {notifications.map((notif) => (
-                        <Link 
-                            key={notif.id} 
-                            href={getNotificationLink(notif) ?? '#'} 
-                            className={`block p-4 hover:bg-secondary/50 ${!notif.isRead ? 'bg-blue-500/5' : ''}`}
-                            onClick={() => handleNotificationClick(notif)}
-                        >
-                            <div className="flex items-start gap-3">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarImage src={notif.senderPhotoURL} alt={notif.senderName} />
-                                    <AvatarFallback>{notif.senderName?.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="text-sm flex-1">
-                                    <p>
-                                        {getNotificationText(notif)}
-                                    </p>
-                                    {notif.type === 'message' && notif.messageSnippet && (
-                                        <p className="text-xs text-muted-foreground mt-1 p-2 bg-secondary rounded-md italic">
-                                            "{notif.messageSnippet}"
+                        <PopoverClose asChild key={notif.id}>
+                            <Link 
+                                href={getNotificationLink(notif) ?? '#'} 
+                                className={`block p-4 hover:bg-secondary/50 ${!notif.isRead ? 'bg-blue-500/5' : ''}`}
+                                onClick={() => handleNotificationClick(notif)}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src={notif.senderPhotoURL} alt={notif.senderName} />
+                                        <AvatarFallback>{notif.senderName?.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="text-sm flex-1">
+                                        <p>
+                                            {getNotificationText(notif)}
                                         </p>
+                                        {notif.type === 'message' && notif.messageSnippet && (
+                                            <p className="text-xs text-muted-foreground mt-1 p-2 bg-secondary rounded-md italic">
+                                                "{notif.messageSnippet}"
+                                            </p>
+                                        )}
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {notif.createdAt ? formatDistanceToNowStrict(notif.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}
+                                        </p>
+                                    </div>
+                                    {!notif.isRead && (
+                                        <div className="w-2 h-2 rounded-full bg-primary mt-1"></div>
                                     )}
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {notif.createdAt ? formatDistanceToNowStrict(notif.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}
-                                    </p>
                                 </div>
-                                {!notif.isRead && (
-                                     <div className="w-2 h-2 rounded-full bg-primary mt-1"></div>
-                                )}
-                            </div>
-                        </Link>
+                            </Link>
+                         </PopoverClose>
                     ))}
                 </div>
             ) : (
