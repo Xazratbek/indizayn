@@ -7,15 +7,23 @@ import type { Designer } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Users2, Search, SlidersHorizontal, PackageSearch } from "lucide-react";
+import { UserPlus, Users2, Search, SlidersHorizontal, PackageSearch, X } from "lucide-react";
 import Link from "next/link";
 import { collection, query, orderBy } from 'firebase/firestore';
-import LoadingPage from "../loading";
-import PaginationControls from '@/components/pagination-controls';
 import { Input } from '@/components/ui/input';
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 import { PREDEFINED_SPECIALIZATIONS } from '@/lib/predefined-tags';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter,
+  SheetClose
+} from "@/components/ui/sheet";
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 const DESIGNERS_PER_PAGE = 12;
 
@@ -37,7 +45,7 @@ export default function DesignersPage() {
   const db = useFirestore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(DESIGNERS_PER_PAGE);
 
   const designersQuery = useMemoFirebase(() => 
     db ? query(collection(db, 'users'), orderBy('subscriberCount', 'desc')) : null, 
@@ -68,78 +76,77 @@ export default function DesignersPage() {
   }, [designers, searchTerm, selectedSpecs]);
 
   const paginatedDesigners = useMemo(() => {
-    const startIndex = (currentPage - 1) * DESIGNERS_PER_PAGE;
-    const endIndex = startIndex + DESIGNERS_PER_PAGE;
-    return filteredDesigners.slice(startIndex, endIndex);
-  }, [filteredDesigners, currentPage]);
+    return filteredDesigners.slice(0, visibleCount);
+  }, [filteredDesigners, visibleCount]);
 
-  const totalPages = Math.ceil(filteredDesigners.length / DESIGNERS_PER_PAGE);
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+  const handleLoadMore = () => {
+    setVisibleCount(prevCount => prevCount + DESIGNERS_PER_PAGE);
   };
   
   const handleSpecToggle = (spec: string) => {
     setSelectedSpecs(prev => 
       prev.includes(spec) ? prev.filter(s => s !== spec) : [...prev, spec]
     );
-    setCurrentPage(1); // Reset to first page on filter change
+    setVisibleCount(DESIGNERS_PER_PAGE); // Reset visible count on filter change
   }
 
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="text-center mb-12">
+      <div className="text-center mb-8">
         <h1 className="font-headline text-4xl md:text-5xl font-bold">Bizning Dizaynerlarimiz</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
           Platformamizdagi eng iqtidorli va ijodkor dizaynerlar hamjamiyatini kashf eting.
         </p>
       </div>
 
-       <div className="flex flex-col md:flex-row gap-4 mb-8 justify-center">
-        <div className="relative w-full md:max-w-lg">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Ism yoki mutaxassislik bo'yicha qidirish..."
-            className="w-full pl-10 h-12"
-            value={searchTerm}
-            onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1); // Reset to first page on search
-            }}
-          />
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-12">
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              Mutaxassislik
-              {selectedSpecs.length > 0 && <span className="ml-2 bg-primary text-primary-foreground h-5 w-5 text-xs rounded-full flex items-center justify-center">{selectedSpecs.length}</span>}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-64">
-            <DropdownMenuLabel>Mutaxassislik bo'yicha filtrlash</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {PREDEFINED_SPECIALIZATIONS.map(spec => (
-                 <DropdownMenuCheckboxItem
-                    key={spec}
-                    checked={selectedSpecs.includes(spec)}
-                    onCheckedChange={() => handleSpecToggle(spec)}
-                >
-                    {spec}
-                </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+       <div className="sticky top-16 md:top-[68px] z-40 bg-background/80 backdrop-blur-lg -mx-4 px-4 py-4 mb-8 border-b">
+         <div className="flex flex-col md:flex-row gap-4 justify-center max-w-2xl mx-auto">
+            <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Ism yoki mutaxassislik bo'yicha qidirish..."
+                    className="w-full pl-10 h-12"
+                    value={searchTerm}
+                    onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setVisibleCount(DESIGNERS_PER_PAGE);
+                    }}
+                />
+            </div>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="h-12">
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Mutaxassislik
+                  {selectedSpecs.length > 0 && <span className="ml-2 bg-primary text-primary-foreground h-5 w-5 text-xs rounded-full flex items-center justify-center">{selectedSpecs.length}</span>}
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Mutaxassislik bo'yicha filtrlash</SheetTitle>
+                </SheetHeader>
+                <div className="py-4 space-y-2">
+                    {PREDEFINED_SPECIALIZATIONS.map(spec => (
+                        <div key={spec} className="flex items-center space-x-2 p-2 rounded-md hover:bg-secondary">
+                             <Checkbox 
+                                id={spec}
+                                checked={selectedSpecs.includes(spec)}
+                                onCheckedChange={() => handleSpecToggle(spec)}
+                             />
+                             <Label htmlFor={spec} className="flex-1 cursor-pointer">{spec}</Label>
+                        </div>
+                    ))}
+                </div>
+                <SheetFooter>
+                    <SheetClose asChild>
+                        <Button className="w-full">Qo'llash</Button>
+                    </SheetClose>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+         </div>
       </div>
       
       {isLoading ? (
@@ -167,14 +174,10 @@ export default function DesignersPage() {
                 </Link>
             ))}
             </div>
-             {totalPages > 1 && (
-                <PaginationControls
-                    currentPage={currentPage}
-                    onNext={handleNextPage}
-                    onPrev={handlePrevPage}
-                    isNextDisabled={currentPage === totalPages}
-                    isPrevDisabled={currentPage === 1}
-                />
+             {visibleCount < filteredDesigners.length && (
+                <div className="mt-12 text-center">
+                    <Button onClick={handleLoadMore}>Ko'proq yuklash</Button>
+                </div>
             )}
         </>
       ) : searchTerm || selectedSpecs.length > 0 ? (
@@ -196,3 +199,5 @@ export default function DesignersPage() {
     </div>
   );
 }
+
+    

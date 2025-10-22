@@ -1,23 +1,24 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import PortfolioCard from '@/components/portfolio-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, SlidersHorizontal, PackageSearch } from 'lucide-react';
+import { Search, SlidersHorizontal, PackageSearch, X } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose
+} from "@/components/ui/sheet";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from '@/components/ui/label';
 import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
-import PaginationControls from '@/components/pagination-controls';
 import LoadingPage from '../loading';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import ProjectDetailModal from '@/components/project-detail-modal';
@@ -25,24 +26,25 @@ import { AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 
 const PROJECTS_PER_PAGE = 12;
 
 export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('trending');
-  const [lastVisible, setLastVisible] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [page, setPage] = useState(1);
-  const [isNextPageLoading, setIsNextPageLoading] = useState(false);
-
+  
+  const [pages, setPages] = useState<QueryDocumentSnapshot<DocumentData>[]>([]);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
   const selectedProjectId = searchParams.get('projectId');
-
   const db = useFirestore();
-
+  
   const projectsQuery = useMemoFirebase(() => {
     if (!db) return null;
     let baseQuery = collection(db, 'projects');
@@ -57,56 +59,65 @@ export default function BrowsePage() {
     }
 
     q = query(q, limit(PROJECTS_PER_PAGE));
-    if (page > 1 && lastVisible) {
-        q = query(q, startAfter(lastVisible));
+    const lastDoc = pages[pages.length - 1];
+    if (lastDoc) {
+        q = query(q, startAfter(lastDoc));
     }
-
     return q;
-  }, [db, sortBy, page, lastVisible]);
+  }, [db, sortBy, pages]);
 
+  const { data: newProjects, isLoading, error, snapshot } = useCollection<Project>(projectsQuery);
 
-  const { data: projects, isLoading, error, snapshot } = useCollection<Project>(projectsQuery);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const isIntersecting = useIntersectionObserver(loadMoreRef);
 
   useEffect(() => {
-      if (!isLoading && snapshot) {
-          const hasMore = snapshot.docs.length === PROJECTS_PER_PAGE;
-          if (!hasMore && page > 1) {
-              // We are on the last page
-          }
-      }
-      if (!isLoading) {
-          setIsNextPageLoading(false);
-      }
-  }, [isLoading, snapshot, page]);
+    if (newProjects) {
+        setAllProjects(prev => {
+             const newProjectIds = new Set(newProjects.map(p => p.id));
+             const filteredPrev = prev.filter(p => !newProjectIds.has(p.id));
+             return [...filteredPrev, ...newProjects].sort((a,b) => {
+                 if (sortBy === 'latest') return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
+                 if (sortBy === 'popular') return b.likeCount - a.likeCount;
+                 return b.viewCount - a.viewCount;
+             });
+        });
+    }
+     if (snapshot) {
+        setHasMore(snapshot.docs.length === PROJECTS_PER_PAGE);
+     }
+  }, [newProjects, snapshot, sortBy]);
 
+
+  useEffect(() => {
+    if (isIntersecting && hasMore && !isLoading) {
+      loadMore();
+    }
+  }, [isIntersecting, hasMore, isLoading]);
+
+  const loadMore = useCallback(() => {
+    if (snapshot && snapshot.docs.length > 0) {
+      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      setPages(prev => [...prev, lastDoc]);
+    }
+  }, [snapshot]);
+
+  const resetAndSort = (newSortBy: string) => {
+    setSortBy(newSortBy);
+    setAllProjects([]);
+    setPages([]);
+    setHasMore(true);
+  }
 
   const filteredProjects = useMemo(() => {
-    if (!projects) return [];
-    if (!searchTerm) return projects;
+    if (!allProjects) return [];
+    if (!searchTerm) return allProjects;
 
-    return projects.filter(project =>
+    return allProjects.filter(project =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
     );
-  }, [projects, searchTerm]);
-
-  const handleNextPage = () => {
-    if (snapshot && snapshot.docs.length > 0) {
-      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-      setLastVisible(lastDoc);
-      setPage(p => p + 1);
-      setIsNextPageLoading(true);
-    }
-  };
-  
-  const handlePrevPage = () => {
-    // This is a simplified previous page logic. For a true "prev", we'd need to query backwards
-    // which is more complex. Resetting to page 1 is a common simple approach.
-    setPage(1);
-    setLastVisible(null);
-  };
-  
-  const isNextDisabled = !snapshot || snapshot.docs.length < PROJECTS_PER_PAGE || isNextPageLoading;
+  }, [allProjects, searchTerm]);
 
   const handleModalClose = () => {
     const params = new URLSearchParams(searchParams);
@@ -125,57 +136,61 @@ export default function BrowsePage() {
         )}
       </AnimatePresence>
     <div className="container mx-auto py-8 px-4">
-      <div className="text-center mb-12">
+      <div className="text-center mb-8">
         <h1 className="font-headline text-4xl md:text-5xl font-bold liquid-text">Dizaynlarni O'rganing</h1>
         <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
           Ijodkorlik dunyosini kashf eting. Keyingi ilhomingizni topish uchun loyihalar, dizaynerlar yoki teglarni qidiring.
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-8 justify-center">
-        <div className="relative w-full md:max-w-lg">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Loyiha, dizayner yoki teg bo'yicha qidirish..."
-            className="w-full pl-10 h-12"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="sticky top-16 md:top-[68px] z-40 bg-background/80 backdrop-blur-lg -mx-4 px-4 py-4 mb-8 border-b">
+        <div className="flex flex-col md:flex-row gap-4 justify-center max-w-2xl mx-auto">
+            <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+                type="search"
+                placeholder="Loyiha, dizayner yoki teg bo'yicha qidirish..."
+                className="w-full pl-10 h-12"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            </div>
+            <Sheet>
+                <SheetTrigger asChild>
+                    <Button variant="outline" className="h-12">
+                        <SlidersHorizontal className="mr-2 h-4 w-4" />
+                        Saralash
+                    </Button>
+                </SheetTrigger>
+                <SheetContent>
+                    <SheetHeader>
+                        <SheetTitle>Saralash</SheetTitle>
+                    </SheetHeader>
+                    <div className="py-4">
+                        <RadioGroup value={sortBy} onValueChange={resetAndSort}>
+                            <div className="flex items-center space-x-2 py-2">
+                                <RadioGroupItem value="trending" id="trending" />
+                                <Label htmlFor="trending">Trenddagilar</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 py-2">
+                                <RadioGroupItem value="latest" id="latest" />
+                                <Label htmlFor="latest">Eng so'nggilari</Label>
+                            </div>
+                            <div className="flex items-center space-x-2 py-2">
+                                <RadioGroupItem value="popular" id="popular" />
+                                <Label htmlFor="popular">Eng mashhurlari</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+                     <SheetClose asChild>
+                        <Button className='w-full'>Ko'rsatish</Button>
+                     </SheetClose>
+                </SheetContent>
+            </Sheet>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-12">
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
-              Saralash
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Saralash</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuCheckboxItem
-              checked={sortBy === 'trending'}
-              onCheckedChange={() => { setSortBy('trending'); setPage(1); setLastVisible(null); }}
-            >
-              Trenddagilar
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={sortBy === 'latest'}
-              onCheckedChange={() => { setSortBy('latest'); setPage(1); setLastVisible(null); }}
-            >
-              Eng so'nggilari
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={sortBy === 'popular'}
-              onCheckedChange={() => { setSortBy('popular'); setPage(1); setLastVisible(null); }}
-            >
-              Eng mashhurlari
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
-      {isLoading && page === 1 ? (
+      {isLoading && allProjects.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {Array.from({ length: 12 }).map((_, i) => (
                 <Card key={i} className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full")}>
@@ -203,18 +218,13 @@ export default function BrowsePage() {
                 <PortfolioCard key={project.id} project={project} />
             ))}
             </div>
-            <PaginationControls 
-                currentPage={page}
-                onNext={handleNextPage}
-                onPrev={handlePrevPage}
-                isNextDisabled={isNextDisabled}
-                isPrevDisabled={page === 1}
-            />
-             {isNextPageLoading && (
-                <div className="flex justify-center items-center mt-4">
-                    <LoadingPage />
-                </div>
-             )}
+            <div ref={loadMoreRef} className="h-10 mt-8">
+                {isLoading && allProjects.length > 0 && (
+                     <div className="flex justify-center items-center">
+                        <LoadingPage />
+                     </div>
+                )}
+            </div>
         </>
       ) : (
         <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
@@ -227,3 +237,5 @@ export default function BrowsePage() {
     </>
   );
 }
+
+    
