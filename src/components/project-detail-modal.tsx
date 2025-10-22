@@ -26,31 +26,31 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
     <Dialog open={!!projectId} onOpenChange={(open) => !open && onClose()}>
       <AnimatePresence>
         {!!projectId && (
-          <DialogContent 
-            className="max-w-7xl w-full h-[95vh] p-0 flex flex-col"
-            asChild
+          <DialogContent
+            className="max-w-7xl w-full h-[95vh] p-0 overflow-hidden flex flex-col"
             onInteractOutside={onClose}
           >
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 50 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="absolute top-2 right-2 z-50 bg-background/50 hover:bg-background rounded-full"
+                className="relative h-full flex flex-col"
               >
-                <X />
-              </Button>
-              <div className="flex-1 overflow-y-auto">
-                 <ModalContext.Provider value={{ projectId }}>
-                    <ProjectDetailsPage />
-                 </ModalContext.Provider>
-              </div>
-            </motion.div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onClose}
+                    className="absolute top-2 right-2 z-50 bg-background/50 hover:bg-background rounded-full"
+                  >
+                    <X />
+                  </Button>
+                  <div className="flex-1 overflow-y-auto">
+                    <ModalContext.Provider value={{ projectId }}>
+                        <ProjectDetailsPage />
+                    </ModalContext.Provider>
+                  </div>
+              </motion.div>
           </DialogContent>
         )}
       </AnimatePresence>
