@@ -47,7 +47,32 @@ const sectionVariants = {
 
 const HeroShowcase = ({ projects }: { projects: Project[] }) => {
     const time = useTime();
-    const rotate = useTransform(time, [0, 20000], [0, 360], { clamp: false });
+    const rotate = useTransform(time, [0, 40000], [0, 360], { clamp: false });
+
+    const [carouselConfig, setCarouselConfig] = useState({
+        radius: 280,
+        imageWidth: 240,
+        imageHeight: 180, // 4:3 ratio
+    });
+
+    useEffect(() => {
+        const updateCarouselConfig = () => {
+            const width = window.innerWidth;
+            if (width < 640) { // small mobile
+                setCarouselConfig({ radius: 160, imageWidth: 160, imageHeight: 120 });
+            } else if (width < 768) { // large mobile
+                setCarouselConfig({ radius: 220, imageWidth: 200, imageHeight: 150 });
+            } else if (width < 1024) { // tablet
+                setCarouselConfig({ radius: 280, imageWidth: 240, imageHeight: 180 });
+            } else { // desktop
+                setCarouselConfig({ radius: 380, imageWidth: 280, imageHeight: 210 });
+            }
+        };
+
+        updateCarouselConfig();
+        window.addEventListener('resize', updateCarouselConfig);
+        return () => window.removeEventListener('resize', updateCarouselConfig);
+    }, []);
     
     // Ensure we have a specific number of projects for the carousel
     const numProjects = 9;
@@ -56,8 +81,6 @@ const HeroShowcase = ({ projects }: { projects: Project[] }) => {
         displayProjects.push(...projects.slice(0, numProjects - displayProjects.length));
     }
     
-    const carouselRadius = 380; // Adjust this for circle size
-
     if (displayProjects.length === 0) return null;
 
     return (
@@ -81,9 +104,13 @@ const HeroShowcase = ({ projects }: { projects: Project[] }) => {
                         return (
                             <motion.div
                                 key={`${project.id}-${i}`}
-                                className="absolute w-[280px] h-[210px] top-[calc(50%-105px)] left-[calc(50%-140px)]"
+                                className="absolute"
                                 style={{
-                                    transform: `rotateY(${angle}deg) translateZ(${carouselRadius}px)`,
+                                    width: `${carouselConfig.imageWidth}px`,
+                                    height: `${carouselConfig.imageHeight}px`,
+                                    top: `calc(50% - ${carouselConfig.imageHeight / 2}px)`,
+                                    left: `calc(50% - ${carouselConfig.imageWidth / 2}px)`,
+                                    transform: `rotateY(${angle}deg) translateZ(${carouselConfig.radius}px)`,
                                 }}
                             >
                                 <div className="aspect-[4/3] relative w-full h-full rounded-lg overflow-hidden shadow-2xl">
@@ -92,7 +119,7 @@ const HeroShowcase = ({ projects }: { projects: Project[] }) => {
                                         alt={project.name}
                                         fill
                                         className="object-cover"
-                                        sizes="300px"
+                                        sizes={`${carouselConfig.imageWidth}px`}
                                         data-ai-hint="project image"
                                     />
                                     {/* Dimming overlay */}
