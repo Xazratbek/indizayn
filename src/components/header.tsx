@@ -48,15 +48,15 @@ export function Header() {
 
   const navContent = isMobile === undefined ? null : (
     !isMobile ? (
-      <nav className="flex items-center gap-6 text-sm">
+      <nav className="flex items-center gap-6 text-base">
         {navItems.map((item) => (
            <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "transition-colors hover:text-foreground/80",
+                "font-medium transition-colors hover:text-foreground/80",
                 pathname.startsWith(item.href)
-                  ? "text-foreground font-semibold"
+                  ? "text-foreground font-bold"
                   : "text-foreground/60"
               )}
             >
