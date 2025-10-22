@@ -17,14 +17,14 @@ import SendMessageDialog from '@/components/send-message-dialog';
 import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
 import { TelegramIcon } from '@/components/icons';
-import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 const StatCard = ({ label, value, icon: Icon }: { label: string; value: number | string; icon: React.ElementType }) => (
-    <Card className="text-center p-4 bg-secondary/50">
+     <div className="flex-1 text-center p-4">
         <Icon className="w-8 h-8 mx-auto text-primary mb-2" />
         <p className="text-2xl font-bold font-headline">{value}</p>
-        <p className="text-sm text-muted-foreground">{label}</p>
-    </Card>
+        <p className="text-sm text-muted-foreground hidden md:block">{label}</p>
+    </div>
 );
 
 export default function DesignerProfilePage() {
@@ -180,12 +180,17 @@ export default function DesignerProfilePage() {
         </CardContent>
       </Card>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-        <StatCard label="Obunachilar" value={designer.subscriberCount || 0} icon={Users} />
-        <StatCard label="Loyihalar" value={designerProjects?.length || 0} icon={FolderKanban} />
-        <StatCard label="Jami Likelar" value={totalLikes} icon={Heart} />
-        <StatCard label="Jami Ko'rishlar" value={totalViews} icon={Eye} />
-      </div>
+      <Card className="mb-12">
+        <div className="flex flex-row justify-around">
+            <StatCard label="Obunachilar" value={designer.subscriberCount || 0} icon={Users} />
+            <Separator orientation="vertical" className="h-24 my-auto" />
+            <StatCard label="Loyihalar" value={designerProjects?.length || 0} icon={FolderKanban} />
+             <Separator orientation="vertical" className="h-24 my-auto" />
+            <StatCard label="Jami Likelar" value={totalLikes} icon={Heart} />
+             <Separator orientation="vertical" className="h-24 my-auto" />
+            <StatCard label="Jami Ko'rishlar" value={totalViews} icon={Eye} />
+        </div>
+      </Card>
 
        {(designer.bio || designer.phoneNumber || designer.telegramUrl) && (
         <Card className="mb-12">
@@ -253,3 +258,5 @@ export default function DesignerProfilePage() {
     </>
   );
 }
+
+    
