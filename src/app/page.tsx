@@ -143,7 +143,7 @@ export default function Home() {
   const [isSigningIn, setIsSigningIn] = useState(false);
 
   const featuredProjectsQuery = useMemoFirebase(() =>
-    db ? query(collection(db, 'projects'), orderBy('viewCount', 'desc'), limit(9)) : null
+    db ? query(collection(db, 'projects'), orderBy('viewCount', 'desc'), limit(12)) : null
   , [db]);
   const { data: featuredProjects, isLoading: areProjectsLoading } = useCollection<Project>(featuredProjectsQuery);
 
@@ -153,8 +153,6 @@ export default function Home() {
   };
 
   const isLoading = areProjectsLoading || isUserLoading;
-  
-  const displayProjects = featuredProjects?.slice(0, 4) || [];
 
   return (
     <div className="flex flex-col">
@@ -216,14 +214,10 @@ export default function Home() {
         variants={sectionVariants}
       >
         <div className="px-4 md:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="font-headline text-3xl md:text-4xl font-bold">Trenddagi Loyihalar</h2>
-            <p className="text-muted-foreground mt-2">Iste'dodli hamjamiyatimizdan eng ko'p ko'rilgan loyihalar.</p>
-          </div>
           
           {isLoading ? (
              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                {Array.from({ length: 4 }).map((_, i) => (
+                {Array.from({ length: 12 }).map((_, i) => (
                     <Card key={i} className="overflow-hidden w-full h-full">
                       <CardContent className="p-0">
                         <Skeleton className="aspect-video w-full" />
@@ -241,10 +235,10 @@ export default function Home() {
                     </Card>
                 ))}
              </div>
-          ) : displayProjects && displayProjects.length > 0 ? (
+          ) : featuredProjects && featuredProjects.length > 0 ? (
             <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                {displayProjects.map(project => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {featuredProjects.map(project => (
                     <PortfolioCard key={project.id} project={project} />
                 ))}
                 </div>
@@ -318,5 +312,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

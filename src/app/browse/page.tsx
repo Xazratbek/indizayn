@@ -5,7 +5,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import PortfolioCard from '@/components/portfolio-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, SlidersHorizontal, PackageSearch, X, Tags } from 'lucide-react';
+import { Search, SlidersHorizontal, PackageSearch } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -27,10 +27,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import { PREDEFINED_TAGS } from '@/lib/predefined-tags';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 const PROJECTS_PER_PAGE = 12;
-const POPULAR_TAGS = [...PREDEFINED_TAGS].sort(() => 0.5 - Math.random()).slice(0, 10);
-
 
 export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -135,8 +135,6 @@ export default function BrowsePage() {
     if (!allProjects) return [];
     if (!searchTerm) return allProjects;
 
-    // This filtering is now only client-side for the currently loaded projects.
-    // For a full-text search solution, a dedicated search service like Algolia would be needed.
     return allProjects.filter(project =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
@@ -160,65 +158,76 @@ export default function BrowsePage() {
         )}
       </AnimatePresence>
     <div className="py-8 px-[10px]">
-      <div className="sticky top-14 md:top-[68px] z-40 bg-background/80 backdrop-blur-lg -mx-[10px] px-4 py-4 mb-8">
-        <div className="flex flex-col gap-4 justify-center max-w-2xl mx-auto">
+       <div className="sticky top-14 md:top-[68px] z-40 bg-background/95 backdrop-blur-lg -mx-[10px] px-4 py-4 mb-8 border-b">
+        <div className="flex flex-col gap-4 max-w-full mx-auto">
+          <div className="flex items-center gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="h-11">
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Saralash
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Saralash</SheetTitle>
+                </SheetHeader>
+                <div className="py-4">
+                  <RadioGroup value={sortBy} onValueChange={resetAndSort}>
+                    <div className="flex items-center space-x-2 py-2">
+                      <RadioGroupItem value="trending" id="trending" />
+                      <Label htmlFor="trending">Trenddagilar</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 py-2">
+                      <RadioGroupItem value="latest" id="latest" />
+                      <Label htmlFor="latest">Eng so'nggilari</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 py-2">
+                      <RadioGroupItem value="popular" id="popular" />
+                      <Label htmlFor="popular">Eng mashhurlari</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                <SheetClose asChild>
+                  <Button className='w-full'>Ko'rsatish</Button>
+                </SheetClose>
+              </SheetContent>
+            </Sheet>
             <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
                 type="search"
                 placeholder="Loyiha, dizayner yoki teg bo'yicha qidirish..."
-                className="w-full pl-10 h-12 text-base"
+                className="w-full pl-10 h-11 text-base"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-            />
+              />
             </div>
-             <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="outline" className="h-12 w-full md:w-auto">
-                        <SlidersHorizontal className="mr-2 h-4 w-4" />
-                        Saralash: {sortBy}
-                    </Button>
-                </SheetTrigger>
-                <SheetContent>
-                    <SheetHeader>
-                        <SheetTitle>Saralash</SheetTitle>
-                    </SheetHeader>
-                    <div className="py-4">
-                        <RadioGroup value={sortBy} onValueChange={resetAndSort}>
-                            <div className="flex items-center space-x-2 py-2">
-                                <RadioGroupItem value="trending" id="trending" />
-                                <Label htmlFor="trending">Trenddagilar</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 py-2">
-                                <RadioGroupItem value="latest" id="latest" />
-                                <Label htmlFor="latest">Eng so'nggilari</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 py-2">
-                                <RadioGroupItem value="popular" id="popular" />
-                                <Label htmlFor="popular">Eng mashhurlari</Label>
-                            </div>
-                        </RadioGroup>
-                    </div>
-                     <SheetClose asChild>
-                        <Button className='w-full'>Ko'rsatish</Button>
-                     </SheetClose>
-                </SheetContent>
-            </Sheet>
+          </div>
+          <ScrollArea className="w-full whitespace-nowrap mt-4">
+             <div className="flex gap-2 pb-2">
+                 <Button 
+                    variant={activeTag === null ? 'default' : 'outline'}
+                    onClick={() => handleTagClick(null!)}
+                    className="rounded-full h-9 px-4"
+                  >
+                    Barchasi
+                  </Button>
+                {[...PREDEFINED_TAGS].slice(0, 15).map(tag => (
+                  <Button 
+                    key={tag}
+                    variant={activeTag === tag ? 'default' : 'outline'}
+                    onClick={() => handleTagClick(tag)}
+                    className="rounded-full h-9 px-4"
+                  >
+                    {tag}
+                  </Button>
+                ))}
+            </div>
+          </ScrollArea>
         </div>
       </div>
-       <div className="relative overflow-hidden starry-background rounded-lg p-6 my-8 flex flex-wrap items-center justify-center gap-2">
-          <Tags className="absolute top-4 left-4 h-6 w-6 text-white/50" />
-          {POPULAR_TAGS.map(tag => (
-              <Button 
-                key={tag}
-                variant={activeTag === tag ? 'default' : 'secondary'}
-                onClick={() => handleTagClick(tag)}
-                className="rounded-full h-8 px-4"
-              >
-                  {tag}
-              </Button>
-          ))}
-      </div>
+      
       {isLoading && allProjects.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {Array.from({ length: 12 }).map((_, i) => (

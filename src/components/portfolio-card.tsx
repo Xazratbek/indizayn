@@ -269,5 +269,3 @@ export default function PortfolioCard({ project, className, showAdminControls = 
     </motion.div>
   );
 }
-
-    
