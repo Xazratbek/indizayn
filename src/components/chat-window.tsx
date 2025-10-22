@@ -233,6 +233,13 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     }
   }, [combinedMessages]);
 
+  useEffect(() => {
+    if (isRecording && recordingMode === 'video' && videoPreviewRef.current && streamRef.current) {
+      videoPreviewRef.current.srcObject = streamRef.current;
+    }
+  }, [isRecording, recordingMode]);
+
+
   const startRecording = async () => {
     if (isRecording) return;
     setRecordingTime(0);
@@ -701,3 +708,5 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
+
+    
