@@ -55,23 +55,30 @@ const HeroShowcase = ({ projects }: { projects: Project[] }) => {
     const rotateX = useTransform(scrollYProgress, [0, 1], [0, 45]);
     const translateY = useTransform(scrollYProgress, [0, 1], [0, -100]);
     const scale = useTransform(scrollYProgress, [0, 1], [1, 0.85]);
-
-    const firstColumn = projects.slice(0, 3);
-    const secondColumn = projects.slice(3, 6);
-    const thirdColumn = projects.slice(6, 9);
     
-    if (projects.length < 9) return null;
+    // Ensure we have at least 9 projects to display by looping if necessary
+    const displayProjects = [...projects];
+    while (displayProjects.length > 0 && displayProjects.length < 9) {
+        displayProjects.push(...projects.slice(0, 9 - displayProjects.length));
+    }
+
+
+    const firstColumn = displayProjects.slice(0, 3);
+    const secondColumn = displayProjects.slice(3, 6);
+    const thirdColumn = displayProjects.slice(6, 9);
+    
+    if (firstColumn.length === 0) return null;
 
     const renderColumn = (columnProjects: Project[], y: number) => (
-        <motion.div className="relative flex flex-col gap-4 w-[30%]" style={{ y: y }}>
-            {columnProjects.map((project) => (
-                <div key={project.id} className="aspect-[4/3] relative rounded-lg overflow-hidden shadow-xl">
+        <motion.div className="relative flex flex-col gap-4 w-[30%]" style={{ y }}>
+            {columnProjects.map((project, index) => (
+                <div key={`${project.id}-${index}`} className="aspect-[4/3] relative rounded-lg overflow-hidden shadow-xl">
                     <Image
                         src={project.imageUrl}
                         alt={project.name}
                         fill
                         className="object-cover"
-                        sizes="30vw"
+                        sizes="(max-width: 768px) 30vw, 30vw"
                         data-ai-hint="project image"
                     />
                 </div>
@@ -80,7 +87,7 @@ const HeroShowcase = ({ projects }: { projects: Project[] }) => {
     );
 
     return (
-        <div ref={gridRef} className="w-full h-[120vh] relative -mt-[20vh] hidden md:block">
+        <div ref={gridRef} className="w-full h-[120vh] relative -mt-[20vh]">
             <motion.div
                 className="sticky top-0 h-screen flex justify-center items-center overflow-hidden"
                 style={{
@@ -89,7 +96,7 @@ const HeroShowcase = ({ projects }: { projects: Project[] }) => {
                 }}
             >
                 <motion.div
-                    className="flex gap-4 w-[90%] md:w-[70%]"
+                    className="flex gap-2 md:gap-4 w-full md:w-[70%]"
                     style={{
                         rotateX,
                         scale,
