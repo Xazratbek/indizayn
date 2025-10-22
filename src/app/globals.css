@@ -95,6 +95,26 @@
     color: hsl(var(--primary));
     animation: float 4s ease-in-out infinite;
   }
+  
+  .starry-background {
+      background-color: #0b1120;
+      animation: stars 100s linear infinite;
+      background-image:
+        radial-gradient(1px 1px at 25px 5px, white, rgba(255, 255, 255, 0)),
+        radial-gradient(1px 1px at 50px 25px, white, rgba(255, 255, 255, 0)),
+        radial-gradient(1px 1px at 125px 20px, white, rgba(255, 255, 255, 0)),
+        radial-gradient(1.5px 1.5px at 100px 55px, white, rgba(255, 255, 255, 0)),
+        radial-gradient(1.5px 1.5px at 25px 85px, white, rgba(255, 255, 255, 0)),
+        radial-gradient(2px 2px at 110px 80px, white, rgba(255, 255, 255, 0)),
+        radial-gradient(2.5px 2.5px at 90px 15px, white, rgba(255, 255, 255, 0)),
+        radial-gradient(2.5px 2.5px at 60px 70px, white, rgba(255, 255, 255, 0));
+  }
+  
+  @keyframes stars {
+      0% { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+      100% { background-position: 500px 700px, 600px 400px, 700px -500px, 800px -400px, -500px 900px, -400px 800px, 900px 300px, -600px 100px; }
+  }
+
 
   @keyframes float {
     0% {

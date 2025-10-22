@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import PortfolioCard from '@/components/portfolio-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, SlidersHorizontal, PackageSearch, X } from 'lucide-react';
+import { Search, SlidersHorizontal, PackageSearch, X, Tags } from 'lucide-react';
 import {
   Sheet,
   SheetContent,
@@ -17,7 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from '@/components/ui/label';
-import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot, where } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
 import LoadingPage from '../loading';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
@@ -27,12 +26,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
+import { PREDEFINED_TAGS } from '@/lib/predefined-tags';
 
 const PROJECTS_PER_PAGE = 12;
+const POPULAR_TAGS = [...PREDEFINED_TAGS].sort(() => 0.5 - Math.random()).slice(0, 10);
+
 
 export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('trending');
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   
   const [pages, setPages] = useState<QueryDocumentSnapshot<DocumentData>[]>([]);
   const [allProjects, setAllProjects] = useState<Project[]>([]);
@@ -57,6 +60,11 @@ export default function BrowsePage() {
     } else { // trending
       q = query(baseQuery, orderBy('viewCount', 'desc'));
     }
+    
+    if (activeTag) {
+      q = query(q, where('tags', 'array-contains', activeTag));
+    }
+
 
     q = query(q, limit(PROJECTS_PER_PAGE));
     const lastDoc = pages[pages.length - 1];
@@ -64,7 +72,7 @@ export default function BrowsePage() {
         q = query(q, startAfter(lastDoc));
     }
     return q;
-  }, [db, sortBy, pages]);
+  }, [db, sortBy, pages, activeTag]);
 
   const { data: newProjects, isLoading, error, snapshot } = useCollection<Project>(projectsQuery);
 
@@ -116,6 +124,13 @@ export default function BrowsePage() {
     setHasMore(true);
   }
 
+  const handleTagClick = (tag: string) => {
+    setAllProjects([]);
+    setPages([]);
+    setHasMore(true);
+    setActiveTag(tag === activeTag ? null : tag);
+  }
+
   const filteredProjects = useMemo(() => {
     if (!allProjects) return [];
     if (!searchTerm) return allProjects;
@@ -144,31 +159,24 @@ export default function BrowsePage() {
           />
         )}
       </AnimatePresence>
-    <div className="py-8 px-4 md:px-6 lg:px-8">
-      <div className="text-center mb-8">
-        <h1 className="font-headline text-4xl md:text-5xl font-bold liquid-text">Dizaynlarni O'rganing</h1>
-        <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-          Ijodkorlik dunyosini kashf eting. Keyingi ilhomingizni topish uchun loyihalar, dizaynerlar yoki teglarni qidiring.
-        </p>
-      </div>
-
-      <div className="sticky top-14 md:top-[68px] z-40 bg-background/80 backdrop-blur-lg -mx-4 px-4 py-4 mb-8 border-b">
-        <div className="flex flex-col md:flex-row gap-4 justify-center max-w-2xl mx-auto">
+    <div className="py-8 px-[10px]">
+      <div className="sticky top-14 md:top-[68px] z-40 bg-background/80 backdrop-blur-lg -mx-[10px] px-4 py-4 mb-8">
+        <div className="flex flex-col gap-4 justify-center max-w-2xl mx-auto">
             <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
                 type="search"
                 placeholder="Loyiha, dizayner yoki teg bo'yicha qidirish..."
-                className="w-full pl-10 h-12"
+                className="w-full pl-10 h-12 text-base"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
             </div>
-            <Sheet>
+             <Sheet>
                 <SheetTrigger asChild>
-                    <Button variant="outline" className="h-12">
+                    <Button variant="outline" className="h-12 w-full md:w-auto">
                         <SlidersHorizontal className="mr-2 h-4 w-4" />
-                        Saralash
+                        Saralash: {sortBy}
                     </Button>
                 </SheetTrigger>
                 <SheetContent>
@@ -198,7 +206,19 @@ export default function BrowsePage() {
             </Sheet>
         </div>
       </div>
-
+       <div className="relative overflow-hidden starry-background rounded-lg p-6 my-8 flex flex-wrap items-center justify-center gap-2">
+          <Tags className="absolute top-4 left-4 h-6 w-6 text-white/50" />
+          {POPULAR_TAGS.map(tag => (
+              <Button 
+                key={tag}
+                variant={activeTag === tag ? 'default' : 'secondary'}
+                onClick={() => handleTagClick(tag)}
+                className="rounded-full h-8 px-4"
+              >
+                  {tag}
+              </Button>
+          ))}
+      </div>
       {isLoading && allProjects.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {Array.from({ length: 12 }).map((_, i) => (
@@ -249,5 +269,3 @@ export default function BrowsePage() {
     </>
   );
 }
-
-    
