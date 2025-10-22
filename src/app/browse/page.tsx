@@ -71,6 +71,13 @@ export default function BrowsePage() {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const isIntersecting = useIntersectionObserver(loadMoreRef);
 
+  const loadMore = useCallback(() => {
+    if (snapshot && snapshot.docs.length > 0) {
+      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      setPages(prev => [...prev, lastDoc]);
+    }
+  }, [snapshot]);
+
   useEffect(() => {
     if (newProjects) {
         setAllProjects(prev => {
@@ -101,13 +108,6 @@ export default function BrowsePage() {
       loadMore();
     }
   }, [isIntersecting, hasMore, isLoading, loadMore]);
-
-  const loadMore = useCallback(() => {
-    if (snapshot && snapshot.docs.length > 0) {
-      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-      setPages(prev => [...prev, lastDoc]);
-    }
-  }, [snapshot]);
 
   const resetAndSort = (newSortBy: string) => {
     setSortBy(newSortBy);
