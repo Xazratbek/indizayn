@@ -711,4 +711,3 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   );
 }
 
-    
