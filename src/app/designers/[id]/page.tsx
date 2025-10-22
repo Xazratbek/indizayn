@@ -97,7 +97,7 @@ export default function DesignerProfilePage() {
             toast({ variant: "success", description: `${designer?.name} ga obuna bo'ldingiz.` });
 
             // Create notification for the followed user
-            if (designer.id !== user.id) { // Don't notify self
+            if (designer.id !== user.id && (!session || (session as any).isSuhbatOynasida !== true)) { // Don't notify self
               const notificationsRef = collection(db, "notifications");
               await addDoc(notificationsRef, {
                   userId: designer.id,
@@ -140,7 +140,7 @@ export default function DesignerProfilePage() {
     <>
     <div className="container mx-auto py-8 px-4">
       <Card className="overflow-hidden mb-8 shadow-lg">
-        <div className="h-48 md:h-64 bg-secondary relative">
+        <div className="h-32 md:h-64 bg-secondary relative">
           {designer.coverPhotoURL ? (
             <Image 
               src={designer.coverPhotoURL}
@@ -153,18 +153,18 @@ export default function DesignerProfilePage() {
              <div className="w-full h-full bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 dark:from-blue-900/30 dark:via-purple-900/30 dark:to-pink-900/30"></div>
           )}
         </div>
-        <CardContent className="p-6 relative -mt-16">
-          <div className="flex flex-col md:flex-row items-center gap-4">
+        <CardContent className="p-4 md:p-6 relative">
+          <div className="flex flex-col items-center -mt-16">
             <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background ring-4 ring-primary/50">
               {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
               <AvatarFallback className="text-4xl">{designer.name.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div className="flex-1 text-center md:text-left mt-2 md:mt-8">
+            <div className="text-center mt-4">
               <h1 className="font-headline text-3xl md:text-4xl font-bold">{designer.name}</h1>
               {designer.specialization && <p className="text-lg text-muted-foreground">{designer.specialization}</p>}
             </div>
-            { status === 'authenticated' && session.user.id !== id ? (
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-4 md:mt-8 w-full md:w-auto">
+             { status === 'authenticated' && session.user.id !== id ? (
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-4 w-full md:w-auto">
                 <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading} className="w-full sm:w-auto text-lg py-6 px-8">
                   {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-5 w-5" /> : <UserPlus className="mr-2 h-5 w-5" />}
                   {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
@@ -178,7 +178,7 @@ export default function DesignerProfilePage() {
         </CardContent>
       </Card>
       
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
         <StatCard label="Obunachilar" value={designer.subscriberCount || 0} icon={Users} />
         <StatCard label="Loyihalar" value={designerProjects?.length || 0} icon={FolderKanban} />
         <StatCard label="Jami Likelar" value={totalLikes} icon={Heart} />
