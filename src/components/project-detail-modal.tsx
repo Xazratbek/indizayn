@@ -25,24 +25,27 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
         {!!projectId && (
           <DialogContent
             className="w-full h-full max-w-none p-0 bg-transparent border-0 shadow-none"
-            onInteractOutside={onClose}
           >
-             <DialogTitle className="sr-only">Loyiha tafsilotlari</DialogTitle>
-             <DialogDescription className="sr-only">
-                Loyiha haqida to'liq ma'lumotni ko'rish uchun qalqib chiquvchi oyna.
-            </DialogDescription>
-            <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="absolute right-4 top-4 z-[60] h-10 w-10 rounded-full bg-background/50 hover:bg-background/80">
-                    <X className="h-6 w-6" />
-                    <span className="sr-only">Yopish</span>
-                </Button>
-            </DialogClose>
+            <div className="absolute inset-0" onClick={onClose}>
+                <DialogTitle className="sr-only">Loyiha tafsilotlari</DialogTitle>
+                <DialogDescription className="sr-only">
+                    Loyiha haqida to'liq ma'lumotni ko'rish uchun qalqib chiquvchi oyna.
+                </DialogDescription>
+                <DialogClose asChild>
+                    <Button variant="ghost" size="icon" className="absolute right-4 top-4 z-[60] h-10 w-10 rounded-full bg-background/50 hover:bg-background/80">
+                        <X className="h-6 w-6" />
+                        <span className="sr-only">Yopish</span>
+                    </Button>
+                </DialogClose>
 
-            <ScrollArea className="h-screen w-screen">
-                <ModalContext.Provider value={{ projectId }}>
-                    <ProjectDetailsPage />
-                </ModalContext.Provider>
-             </ScrollArea>
+                <div className="h-full w-full" onClick={(e) => e.stopPropagation()}>
+                    <ScrollArea className="h-screen w-screen">
+                        <ModalContext.Provider value={{ projectId }}>
+                            <ProjectDetailsPage />
+                        </ModalContext.Provider>
+                    </ScrollArea>
+                </div>
+            </div>
           </DialogContent>
         )}
       </AnimatePresence>
