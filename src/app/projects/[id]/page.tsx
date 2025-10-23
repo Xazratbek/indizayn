@@ -110,7 +110,7 @@ export default function ProjectDetailsPage() {
   }, [user, project, designer]);
 
   const handleShare = () => {
-    const url = window.location.href;
+    const url = window.location.origin + `/projects/${id}`;
     navigator.clipboard.writeText(url).then(() => {
         toast({
             title: "Havola nusxalandi!",
@@ -319,7 +319,7 @@ export default function ProjectDetailsPage() {
             </div>
         )}
         
-        {/* Right Fixed Panel */}
+        {/* Right Fixed Vertical Panel */}
         <div className="fixed top-1/2 -translate-y-1/2 right-4 md:right-8 z-40 flex flex-col items-center gap-4">
             {designer && (
                  <div className="relative group">
@@ -342,7 +342,6 @@ export default function ProjectDetailsPage() {
                      )}
                  </div>
             )}
-            <Separator className="w-10 h-[1px] my-2" />
             
             <HoverCard openDelay={200} closeDelay={100}>
                 <HoverCardTrigger asChild>
@@ -414,7 +413,7 @@ export default function ProjectDetailsPage() {
                 </HoverCardContent>
             </HoverCard>
 
-            <div className="p-2 bg-secondary/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
+             <div className="p-2 bg-secondary/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
                 <Button onClick={handleLikeToggle} variant="ghost" size="icon" className="h-12 w-12 rounded-full" disabled={!user || isLikeLoading}>
                     {isLikeLoading ? <LoadingPage /> : <ThumbsUp className={`h-6 w-6 ${isLiked ? 'fill-current text-blue-500' : ''}`} />}
                 </Button>
@@ -431,12 +430,12 @@ export default function ProjectDetailsPage() {
              <div className="text-center pt-10 pb-8">
                 <h1 className="font-headline text-3xl md:text-5xl font-bold">{project.name}</h1>
                  {designer && (
-                    <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 mt-4 text-lg hover:underline">
+                    <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 mt-4 text-lg">
                         <Avatar className="h-6 w-6">
                             {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
                             <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <span>{designer.name}</span>
+                        <span className="group-hover:underline">{designer.name}</span>
                     </Link>
                  )}
             </div>
