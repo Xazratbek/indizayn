@@ -152,7 +152,7 @@ export default function Home() {
                 <section className="relative w-full h-[80vh] md:h-screen bg-background overflow-hidden">
                     {featuredProjects && <FloatingShowcase projects={featuredProjects} />}
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-                        <div className="absolute inset-0 bg-background/30 backdrop-blur-sm"></div>
+                        <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px]"></div>
                         <div className="relative z-20 text-center p-4">
                             <motion.h1
                                 initial={{ opacity: 0, y: 20 }}
@@ -162,7 +162,7 @@ export default function Home() {
                             >
                                 <span className="inline-block">Лучшие</span>{' '}
                                 <RotatingText
-                                  texts={['авторы', 'проекты', 'таланты']}
+                                  texts={['проекты', 'таланты']}
                                   mainClassName="px-2 sm:px-2 md:px-2 bg-primary text-primary-foreground overflow-hidden py-0 justify-center rounded-lg"
                                   staggerFrom={"last"}
                                   initial={{ y: "100%" }}
