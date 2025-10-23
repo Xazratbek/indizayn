@@ -27,6 +27,8 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { useModalContext } from '@/components/project-detail-modal';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 
 function CommentSkeleton() {
@@ -308,6 +310,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="relative">
+      {/* Floating Action Bar for Desktop */}
       <div className="fixed top-1/2 -translate-y-1/2 right-8 hidden xl:flex flex-col items-center gap-4 z-[60]">
           {designer && (
                <div className="relative group">
@@ -426,7 +429,7 @@ export default function ProjectDetailsPage() {
             <h1 className="font-headline text-2xl md:text-3xl font-bold mt-4">{project.name}</h1>
         </div>
         
-        <div className="space-y-4 md:space-y-8 mt-8">
+        <div className="mt-8">
             {projectImages.map((url, index) => (
                 <div key={index} className="relative w-full overflow-hidden bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
                     <Image
@@ -441,9 +444,62 @@ export default function ProjectDetailsPage() {
                 </div>
             ))}
         </div>
+        
+        {/* Action Bar for Mobile/Tablet */}
+        <div className="px-4 md:px-8 py-8 xl:hidden">
+            <Card>
+                <CardContent className="p-4">
+                     <div className="flex items-center justify-between">
+                         {designer && (
+                             <Link href={`/designers/${designer.id}`} className="group flex items-center gap-3 text-lg">
+                                <Avatar className="h-12 w-12">
+                                    {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                                    <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                     <p className="font-bold leading-tight group-hover:underline">{designer.name}</p>
+                                     <p className="text-sm text-muted-foreground leading-tight">{designer.specialization}</p>
+                                </div>
+                            </Link>
+                         )}
+                         {user && designer && user.id !== designer.id && (
+                             <Button 
+                                size="sm" 
+                                variant={isFollowing ? "secondary" : "default"}
+                                disabled={isFollowLoading}
+                                onClick={handleFollowToggle}
+                            >
+                                {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                                {isFollowing ? "Obuna" : "Obuna bo'lish"}
+                            </Button>
+                         )}
+                     </div>
+                     <Separator className="my-4" />
+                     <div className="flex justify-around items-center">
+                          <Button onClick={handleLikeToggle} variant="ghost" size="lg" className="flex-col h-auto gap-1" disabled={!user || isLikeLoading}>
+                            {isLikeLoading ? <LoadingPage /> : <ThumbsUp className={`h-6 w-6 ${isLiked ? 'fill-current text-blue-500' : ''}`} />}
+                            <span className="text-xs">{project.likeCount}</span>
+                          </Button>
+                           <Button variant="ghost" size="lg" className="flex-col h-auto gap-1 text-muted-foreground" disabled>
+                               <Eye className="h-6 w-6"/>
+                               <span className="text-xs">{project.viewCount}</span>
+                           </Button>
+                           <Button variant="ghost" size="lg" className="flex-col h-auto gap-1 text-muted-foreground" disabled>
+                               <MessageSquare className="h-6 w-6"/>
+                               <span className="text-xs">{comments?.length || 0}</span>
+                           </Button>
+                           <Button onClick={handleShare} variant="ghost" size="lg" className="flex-col h-auto gap-1">
+                              <Share2 className="h-6 w-6" />
+                               <span className="text-xs">Ulashish</span>
+                           </Button>
+                     </div>
+                </CardContent>
+            </Card>
+        </div>
+
 
         <div className="px-4 md:px-8">
-          <div className="max-w-3xl mx-auto w-full pt-16 pb-24">
+          <div className="max-w-3xl mx-auto w-full pt-8 pb-24">
               <h2 className="font-headline text-2xl font-bold mb-6">
                   Izohlar ({comments?.length || 0})
               </h2>
@@ -517,3 +573,5 @@ export default function ProjectDetailsPage() {
     </div>
   );
 }
+
+    
