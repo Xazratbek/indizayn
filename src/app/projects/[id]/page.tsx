@@ -333,70 +333,6 @@ export default function ProjectDetailsPage() {
                    )}
                </div>
           )}
-          
-          <HoverCard openDelay={200} closeDelay={100}>
-              <HoverCardTrigger asChild>
-                  <Button variant="secondary" size="icon" className="rounded-full h-14 w-14 bg-background/80 backdrop-blur-sm">
-                      <Info className="h-6 w-6" />
-                  </Button>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80" side="left" align="center">
-                  <div className="space-y-4">
-                      <h3 className="font-bold text-lg">{project.name}</h3>
-                       <div className="flex justify-around text-sm text-muted-foreground">
-                           <div className="flex items-center gap-1.5">
-                              <ThumbsUp className="w-4 h-4" />
-                              <span>{project.likeCount || 0}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                              <Eye className="w-4 h-4" />
-                              <span>{project.viewCount || 0}</span>
-                          </div>
-                              <div className="flex items-center gap-1.5">
-                              <MessageSquare className="w-4 h-4" />
-                              <span>{comments?.length || 0}</span>
-                          </div>
-                      </div>
-                      {project.createdAt && (
-                          <div className="flex items-start text-sm">
-                              <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                              <div>
-                                  <h4 className="font-semibold">Chop etilgan</h4>
-                                  <p className="text-muted-foreground">
-                                  {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
-                                  </p>
-                              </div>
-                          </div>
-                      )}
-                      {project.tools && project.tools.length > 0 && (
-                          <>
-                          <div className="flex items-start text-sm">
-                          <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                          <div>
-                              <h4 className="font-semibold">Foydalanilgan vositalar</h4>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                              {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
-                              </div>
-                          </div>
-                          </div>
-                          </>
-                      )}
-                      {project.tags && project.tags.length > 0 && (
-                          <>
-                          <div className="flex items-start text-sm">
-                          <Tag className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                          <div>
-                              <h4 className="font-semibold">Teglar</h4>
-                              <div className="flex flex-wrap gap-1 mt-1">
-                              {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
-                              </div>
-                          </div>
-                          </div>
-                          </>
-                      )}
-                  </div>
-              </HoverCardContent>
-          </HoverCard>
 
            <div className="p-2 bg-background/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
               <Button onClick={handleLikeToggle} variant="ghost" size="icon" className="h-14 w-14 rounded-full" disabled={!user || isLikeLoading}>
@@ -451,10 +387,10 @@ export default function ProjectDetailsPage() {
         </div>
         
         {/* Action Bar for Mobile/Tablet */}
-        <div className="px-4 md:px-8 py-8 xl:hidden">
+        <div className="px-4 md:px-8 py-4 xl:hidden">
             <div className="relative overflow-hidden rounded-lg">
               <Card>
-                  <CardContent className="relative p-4">
+                  <div className="relative overflow-hidden p-4">
                       <div className="flex items-center justify-between">
                            {designer && (
                                <Link href={`/designers/${designer.id}`} className="group flex items-center gap-3 text-lg">
@@ -482,7 +418,7 @@ export default function ProjectDetailsPage() {
                        </div>
                        <Separator className="my-4" />
                        <div className="flex justify-around items-center">
-                            <Button onClick={handleLikeToggle} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground" disabled={!user || isLikeLoading}>
+                            <Button onClick={handleLikeToggle} variant="ghost" size="lg" className="flex-col h-auto gap-1" disabled={!user || isLikeLoading}>
                                <motion.div
                                   animate={{ scale: isLiked ? 1.2 : 1, y: isLiked ? -2 : 0 }}
                                   transition={{ type: 'spring', stiffness: 400, damping: 10 }}
@@ -505,13 +441,13 @@ export default function ProjectDetailsPage() {
                                  <span className="text-xs">Ulashish</span>
                              </Button>
                        </div>
-                  </CardContent>
+                  </div>
               </Card>
             </div>
         </div>
 
-        {/* Info Card for Mobile/Tablet */}
-        <div className="px-4 md:px-8 pb-8 xl:hidden">
+        {/* Info Card */}
+        <div className="px-4 md:px-8 pb-8">
             <Card>
                 <CardHeader>
                     <CardTitle>Loyiha haqida</CardTitle>
@@ -519,43 +455,45 @@ export default function ProjectDetailsPage() {
                 <CardContent className="space-y-4">
                      {project.description && (
                         <div>
-                            <p>{project.description}</p>
+                            <p className="text-foreground/90 leading-relaxed">{project.description}</p>
                         </div>
                      )}
                      <Separator/>
-                    {project.createdAt && (
-                        <div className="flex items-start text-sm">
-                            <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                            <div>
-                                <h4 className="font-semibold">Chop etilgan</h4>
-                                <p className="text-muted-foreground">
-                                {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
-                                </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 text-sm">
+                        {project.createdAt && (
+                            <div className="flex items-start">
+                                <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                                <div>
+                                    <h4 className="font-semibold">Chop etilgan</h4>
+                                    <p className="text-muted-foreground">
+                                    {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                    {project.tools && project.tools.length > 0 && (
-                        <div className="flex items-start text-sm">
-                        <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                        <div>
-                            <h4 className="font-semibold">Foydalanilgan vositalar</h4>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                            {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
+                        )}
+                        {project.tools && project.tools.length > 0 && (
+                            <div className="flex items-start">
+                                <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                                <div>
+                                    <h4 className="font-semibold">Foydalanilgan vositalar</h4>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                    {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        </div>
-                    )}
-                    {project.tags && project.tags.length > 0 && (
-                        <div className="flex items-start text-sm">
-                        <Tag className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                        <div>
-                            <h4 className="font-semibold">Teglar</h4>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                            {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
+                        )}
+                        {project.tags && project.tags.length > 0 && (
+                            <div className="flex items-start">
+                                <Tag className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                                <div>
+                                    <h4 className="font-semibold">Teglar</h4>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                    {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -636,3 +574,5 @@ export default function ProjectDetailsPage() {
     </div>
   );
 }
+
+    
