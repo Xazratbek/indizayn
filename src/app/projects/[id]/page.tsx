@@ -26,6 +26,13 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useModalContext } from '@/components/project-detail-modal';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -488,6 +495,54 @@ export default function ProjectDetailsPage() {
                                <MessageSquare className="h-6 w-6"/>
                                <span className="text-xs">{comments?.length || 0}</span>
                            </Button>
+                           <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button variant="ghost" size="lg" className="flex-col h-auto gap-1">
+                                       <Info className="h-6 w-6" />
+                                       <span className="text-xs">Ma'lumot</span>
+                                   </Button>
+                                </SheetTrigger>
+                                <SheetContent side="bottom">
+                                    <SheetHeader>
+                                        <SheetTitle>Loyiha haqida</SheetTitle>
+                                    </SheetHeader>
+                                    <div className="py-4 space-y-4">
+                                        {project.createdAt && (
+                                            <div className="flex items-start text-sm">
+                                                <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                                                <div>
+                                                    <h4 className="font-semibold">Chop etilgan</h4>
+                                                    <p className="text-muted-foreground">
+                                                    {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {project.tools && project.tools.length > 0 && (
+                                            <div className="flex items-start text-sm">
+                                            <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                                            <div>
+                                                <h4 className="font-semibold">Foydalanilgan vositalar</h4>
+                                                <div className="flex flex-wrap gap-1 mt-1">
+                                                {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
+                                                </div>
+                                            </div>
+                                            </div>
+                                        )}
+                                        {project.tags && project.tags.length > 0 && (
+                                            <div className="flex items-start text-sm">
+                                            <Tag className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                                            <div>
+                                                <h4 className="font-semibold">Teglar</h4>
+                                                <div className="flex flex-wrap gap-1 mt-1">
+                                                {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
+                                                </div>
+                                            </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </SheetContent>
+                            </Sheet>
                            <Button onClick={handleShare} variant="ghost" size="lg" className="flex-col h-auto gap-1">
                               <Share2 className="h-6 w-6" />
                                <span className="text-xs">Ulashish</span>
