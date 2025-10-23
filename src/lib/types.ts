@@ -52,12 +52,12 @@ export interface Message {
 export interface Notification {
     id: string;
     userId: string; // User who receives the notification
-    type: 'like' | 'follow' | 'message' | 'comment';
+    type: 'like' | 'follow' | 'message' | 'comment' | 'new_project';
     senderId: string; // User who triggered the notification
     senderName: string;
     senderPhotoURL?: string;
     isRead: boolean;
-    projectId?: string; // For 'like' and 'comment' on a project
+    projectId?: string; // For 'like', 'comment' and 'new_project' on a project
     projectName?: string;
     messageSnippet?: string; // For 'message' or 'comment'
     createdAt: Timestamp;

@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { UploadCloud, X, ArrowLeft } from "lucide-react";
 import { useFirestore } from "@/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,6 +23,7 @@ import LoadingPage from "@/app/loading";
 import { TagInput } from "@/components/tag-input";
 import { TagSelector } from "@/components/tag-selector";
 import { PREDEFINED_TAGS } from "@/lib/predefined-tags";
+import type { Designer } from "@/lib/types";
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: "Loyiha nomi kamida 3 belgidan iborat bo'lishi kerak." }),
@@ -105,6 +106,26 @@ export default function NewProjectPage() {
     return result.url;
   };
 
+  const notifyFollowers = async (designer: Designer, projectId: string, projectName: string) => {
+      if (!db || !designer.followers || designer.followers.length === 0) return;
+
+      const notificationsRef = collection(db, "notifications");
+      
+      for (const followerId of designer.followers) {
+          await addDoc(notificationsRef, {
+              userId: followerId,
+              type: 'new_project',
+              senderId: designer.id,
+              senderName: designer.name,
+              senderPhotoURL: designer.photoURL || '',
+              isRead: false,
+              projectId: projectId,
+              projectName: projectName,
+              createdAt: serverTimestamp(),
+          });
+      }
+  };
+
   const onSubmit = async (data: ProjectFormValues) => {
     if (!user) {
       toast({ variant: "destructive", title: "Xatolik", description: "Loyiha yuklash uchun tizimga kiring." });
@@ -118,15 +139,15 @@ export default function NewProjectPage() {
     setIsSubmitting(true);
 
     try {
+      if(!db) throw new Error("Database connection not found.");
+      
       const imageUrls: string[] = [];
       for (const file of imageFiles) {
         const url = await uploadImageWithApi(file);
         imageUrls.push(url);
       }
 
-      if(!db) throw new Error("Database connection not found.");
-
-      await addDoc(collection(db, "projects"), {
+      const newProjectData = {
         name: data.name,
         description: data.description,
         designerId: user.id,
@@ -138,7 +159,17 @@ export default function NewProjectPage() {
         viewCount: 0,
         likes: [],
         createdAt: serverTimestamp(),
-      });
+      };
+
+      const projectRef = await addDoc(collection(db, "projects"), newProjectData);
+      
+      // Fetch designer's data to get followers
+      const designerRef = doc(db, "users", user.id);
+      const designerSnap = await getDoc(designerRef);
+      if (designerSnap.exists()) {
+          const designerData = designerSnap.data() as Designer;
+          await notifyFollowers(designerData, projectRef.id, data.name);
+      }
       
       toast({
         variant: "success",

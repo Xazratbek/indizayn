@@ -63,12 +63,12 @@
       "description": "Represents a notification for a user.",
       "properties": {
         "userId": { "type": "string", "description": "UID of the user who receives the notification." },
-        "type": { "type": "string", "enum": ["like", "follow", "message", "comment"], "description": "The type of notification." },
+        "type": { "type": "string", "enum": ["like", "follow", "message", "comment", "new_project"], "description": "The type of notification." },
         "senderId": { "type": "string", "description": "UID of the user who triggered the notification." },
         "senderName": { "type": "string", "description": "Display name of the sender." },
         "senderPhotoURL": { "type": "string", "format": "uri", "description": "Profile picture URL of the sender." },
         "isRead": { "type": "boolean", "description": "Whether the notification has been read." },
-        "projectId": { "type": "string", "description": "Optional ID of the relevant project (for likes and comments)." },
+        "projectId": { "type": "string", "description": "Optional ID of the relevant project (for likes, comments and new projects)." },
         "projectName": { "type": "string", "description": "Optional name of the relevant project." },
         "messageSnippet": { "type": "string", "description": "A short snippet of the message or comment." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of notification creation." }

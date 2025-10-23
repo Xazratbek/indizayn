@@ -12,7 +12,7 @@ import {
   PopoverClose,
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, UserPlus, MessageSquare, CheckCheck, X } from 'lucide-react';
+import { Bell, Heart, UserPlus, MessageSquare, CheckCheck, X, FolderKanban } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -31,6 +31,8 @@ function NotificationIcon({ type }: { type: Notification['type'] }) {
             return <UserPlus className="h-4 w-4 text-blue-500" />;
         case 'message':
             return <MessageSquare className="h-4 w-4 text-green-500" />;
+        case 'new_project':
+            return <FolderKanban className="h-4 w-4 text-purple-500" />;
         default:
             return <Bell className="h-4 w-4" />;
     }
@@ -109,6 +111,7 @@ export default function NotificationsDropdown() {
     switch (notification.type) {
       case 'like':
       case 'comment':
+      case 'new_project':
         return `/projects/${notification.projectId}`;
       case 'follow':
         return `/designers/${notification.senderId}`;
@@ -145,6 +148,12 @@ export default function NotificationsDropdown() {
             return <>
                 <span className="font-semibold">{notification.senderName}</span>
                 {` loyihangizga izoh qoldirdi: `}
+                <span className="font-semibold italic">"{notification.projectName}"</span>
+            </>;
+        case 'new_project':
+             return <>
+                <span className="font-semibold">{notification.senderName}</span>
+                {` yangi loyiha yukladi: `}
                 <span className="font-semibold italic">"{notification.projectName}"</span>
             </>;
         default:
