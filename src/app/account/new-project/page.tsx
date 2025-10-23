@@ -24,6 +24,7 @@ import { TagInput } from "@/components/tag-input";
 import { TagSelector } from "@/components/tag-selector";
 import { PREDEFINED_TAGS } from "@/lib/predefined-tags";
 import type { Designer } from "@/lib/types";
+import { Progress } from "@/components/ui/progress";
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: "Loyiha nomi kamida 3 belgidan iborat bo'lishi kerak." }),
@@ -45,6 +46,12 @@ export default function NewProjectPage() {
 
   const [tags, setTags] = useState<string[]>([]);
   const [tools, setTools] = useState<string[]>([]);
+
+  // Progress state
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [submissionProgress, setSubmissionProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState<string>('');
+
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -137,15 +144,22 @@ export default function NewProjectPage() {
     }
 
     setIsSubmitting(true);
+    setUploadStatus('Rasmlar yuklanmoqda...');
 
     try {
       if(!db) throw new Error("Database connection not found.");
       
       const imageUrls: string[] = [];
-      for (const file of imageFiles) {
+      for (let i = 0; i < imageFiles.length; i++) {
+        const file = imageFiles[i];
         const url = await uploadImageWithApi(file);
         imageUrls.push(url);
+        // Update image upload progress
+        setUploadProgress(((i + 1) / imageFiles.length) * 100);
       }
+      
+      setUploadStatus('Ma\'lumotlar saqlanmoqda...');
+      setSubmissionProgress(50); // Simulate start of DB submission
 
       const newProjectData = {
         name: data.name,
@@ -162,6 +176,7 @@ export default function NewProjectPage() {
       };
 
       const projectRef = await addDoc(collection(db, "projects"), newProjectData);
+      setSubmissionProgress(75);
       
       // Fetch designer's data to get followers
       const designerRef = doc(db, "users", user.id);
@@ -170,6 +185,7 @@ export default function NewProjectPage() {
           // Pass the full designer object with ID to the notify function
           await notifyFollowers({ ...designerSnap.data(), id: designerSnap.id } as Designer, projectRef.id, data.name);
       }
+      setSubmissionProgress(100);
       
       toast({
         variant: "success",
@@ -188,7 +204,10 @@ export default function NewProjectPage() {
         title: "Xatolik!",
         description: error.message || "Loyihani yuklashda kutilmagan xatolik yuz berdi.",
       });
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Re-enable button on error
+      setUploadProgress(0);
+      setSubmissionProgress(0);
+      setUploadStatus('');
     }
   };
 
@@ -231,7 +250,7 @@ export default function NewProjectPage() {
                                          <FormItem>
                                              <FormLabel>Loyiha nomi</FormLabel>
                                              <FormControl>
-                                                 <Input placeholder="Masalan, 'Mobil ilova dizayni'" {...field} />
+                                                 <Input placeholder="Masalan, 'Mobil ilova dizayni'" {...field} disabled={isSubmitting} />
                                              </FormControl>
                                              <FormMessage />
                                          </FormItem>
@@ -244,7 +263,7 @@ export default function NewProjectPage() {
                                          <FormItem>
                                              <FormLabel>Loyiha tavsifi</FormLabel>
                                              <FormControl>
-                                                 <Textarea placeholder="Loyiha haqida batafsil ma'lumot bering..." className="min-h-[120px]" {...field} />
+                                                 <Textarea placeholder="Loyiha haqida batafsil ma'lumot bering..." className="min-h-[120px]" {...field} disabled={isSubmitting} />
                                              </FormControl>
                                              <FormMessage />
                                          </FormItem>
@@ -280,7 +299,8 @@ export default function NewProjectPage() {
                                                      variant="destructive"
                                                      size="icon"
                                                      className="absolute top-1 right-1 h-6 w-6"
-                                                     onClick={() => removeImage(index)}
+                                                     onClick={() => !isSubmitting && removeImage(index)}
+                                                     disabled={isSubmitting}
                                                  >
                                                      <X className="h-4 w-4" />
                                                  </Button>
@@ -290,7 +310,7 @@ export default function NewProjectPage() {
                                  </ScrollArea>
                                  <div
                                      className="aspect-video w-full border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors mt-2"
-                                     onClick={() => fileInputRef.current?.click()}
+                                     onClick={() => !isSubmitting && fileInputRef.current?.click()}
                                  >
                                      <div className="text-center text-muted-foreground">
                                          <UploadCloud className="mx-auto h-10 w-10 mb-2" />
@@ -304,17 +324,36 @@ export default function NewProjectPage() {
                                          accept="image/png, image/jpeg, image/gif"
                                          onChange={handleImageChange}
                                          multiple
+                                         disabled={isSubmitting}
                                      />
                                  </div>
                              </div>
                          </div>
+
+                         {isSubmitting && (
+                          <div className="space-y-4 pt-4">
+                              <p className="text-sm font-medium text-center text-muted-foreground">{uploadStatus}</p>
+                              {uploadProgress > 0 && (
+                                <div className="space-y-2">
+                                    <Label>Rasmlar yuklanishi</Label>
+                                    <Progress value={uploadProgress} />
+                                </div>
+                              )}
+                              {submissionProgress > 0 && (
+                                <div className="space-y-2">
+                                    <Label>Loyiha saqlanishi</Label>
+                                    <Progress value={submissionProgress} />
+                                </div>
+                              )}
+                          </div>
+                         )}
+
 
                          <div className="flex justify-end gap-2 pt-4">
                              <Button type="button" variant="secondary" disabled={isSubmitting} onClick={() => router.back()}>
                                  Bekor qilish
                              </Button>
                              <Button type="submit" disabled={isSubmitting}>
-                                 {isSubmitting && <LoadingPage />}
                                  Saqlash va Yuklash
                              </Button>
                          </div>
