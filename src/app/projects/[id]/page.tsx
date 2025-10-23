@@ -220,7 +220,7 @@ export default function ProjectDetailsPage() {
         } else {
             await updateDoc(projectRef, { likes: arrayUnion(user.id), likeCount: increment(1) });
             setIsLiked(true);
-            toast({ variant: "success", description: "Loyiha yoqtirilganlarga qo'shildi!"});
+            // toast({ variant: "success", description: "Loyiha yoqtirilganlarga qo'shildi!"}); // REMOVED as per user request
             if (project.designerId !== user.id) { 
               const notificationsRef = collection(db, "notifications");
               await addDoc(notificationsRef, {
@@ -431,7 +431,7 @@ export default function ProjectDetailsPage() {
         
         <div className="mt-8">
             {projectImages.map((url, index) => (
-                <div key={index} className="relative w-full overflow-hidden bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
+                <div key={index} className="relative w-full bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
                     <Image
                         src={url}
                         alt={`${project.name} - ${index + 1}`}
