@@ -10,9 +10,9 @@ import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimes
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus, Eye, Pencil, Trash2 } from 'lucide-react';
+import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Project, Designer, Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -293,22 +293,23 @@ export default function ProjectDetailsPage() {
   const isLoading = isProjectLoading || isDesignerLoading || areCommentsLoading;
 
   if (isLoading && !project) {
-    return <div className="h-screen w-full flex items-center justify-center"><LoadingPage /></div>;
+    return <div className="h-full w-full flex items-center justify-center bg-card rounded-lg"><LoadingPage /></div>;
   }
   
   if (error || !project) {
-    return <div className="flex h-screen items-center justify-center"><p>Loyiha topilmadi yoki yuklashda xatolik yuz berdi.</p></div>;
+    return <div className="flex h-full items-center justify-center bg-card rounded-lg"><p>Loyiha topilmadi yoki yuklashda xatolik yuz berdi.</p></div>;
   }
 
   if (!designer && !isDesignerLoading) {
-     return <div className="flex h-screen items-center justify-center"><p>Dizayner ma'lumotlari topilmadi.</p></div>;
+     return <div className="flex h-full items-center justify-center bg-card rounded-lg"><p>Dizayner ma'lumotlari topilmadi.</p></div>;
   }
   
   const projectImages = project.imageUrls && project.imageUrls.length > 0 ? project.imageUrls : [project.imageUrl];
 
   const content = (
-    <>
-      <div className="fixed top-1/2 -translate-y-1/2 right-4 z-50 flex flex-col items-center gap-4">
+    <div className="relative w-full">
+      
+      <div className="absolute top-1/2 -translate-y-1/2 left-full ml-8 hidden xl:flex flex-col items-center gap-4">
           {designer && (
                <div className="relative group">
                    <Link href={`/designers/${designer.id}`} className="block">
@@ -409,7 +410,7 @@ export default function ProjectDetailsPage() {
       </div>
       
       <div className="max-w-5xl mx-auto rounded-lg bg-card text-card-foreground my-8">
-        <div className="p-4 md:p-8">
+        <div className="px-4 md:px-8 pt-8">
              {designer && (
                 <div className="flex items-center gap-4">
                     <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 text-lg">
@@ -421,15 +422,14 @@ export default function ProjectDetailsPage() {
                              <span className="group-hover:underline">{designer.name}</span>
                         </div>
                     </Link>
-                    
                 </div>
              )}
             <h1 className="font-headline text-2xl md:text-3xl font-bold mt-4">{project.name}</h1>
         </div>
         
-        <div className="space-y-4 md:space-y-8">
+        <div className="space-y-4 md:space-y-8 mt-8">
             {projectImages.map((url, index) => (
-                <div key={index} className="relative w-full overflow-hidden bg-secondary cursor-pointer px-4 md:px-8" onClick={() => openLightbox(index)}>
+                <div key={index} className="relative w-full overflow-hidden bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
                     <Image
                         src={url}
                         alt={`${project.name} - ${index + 1}`}
@@ -443,7 +443,7 @@ export default function ProjectDetailsPage() {
             ))}
         </div>
 
-        <div className="p-4 md:p-8">
+        <div className="px-4 md:px-8">
           <div className="max-w-3xl mx-auto w-full pt-16 pb-24">
               <h2 className="font-headline text-2xl font-bold mb-6">
                   Izohlar ({comments?.length || 0})
@@ -515,13 +515,13 @@ export default function ProjectDetailsPage() {
           onOpenChange={setLightboxOpen} 
         />
       )}
-    </>
+    </div>
   );
 
   // If page is not in a modal, wrap with a standard layout
   if (!modalContext?.projectId) {
     return (
-      <div className="relative">
+      <div className="relative overflow-y-auto h-screen">
         {content}
       </div>
     );
