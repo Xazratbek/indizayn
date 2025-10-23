@@ -305,7 +305,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <>
-      <div className="bg-secondary/30">
+      <div className="bg-background">
         { !isModal && (
               <div className="container mx-auto p-4">
                   <Button variant="ghost" size="icon" onClick={() => router.back()} className="mb-4">
@@ -316,8 +316,10 @@ export default function ProjectDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-12 py-8 px-4 md:px-8">
             {/* Left Column - Scrollable Content */}
             <div className="space-y-6">
+                <h1 className="font-headline text-3xl md:text-4xl font-bold">{project.name}</h1>
+                
                  {projectImages.map((url, index) => (
-                    <div key={index} className="relative w-full overflow-hidden rounded-lg bg-background cursor-pointer" onClick={() => openLightbox(index)}>
+                    <div key={index} className="relative w-full overflow-hidden rounded-lg bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
                         <Image
                             src={url}
                             alt={`${project.name} - ${index + 1}`}
@@ -331,39 +333,37 @@ export default function ProjectDetailsPage() {
                 ))}
 
                  {/* ----- Comments Section ----- */}
-                 <Card className="pt-6">
-                    <CardHeader>
-                        <h2 className="font-headline text-2xl font-bold flex items-center gap-2">
-                            <MessageSquare className="w-6 h-6" />
-                            Izohlar ({comments?.length || 0})
-                        </h2>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
+                <div className="pt-10">
+                    <h2 className="font-headline text-2xl font-bold mb-6">
+                        Izohlar ({comments?.length || 0})
+                    </h2>
+                    <div className="space-y-8">
                         {user && (
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-4">
                                 <Avatar className="h-10 w-10">
                                     <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
                                     <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <div className="flex-1 space-y-2">
+                                <div className="flex-1 relative">
                                     <Textarea 
                                         placeholder="Izohingizni yozing..."
                                         value={newComment}
                                         onChange={(e) => setNewComment(e.target.value)}
                                         disabled={isSubmittingComment}
+                                        className="bg-secondary min-h-[100px] pr-28"
                                     />
-                                    <div className="flex justify-end">
-                                        <Button onClick={handleCommentSubmit} disabled={isSubmittingComment || !newComment.trim()}>
-                                            {isSubmittingComment ? <LoadingPage /> : <Send className="mr-2 h-4 w-4"/>}
-                                            Yuborish
-                                        </Button>
-                                    </div>
+                                    <Button 
+                                        onClick={handleCommentSubmit} 
+                                        disabled={isSubmittingComment || !newComment.trim()}
+                                        className="absolute bottom-3 right-3"
+                                        size="sm"
+                                    >
+                                        {isSubmittingComment ? <LoadingPage /> : 'Yuborish'}
+                                    </Button>
                                 </div>
                             </div>
                         )}
                     
-                        <Separator />
-
                         <div className="space-y-6">
                             {areCommentsLoading ? (
                                 <div className="space-y-6">
@@ -372,16 +372,17 @@ export default function ProjectDetailsPage() {
                                 </div>
                             ) : comments && comments.length > 0 ? (
                             comments.map(comment => (
-                                <div key={comment.id} className="flex items-start gap-3">
+                                <div key={comment.id} className="flex items-start gap-4">
                                     <Avatar className="h-10 w-10">
                                         <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
                                         <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 text-sm">
                                             <p className="font-semibold">{comment.userName}</p>
+                                            <p className="text-muted-foreground">· {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}</p>
                                         </div>
-                                        <p className="text-muted-foreground">{comment.content}</p>
+                                        <p className="text-foreground/90 mt-1">{comment.content}</p>
                                     </div>
                                 </div>
                             ))
@@ -389,8 +390,8 @@ export default function ProjectDetailsPage() {
                                 <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
                             )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
             {/* Right Column - Sticky Sidebar */}
@@ -399,41 +400,37 @@ export default function ProjectDetailsPage() {
                     {designer && (
                         <Card>
                              <CardContent className="p-4">
-                                <div className="flex items-center gap-4">
-                                    <Link href={`/designers/${designer.id}`} className="group">
-                                        <Avatar className="h-12 w-12">
-                                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                                            <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                    </Link>
+                                <Link href={`/designers/${designer.id}`} className="group flex items-center gap-4">
+                                    <Avatar className="h-12 w-12">
+                                        {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                                        <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
                                     <div className="flex-1">
-                                         <Link href={`/designers/${designer.id}`} className="group">
-                                            <p className="font-bold group-hover:underline">{designer.name}</p>
-                                         </Link>
+                                        <p className="font-bold group-hover:underline">{designer.name}</p>
                                         <p className="text-sm text-muted-foreground">{designer.specialization}</p>
                                     </div>
+                                </Link>
                                     {user && user.id !== designer.id && (
-                                        <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} size="sm" disabled={isFollowLoading}>
-                                            {isFollowLoading ? <LoadingPage /> : <UserPlus className="mr-2 h-4 w-4" />}
-                                            {isFollowing ? "Obuna" : "Obuna"}
+                                        <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading} className="w-full mt-4">
+                                            {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                                            {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
                                         </Button>
                                     )}
-                                </div>
                             </CardContent>
                         </Card>
                     )}
 
                     <Card>
-                        <CardContent className="p-4 flex flex-col gap-2">
-                             <Button onClick={handleLikeToggle} variant={isLiked ? "default" : "secondary"} disabled={!user || isLikeLoading} size="icon" className="w-14 h-14 rounded-full justify-center text-base">
-                                {isLikeLoading ? <LoadingPage /> : <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />}
+                        <CardContent className="p-2 flex justify-around">
+                             <Button onClick={handleLikeToggle} variant="secondary" size="icon" className="w-14 h-14 rounded-full" disabled={!user || isLikeLoading}>
+                                {isLikeLoading ? <LoadingPage /> : <Heart className={`h-6 w-6 ${isLiked ? 'fill-current text-red-500' : ''}`} />}
                                 <span className="sr-only">Yoqdi ({project.likeCount})</span>
                             </Button>
-                            <Button onClick={handleShare} variant="secondary" size="icon" className="w-14 h-14 rounded-full justify-center text-base">
+                            <Button onClick={handleShare} variant="secondary" size="icon" className="w-14 h-14 rounded-full">
                                 <Share2 className="h-6 w-6" />
                                 <span className="sr-only">Ulashish</span>
                             </Button>
-                            <Button onClick={handleDownload} variant="secondary" size="icon" className="w-14 h-14 rounded-full justify-center text-base">
+                            <Button onClick={handleDownload} variant="secondary" size="icon" className="w-14 h-14 rounded-full">
                                 <Download className="h-6 w-6" />
                                 <span className="sr-only">Yuklab olish</span>
                             </Button>
@@ -520,4 +517,3 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
-
