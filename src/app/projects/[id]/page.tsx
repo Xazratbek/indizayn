@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus, Eye } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Project, Designer, Comment } from '@/lib/types';
@@ -28,6 +28,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { useModalContext } from '@/components/project-detail-modal';
 
 
 function CommentSkeleton() {
@@ -48,8 +49,9 @@ function CommentSkeleton() {
 export default function ProjectDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const modalContext = useModalContext();
 
-  const id = typeof params.id === 'string' ? params.id : '';
+  const id = modalContext.projectId || (typeof params.id === 'string' ? params.id : '');
 
   const db = useFirestore();
   const { data: session } = useSession();
@@ -107,7 +109,7 @@ export default function ProjectDetailsPage() {
   }, [user, project, designer]);
 
   const handleShare = () => {
-    const url = window.location.href;
+    const url = `${window.location.origin}/projects/${id}`;
     navigator.clipboard.writeText(url).then(() => {
         toast({
             title: "Havola nusxalandi!",
@@ -308,9 +310,7 @@ export default function ProjectDetailsPage() {
   return (
     <>
       <div className="relative">
-        
-        {/* Right Fixed Vertical Panel */}
-        <div className="fixed top-1/2 -translate-y-1/2 right-8 z-50 flex flex-col items-center gap-4">
+        <div className="fixed top-1/2 -translate-y-1/2 right-4 z-50 flex flex-col items-center gap-4">
             {designer && (
                  <div className="relative group">
                      <Link href={`/designers/${designer.id}`} className="block">
@@ -416,21 +416,24 @@ export default function ProjectDetailsPage() {
             </div>
         </div>
         
-        {/* Main scrollable content */}
         <div className="max-w-5xl mx-auto py-12 px-4 md:px-8 bg-card shadow-2xl my-8 rounded-lg">
             <div className="space-y-6">
-                <div className="text-center pt-10 pb-8">
-                    <h1 className="font-headline text-3xl md:text-5xl font-bold">{project.name}</h1>
-                    {designer && (
-                        <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 mt-4 text-lg">
-                            <Avatar className="h-6 w-6 group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background transition-all">
+                 {designer && (
+                    <div className="flex items-center gap-4">
+                        <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 text-lg">
+                            <Avatar className="h-12 w-12 group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background transition-all">
                                 {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                                <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
+                                <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            <span className="group-hover:underline">{designer.name}</span>
                         </Link>
-                    )}
-                </div>
+                        <div>
+                             <h1 className="font-headline text-2xl md:text-3xl font-bold">{project.name}</h1>
+                             <Link href={`/designers/${designer.id}`} className="hover:underline">
+                                <span >{designer.name}</span>
+                             </Link>
+                        </div>
+                    </div>
+                 )}
                 
                 {projectImages.map((url, index) => (
                     <div key={index} className="relative w-full overflow-hidden rounded-lg bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
@@ -446,7 +449,6 @@ export default function ProjectDetailsPage() {
                     </div>
                 ))}
 
-                {/* ----- Comments Section ----- */}
                 <div className="max-w-3xl mx-auto w-full pt-16 pb-24">
                     <h2 className="font-headline text-2xl font-bold mb-6">
                         Izohlar ({comments?.length || 0})
