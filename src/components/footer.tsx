@@ -28,11 +28,6 @@ export function Footer() {
                 <Link href="/designers" className="text-muted-foreground hover:text-foreground">Dizaynerlar</Link>
                 <Link href="/about" className="text-muted-foreground hover:text-foreground">Haqida</Link>
             </nav>
-            {!session && (
-              <Button asChild size="sm" variant="outline">
-                  <Link href="/auth">Kirish</Link>
-              </Button>
-            )}
              <p className="text-sm text-muted-foreground md:hidden">
               © {new Date().getFullYear()} inDizayn. Barcha huquqlar himoyalangan.
             </p>
