@@ -30,7 +30,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
             <Link href="/" className="flex items-center gap-2">
-              <Logo className="w-6 h-6 text-primary" />
+              <Logo />
               <span className="font-semibold font-headline text-foreground">inDizayn</span>
             </Link>
             <p className="text-sm hidden md:block text-muted-foreground">

@@ -76,7 +76,7 @@ export function Header() {
       <div className="flex h-14 items-center px-4 md:px-6 lg:px-8">
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Logo className="h-6 w-6 text-primary" />
+            <Logo />
             <span className="hidden font-bold sm:inline-block font-headline sm:text-xl">
               inDizayn
             </span>
