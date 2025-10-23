@@ -313,7 +313,7 @@ export default function ProjectDetailsPage() {
                   </Button>
               </div>
           )}
-        <div className="container mx-auto grid grid-cols-1 md:grid-cols-[1fr_320px] gap-12 py-8 px-4">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-12 py-8 px-4 md:px-8">
             {/* Left Column - Scrollable Content */}
             <div className="space-y-6">
                  {projectImages.map((url, index) => (
@@ -425,15 +425,17 @@ export default function ProjectDetailsPage() {
 
                     <Card>
                         <CardContent className="p-4 flex flex-col gap-2">
-                             <Button onClick={handleLikeToggle} variant={isLiked ? "default" : "secondary"} disabled={!user || isLikeLoading} size="lg" className="w-full justify-start text-base">
-                                {isLikeLoading ? <LoadingPage /> : <Heart className={`mr-2 h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />}
-                                <span>Yoqdi ({project.likeCount})</span>
+                             <Button onClick={handleLikeToggle} variant={isLiked ? "default" : "secondary"} disabled={!user || isLikeLoading} size="icon" className="w-14 h-14 rounded-full justify-center text-base">
+                                {isLikeLoading ? <LoadingPage /> : <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />}
+                                <span className="sr-only">Yoqdi ({project.likeCount})</span>
                             </Button>
-                            <Button onClick={handleShare} variant="secondary" size="lg" className="w-full justify-start text-base">
-                                <Share2 className="mr-2 h-5 w-5" /> Ulashish
+                            <Button onClick={handleShare} variant="secondary" size="icon" className="w-14 h-14 rounded-full justify-center text-base">
+                                <Share2 className="h-6 w-6" />
+                                <span className="sr-only">Ulashish</span>
                             </Button>
-                            <Button onClick={handleDownload} variant="secondary" size="lg" className="w-full justify-start text-base">
-                                <Download className="mr-2 h-5 w-5" /> Yuklab olish
+                            <Button onClick={handleDownload} variant="secondary" size="icon" className="w-14 h-14 rounded-full justify-center text-base">
+                                <Download className="h-6 w-6" />
+                                <span className="sr-only">Yuklab olish</span>
                             </Button>
                         </CardContent>
                     </Card>
@@ -519,4 +521,3 @@ export default function ProjectDetailsPage() {
   );
 }
 
-    
