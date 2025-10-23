@@ -5,9 +5,15 @@ import Link from "next/link";
 import { Logo } from "./icons";
 import { Button } from "./ui/button";
 import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
 
 export function Footer() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <footer className="w-full border-t bg-background">

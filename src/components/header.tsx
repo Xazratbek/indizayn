@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -20,6 +21,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { Skeleton } from "./ui/skeleton"
 import NotificationsDropdown from "./notifications-dropdown"
 import { cn } from "@/lib/utils"
+import { useState, useEffect } from "react"
 
 export function Header() {
   const isMobile = useIsMobile();
@@ -28,6 +30,11 @@ export function Header() {
   const isUserLoading = status === 'loading';
   const router = useRouter();
   const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
@@ -45,8 +52,7 @@ export function Header() {
     { href: "/about", label: "Haqida" },
   ];
 
-  const navContent = isMobile === undefined ? null : (
-    !isMobile ? (
+  const navContent = !isMobile ? (
       <nav className="flex items-center gap-6 text-base">
         {navItems.map((item) => (
            <Link
@@ -63,8 +69,7 @@ export function Header() {
             </Link>
         ))}
       </nav>
-    ) : null
-  );
+    ) : null;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -76,7 +81,7 @@ export function Header() {
               inDizayn
             </span>
           </Link>
-          {navContent}
+          {isClient && navContent}
         </div>
         
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
@@ -84,11 +89,11 @@ export function Header() {
             {/* Search can be implemented later */}
           </div>
           <nav className="flex items-center gap-2">
-             {isUserLoading ? (
+             {isUserLoading || !isClient ? (
                <Skeleton className="h-8 w-8 rounded-full" />
              ) : user ? (
                <>
-                {isMobile === false && (
+                {!isMobile && (
                   <Button asChild size="sm">
                     <Link href="/account/new-project"><PlusSquare className="mr-2 h-4 w-4"/> Loyiha Yuklash</Link>
                   </Button>
@@ -126,7 +131,7 @@ export function Header() {
                </>
               ) : (
                 <>
-                  {isMobile === false && (
+                  {!isMobile && (
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" onClick={handleSignIn}>
                             Kirish
