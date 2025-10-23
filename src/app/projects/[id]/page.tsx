@@ -310,7 +310,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <>
-      <div className="bg-background relative">
+      <div className="relative">
         { !isModal && (
             <div className="container mx-auto p-4 absolute top-0 left-0 z-10">
                 <Button variant="ghost" size="icon" onClick={() => router.back()} className="mb-4 bg-background/50 hover:bg-background/80">
@@ -320,7 +320,7 @@ export default function ProjectDetailsPage() {
         )}
         
         {/* Right Fixed Vertical Panel */}
-        <div className="fixed top-1/2 -translate-y-1/2 right-4 md:right-8 z-40 flex flex-col items-center gap-4">
+        <div className="fixed top-1/2 -translate-y-1/2 right-4 md:right-8 z-50 flex flex-col items-center gap-4">
             {designer && (
                  <div className="relative group">
                      <Link href={`/designers/${designer.id}`} className="block">
@@ -431,7 +431,7 @@ export default function ProjectDetailsPage() {
                 <h1 className="font-headline text-3xl md:text-5xl font-bold">{project.name}</h1>
                  {designer && (
                     <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 mt-4 text-lg">
-                        <Avatar className="h-6 w-6">
+                        <Avatar className="h-6 w-6 group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background transition-all">
                             {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
                             <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
                         </Avatar>
@@ -505,6 +505,7 @@ export default function ProjectDetailsPage() {
                                         <p className="text-muted-foreground">· {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}</p>
                                     </div>
                                     <p className="text-foreground/90 mt-1">{comment.content}</p>
+
                                 </div>
                             </div>
                         ))
@@ -528,3 +529,5 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
+
+    
