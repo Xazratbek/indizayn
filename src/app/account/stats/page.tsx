@@ -6,7 +6,7 @@ import { collection, query, where } from 'firebase/firestore';
 import type { Project, Designer } from '@/lib/types';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Eye, Heart, Users, BarChart3, PieChart, ArrowLeft } from 'lucide-react';
+import { Eye, ThumbsUp, Users, BarChart3, PieChart, ArrowLeft } from 'lucide-react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { doc } from 'firebase/firestore';
 import { useSession } from 'next-auth/react';
@@ -97,7 +97,7 @@ export default function MyStatsPage() {
             </div>
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-                <StatCard title="Jami Yoqtirishlar" value={totalLikes} icon={Heart} />
+                <StatCard title="Jami Yoqtirishlar" value={totalLikes} icon={ThumbsUp} />
                 <StatCard title="Jami Ko'rishlar" value={totalViews} icon={Eye} />
                 <StatCard title="Obunachilar" value={subscriberCount} icon={Users} />
             </div>
@@ -141,5 +141,3 @@ export default function MyStatsPage() {
         </div>
     )
 }
-
-    

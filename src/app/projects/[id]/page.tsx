@@ -1,7 +1,7 @@
 
 "use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -11,9 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, Heart, Calendar, Wrench, ArrowLeft, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import { format } from 'date-fns';
+import { Eye, ThumbsUp, Calendar, Wrench, ArrowLeft, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Project, Designer, Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,11 @@ import { useModalContext } from '@/components/project-detail-modal';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 
 function CommentSkeleton() {
@@ -305,163 +310,69 @@ export default function ProjectDetailsPage() {
 
   return (
     <>
-      <div className="bg-background">
+      <div className="bg-background relative">
         { !isModal && (
-              <div className="container mx-auto p-4">
-                  <Button variant="ghost" size="icon" onClick={() => router.back()} className="mb-4">
-                      <ArrowLeft className="h-5 w-5" />
-                  </Button>
-              </div>
-          )}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-12 py-8 px-4 md:px-8">
-            {/* Left Column - Scrollable Content */}
-            <div className="space-y-6">
-                <h1 className="font-headline text-3xl md:text-4xl font-bold">{project.name}</h1>
-                
-                 {projectImages.map((url, index) => (
-                    <div key={index} className="relative w-full overflow-hidden rounded-lg bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
-                        <Image
-                            src={url}
-                            alt={`${project.name} - ${index + 1}`}
-                            width={1200}
-                            height={800}
-                            className="w-full h-auto object-contain"
-                            data-ai-hint="project image"
-                            priority={index < 2}
-                        />
-                    </div>
-                ))}
-
-                 {/* ----- Comments Section ----- */}
-                <div className="pt-10">
-                    <h2 className="font-headline text-2xl font-bold mb-6">
-                        Izohlar ({comments?.length || 0})
-                    </h2>
-                    <div className="space-y-8">
-                        {user && (
-                            <div className="flex items-start gap-4">
-                                <Avatar className="h-10 w-10">
-                                    <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
-                                    <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 relative">
-                                    <Textarea 
-                                        placeholder="Izohingizni yozing..."
-                                        value={newComment}
-                                        onChange={(e) => setNewComment(e.target.value)}
-                                        disabled={isSubmittingComment}
-                                        className="bg-secondary min-h-[100px] pr-28"
-                                    />
-                                    <Button 
-                                        onClick={handleCommentSubmit} 
-                                        disabled={isSubmittingComment || !newComment.trim()}
-                                        className="absolute bottom-3 right-3"
-                                        size="sm"
-                                    >
-                                        {isSubmittingComment ? <LoadingPage /> : 'Yuborish'}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    
-                        <div className="space-y-6">
-                            {areCommentsLoading ? (
-                                <div className="space-y-6">
-                                    <CommentSkeleton />
-                                    <CommentSkeleton />
-                                </div>
-                            ) : comments && comments.length > 0 ? (
-                            comments.map(comment => (
-                                <div key={comment.id} className="flex items-start gap-4">
-                                    <Avatar className="h-10 w-10">
-                                        <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
-                                        <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <p className="font-semibold">{comment.userName}</p>
-                                            <p className="text-muted-foreground">· {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}</p>
-                                        </div>
-                                        <p className="text-foreground/90 mt-1">{comment.content}</p>
-                                    </div>
-                                </div>
-                            ))
-                            ) : (
-                                <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
+            <div className="container mx-auto p-4 absolute top-0 left-0 z-10">
+                <Button variant="ghost" size="icon" onClick={() => router.back()} className="mb-4 bg-background/50 hover:bg-background/80">
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
             </div>
-
-            {/* Right Column - Sticky Sidebar */}
-            <div className="relative">
-                <div className="sticky top-20 space-y-6">
-                    {designer && (
-                        <Card>
-                             <CardContent className="p-4">
-                                <Link href={`/designers/${designer.id}`} className="group flex items-center gap-4">
-                                    <Avatar className="h-12 w-12">
-                                        {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                                        <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1">
-                                        <p className="font-bold group-hover:underline">{designer.name}</p>
-                                        <p className="text-sm text-muted-foreground">{designer.specialization}</p>
-                                    </div>
-                                </Link>
-                                    {user && user.id !== designer.id && (
-                                        <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading} className="w-full mt-4">
-                                            {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                                            {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
-                                        </Button>
-                                    )}
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    <Card>
-                        <CardContent className="p-2 flex justify-around">
-                             <Button onClick={handleLikeToggle} variant="secondary" size="icon" className="w-14 h-14 rounded-full" disabled={!user || isLikeLoading}>
-                                {isLikeLoading ? <LoadingPage /> : <Heart className={`h-6 w-6 ${isLiked ? 'fill-current text-red-500' : ''}`} />}
-                                <span className="sr-only">Yoqdi ({project.likeCount})</span>
-                            </Button>
-                            <Button onClick={handleShare} variant="secondary" size="icon" className="w-14 h-14 rounded-full">
-                                <Share2 className="h-6 w-6" />
-                                <span className="sr-only">Ulashish</span>
-                            </Button>
-                            <Button onClick={handleDownload} variant="secondary" size="icon" className="w-14 h-14 rounded-full">
-                                <Download className="h-6 w-6" />
-                                <span className="sr-only">Yuklab olish</span>
-                            </Button>
-                        </CardContent>
-                    </Card>
-
-                     <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Loyiha haqida</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 text-sm">
-                            <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
-                                <p>{project.description}</p>
+        )}
+        
+        {/* Right Fixed Panel */}
+        <div className="fixed top-1/2 -translate-y-1/2 right-4 md:right-8 z-40 flex flex-col items-center gap-4">
+            {designer && (
+                 <div className="relative group">
+                     <Link href={`/designers/${designer.id}`} className="block">
+                        <Avatar className="h-16 w-16 border-2 border-background shadow-lg">
+                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                            <AvatarFallback className="text-2xl">{designer.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                     </Link>
+                     {user && user.id !== designer.id && (
+                        <Button 
+                            size="icon" 
+                            className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full border-2 border-background"
+                            variant={isFollowing ? "secondary" : "default"}
+                            disabled={isFollowLoading}
+                            onClick={handleFollowToggle}
+                        >
+                            {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        </Button>
+                     )}
+                 </div>
+            )}
+            <Separator className="w-10 h-[1px] my-2" />
+            
+            <HoverCard openDelay={200} closeDelay={100}>
+                <HoverCardTrigger asChild>
+                    <Button variant="secondary" size="icon" className="rounded-full h-12 w-12 bg-secondary/80 backdrop-blur-sm">
+                        <Info className="h-6 w-6" />
+                    </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80" side="left" align="center">
+                    <div className="space-y-4">
+                        <h3 className="font-bold text-lg">{project.name}</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                            {project.description}
+                        </p>
+                        <Separator />
+                        <div className="flex justify-around text-sm text-muted-foreground">
+                             <div className="flex items-center gap-1.5">
+                                <ThumbsUp className="w-4 h-4" />
+                                <span>{project.likeCount || 0}</span>
                             </div>
-                            <Separator />
-                            <div className="flex justify-around text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1.5">
-                                    <Heart className="w-4 h-4" />
-                                    <span>{project.likeCount || 0}</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <Eye className="w-4 h-4" />
-                                    <span>{project.viewCount || 0}</span>
-                                </div>
-                                 <div className="flex items-center gap-1.5">
-                                    <MessageSquare className="w-4 h-4" />
-                                    <span>{comments?.length || 0}</span>
-                                </div>
+                            <div className="flex items-center gap-1.5">
+                                <Eye className="w-4 h-4" />
+                                <span>{project.viewCount || 0}</span>
                             </div>
-                            {project.createdAt && (
-                                <div className="flex items-start">
+                                <div className="flex items-center gap-1.5">
+                                <MessageSquare className="w-4 h-4" />
+                                <span>{comments?.length || 0}</span>
+                            </div>
+                        </div>
+                        {project.createdAt && (
+                            <div className="flex items-start text-sm">
                                 <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
                                 <div>
                                     <h4 className="font-semibold">Chop etilgan</h4>
@@ -469,38 +380,139 @@ export default function ProjectDetailsPage() {
                                     {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
                                     </p>
                                 </div>
+                            </div>
+                        )}
+                        {project.tools && project.tools.length > 0 && (
+                            <>
+                            <Separator/>
+                            <div className="flex items-start text-sm">
+                            <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                            <div>
+                                <h4 className="font-semibold">Foydalanilgan vositalar</h4>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
                                 </div>
-                            )}
-                            {project.tools && project.tools.length > 0 && (
-                                <>
-                                <Separator/>
-                                <div className="flex items-start">
-                                <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                                <div>
-                                    <h4 className="font-semibold">Foydalanilgan vositalar</h4>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                    {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
+                            </div>
+                            </div>
+                            </>
+                        )}
+                        {project.tags && project.tags.length > 0 && (
+                            <>
+                            <Separator/>
+                            <div className="flex items-start text-sm">
+                            <Tag className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                            <div>
+                                <h4 className="font-semibold">Teglar</h4>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
+                                </div>
+                            </div>
+                            </div>
+                            </>
+                        )}
+                    </div>
+                </HoverCardContent>
+            </HoverCard>
+
+            <div className="p-2 bg-secondary/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
+                <Button onClick={handleLikeToggle} variant="ghost" size="icon" className="h-12 w-12 rounded-full" disabled={!user || isLikeLoading}>
+                    {isLikeLoading ? <LoadingPage /> : <ThumbsUp className={`h-6 w-6 ${isLiked ? 'fill-current text-blue-500' : ''}`} />}
+                </Button>
+                <Button onClick={handleShare} variant="ghost" size="icon" className="h-12 w-12 rounded-full">
+                    <Share2 className="h-6 w-6" />
+                </Button>
+                <Button onClick={handleDownload} variant="ghost" size="icon" className="h-12 w-12 rounded-full">
+                    <Download className="h-6 w-6" />
+                </Button>
+            </div>
+        </div>
+
+        <div className="space-y-6 md:px-8 lg:px-16">
+             <div className="text-center pt-10 pb-8">
+                <h1 className="font-headline text-3xl md:text-5xl font-bold">{project.name}</h1>
+                 {designer && (
+                    <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 mt-4 text-lg hover:underline">
+                        <Avatar className="h-6 w-6">
+                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                            <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span>{designer.name}</span>
+                    </Link>
+                 )}
+            </div>
+            
+             {projectImages.map((url, index) => (
+                <div key={index} className="relative w-full overflow-hidden rounded-lg bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
+                    <Image
+                        src={url}
+                        alt={`${project.name} - ${index + 1}`}
+                        width={1600}
+                        height={1200}
+                        className="w-full h-auto object-contain"
+                        data-ai-hint="project image"
+                        priority={index < 2}
+                    />
+                </div>
+            ))}
+
+            {/* ----- Comments Section ----- */}
+            <div className="max-w-3xl mx-auto w-full pt-16 pb-24">
+                <h2 className="font-headline text-2xl font-bold mb-6">
+                    Izohlar ({comments?.length || 0})
+                </h2>
+                <div className="space-y-8">
+                    {user && (
+                        <div className="flex items-start gap-4">
+                            <Avatar className="h-10 w-10">
+                                <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
+                                <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 relative">
+                                <Textarea 
+                                    placeholder="Izohingizni yozing..."
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    disabled={isSubmittingComment}
+                                    className="bg-secondary min-h-[100px] pr-28"
+                                />
+                                <Button 
+                                    onClick={handleCommentSubmit} 
+                                    disabled={isSubmittingComment || !newComment.trim()}
+                                    className="absolute bottom-3 right-3"
+                                    size="sm"
+                                >
+                                    {isSubmittingComment ? <LoadingPage /> : 'Yuborish'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                
+                    <div className="space-y-6">
+                        {areCommentsLoading ? (
+                            <div className="space-y-6">
+                                <CommentSkeleton />
+                                <CommentSkeleton />
+                            </div>
+                        ) : comments && comments.length > 0 ? (
+                        comments.map(comment => (
+                            <div key={comment.id} className="flex items-start gap-4">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
+                                    <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <p className="font-semibold">{comment.userName}</p>
+                                        <p className="text-muted-foreground">· {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}</p>
                                     </div>
+                                    <p className="text-foreground/90 mt-1">{comment.content}</p>
                                 </div>
-                                </div>
-                                </>
-                            )}
-                            {project.tags && project.tags.length > 0 && (
-                                <>
-                                <Separator/>
-                                <div className="flex items-start">
-                                <Tag className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                                <div>
-                                    <h4 className="font-semibold">Teglar</h4>
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                    {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
-                                    </div>
-                                </div>
-                                </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
+                            </div>
+                        ))
+                        ) : (
+                            <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

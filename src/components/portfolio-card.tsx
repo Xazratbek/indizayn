@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Heart, Eye, Pencil, Trash2, User, Users } from 'lucide-react';
+import { ThumbsUp, Eye, Pencil, Trash2, User, Users } from 'lucide-react';
 import type { Project, Designer } from '@/lib/types';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
@@ -235,7 +235,7 @@ export default function PortfolioCard({ project, className, showAdminControls = 
             </HoverCard>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                    <Heart className="w-4 h-4" />
+                    <ThumbsUp className="w-4 h-4" />
                     <AnimatePresence mode="popLayout">
                         <motion.span
                         key={project.likeCount}

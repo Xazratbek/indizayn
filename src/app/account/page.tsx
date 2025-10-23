@@ -8,7 +8,7 @@ import { doc, collection, query, where } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { LayoutDashboard, BarChart2, PlusSquare, Pencil, LogIn, Loader2, Users, FolderKanban, Heart, Eye } from 'lucide-react';
+import { LayoutDashboard, BarChart2, PlusSquare, Pencil, LogIn, Loader2, Users, FolderKanban, ThumbsUp, Eye } from 'lucide-react';
 import type { Designer, Project } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession, signIn } from 'next-auth/react';
@@ -167,7 +167,7 @@ export default function AccountDashboardPage() {
             <Separator orientation="vertical" className="h-24 my-auto" />
             <StatCard label="Loyihalar" value={designerProjects?.length || 0} icon={FolderKanban} />
              <Separator orientation="vertical" className="h-24 my-auto" />
-            <StatCard label="Jami Likelar" value={totalLikes} icon={Heart} />
+            <StatCard label="Jami Likelar" value={totalLikes} icon={ThumbsUp} />
              <Separator orientation="vertical" className="h-24 my-auto" />
             <StatCard label="Jami Ko'rishlar" value={totalViews} icon={Eye} />
         </div>
@@ -176,5 +176,3 @@ export default function AccountDashboardPage() {
     </div>
   );
 }
-
-    

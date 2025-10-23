@@ -8,7 +8,7 @@ import { doc, collection, query, where, updateDoc, increment, arrayUnion, arrayR
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPlus, Mail, UserCheck, Palmtree, Eye, Heart, Users, FolderKanban } from 'lucide-react';
+import { UserPlus, Mail, UserCheck, Palmtree, Eye, ThumbsUp, Users, FolderKanban } from 'lucide-react';
 import PortfolioCard from '@/components/portfolio-card';
 import { useState, useEffect } from 'react';
 import type { Designer, Project } from '@/lib/types';
@@ -186,7 +186,7 @@ export default function DesignerProfilePage() {
             <Separator orientation="vertical" className="h-24 my-auto" />
             <StatCard label="Loyihalar" value={designerProjects?.length || 0} icon={FolderKanban} />
              <Separator orientation="vertical" className="h-24 my-auto" />
-            <StatCard label="Jami Likelar" value={totalLikes} icon={Heart} />
+            <StatCard label="Jami Likelar" value={totalLikes} icon={ThumbsUp} />
              <Separator orientation="vertical" className="h-24 my-auto" />
             <StatCard label="Jami Ko'rishlar" value={totalViews} icon={Eye} />
         </div>
@@ -258,5 +258,3 @@ export default function DesignerProfilePage() {
     </>
   );
 }
-
-    
