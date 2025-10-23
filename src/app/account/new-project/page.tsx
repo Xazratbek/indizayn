@@ -167,8 +167,8 @@ export default function NewProjectPage() {
       const designerRef = doc(db, "users", user.id);
       const designerSnap = await getDoc(designerRef);
       if (designerSnap.exists()) {
-          const designerData = designerSnap.data() as Designer;
-          await notifyFollowers(designerData, projectRef.id, data.name);
+          // Pass the full designer object with ID to the notify function
+          await notifyFollowers({ ...designerSnap.data(), id: designerSnap.id } as Designer, projectRef.id, data.name);
       }
       
       toast({
@@ -325,3 +325,5 @@ export default function NewProjectPage() {
     </div>
   );
 }
+
+    
