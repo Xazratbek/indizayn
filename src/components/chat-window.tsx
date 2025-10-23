@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -133,7 +132,7 @@ function MessageSkeleton() {
 function TypingIndicator() {
   return (
     <div className="flex items-center space-x-1">
-      <span className="text-sm text-muted-foreground">Yozmoqda</span>
+      <span className="text-sm text-primary">Yozmoqda</span>
       <motion.div
         transition={{
           repeat: Infinity,
@@ -145,15 +144,15 @@ function TypingIndicator() {
         className="flex"
       >
         <motion.span
-          className="h-1.5 w-1.5 rounded-full bg-muted-foreground"
+          className="h-1.5 w-1.5 rounded-full bg-primary"
           variants={{ animate: { y: [0, -3, 0] } }}
         />
         <motion.span
-          className="h-1.5 w-1.5 rounded-full bg-muted-foreground"
+          className="h-1.5 w-1.5 rounded-full bg-primary"
           variants={{ animate: { y: [0, -3, 0] } }}
         />
         <motion.span
-          className="h-1.5 w-1.5 rounded-full bg-muted-foreground"
+          className="h-1.5 w-1.5 rounded-full bg-primary"
           variants={{ animate: { y: [0, -3, 0] } }}
         />
       </motion.div>
@@ -164,8 +163,8 @@ function TypingIndicator() {
 function RecordingIndicator() {
   return (
     <div className="flex items-center space-x-2">
-      <span className="text-sm text-muted-foreground">Audio yubormoqda</span>
-      <Mic className="h-4 w-4 text-muted-foreground animate-pulse" />
+      <span className="text-sm text-primary">Audio yubormoqda</span>
+      <Mic className="h-4 w-4 text-primary animate-pulse" />
     </div>
   );
 }
@@ -191,7 +190,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
   // Typing status logic
   const [typingStatus, setTypingStatus] = useState<'idle' | 'typing'>('idle');
-  const [debouncedTypingStatus] = useDebounce(typingStatus, 1500); // 1.5 second debounce
+  const [debouncedTypingStatus] = useDebounce(typingStatus, 2000); // After 2s of no typing, send 'idle'
 
   const partnerTypingStatusRef = useMemoFirebase(() =>
     db && selectedUserId ? doc(db, 'typingStatus', selectedUserId) : null,
@@ -200,11 +199,13 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
 
   const isPartnerTyping = partnerTypingStatus?.status === 'typing' &&
                         partnerTypingStatus?.recipientId === currentUser.id &&
-                        Timestamp.now().seconds - partnerTypingStatus.lastActive.seconds < 5;
+                        partnerTypingStatus.createdAt &&
+                        Timestamp.now().seconds - partnerTypingStatus.createdAt.seconds < 5; // 5-second staleness check
 
   const isPartnerRecording = partnerTypingStatus?.status === 'recording' &&
                            partnerTypingStatus?.recipientId === currentUser.id &&
-                           Timestamp.now().seconds - partnerTypingStatus.lastActive.seconds < 60;
+                           partnerTypingStatus.createdAt &&
+                           Timestamp.now().seconds - partnerTypingStatus.createdAt.seconds < 60; // 60-second staleness check
 
 
   useEffect(() => {
@@ -214,7 +215,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       await setDoc(myStatusRef, {
         status: status,
         recipientId: selectedUserId,
-        lastActive: serverTimestamp()
+        createdAt: serverTimestamp() // Use createdAt for consistency
       });
     };
     
@@ -227,6 +228,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   }, [typingStatus, isRecording, db, currentUser.id, selectedUserId]);
   
   useEffect(() => {
+    // This effect now only sends the 'idle' status after user stops typing
     if (debouncedTypingStatus === 'typing') {
       setTypingStatus('idle');
     }
@@ -324,7 +326,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       if (isRecording && recordingMode === 'video' && videoPreviewRef.current && streamRef.current) {
           videoPreviewRef.current.srcObject = streamRef.current;
       }
-  }, [isRecording, recordingMode, streamRef.current]);
+  }, [isRecording, recordingMode, streamRef]);
 
 
   const startRecording = async () => {
@@ -690,9 +692,17 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
               <AvatarImage src={partner.photoURL} alt={partner.name} />
               <AvatarFallback>{partner.name.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div>
-              <p className="font-bold group-hover:underline">{partner.name}</p>
-              <p className="text-xs text-muted-foreground">{partner.specialization}</p>
+            <div className="h-10 flex flex-col justify-center">
+              <p className="font-bold group-hover:underline leading-tight">{partner.name}</p>
+              <div className="text-xs h-4">
+                  {isPartnerTyping ? (
+                      <TypingIndicator />
+                  ) : isPartnerRecording ? (
+                      <RecordingIndicator />
+                  ) : (
+                      <p className="text-muted-foreground leading-tight">{partner.specialization}</p>
+                  )}
+              </div>
             </div>
           </Link>
         </div>
@@ -707,40 +717,6 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         ) : (
             renderMessagesWithDateSeparators()
         )}
-        <AnimatePresence>
-          {isPartnerTyping && (
-             <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="flex items-end gap-2 my-2 max-w-[80%] clear-both mr-auto"
-              >
-                  <Avatar className="h-6 w-6">
-                      <AvatarImage src={partner?.photoURL} />
-                      <AvatarFallback>{partner?.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="p-3 rounded-lg relative shadow-md bg-background text-foreground rounded-bl-none">
-                     <TypingIndicator />
-                  </div>
-              </motion.div>
-          )}
-           {isPartnerRecording && (
-             <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="flex items-end gap-2 my-2 max-w-[80%] clear-both mr-auto"
-              >
-                  <Avatar className="h-6 w-6">
-                      <AvatarImage src={partner?.photoURL} />
-                      <AvatarFallback>{partner?.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <div className="p-3 rounded-lg relative shadow-md bg-background text-foreground rounded-bl-none">
-                     <RecordingIndicator />
-                  </div>
-              </motion.div>
-          )}
-        </AnimatePresence>
       </ScrollArea>
         
       <canvas ref={canvasRef} className="hidden"></canvas>
@@ -846,3 +822,5 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     </div>
   );
 }
+
+    

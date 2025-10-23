@@ -96,9 +96,9 @@
         "properties": {
             "status": { "type": "string", "enum": ["idle", "typing", "recording"], "description": "The current status of the user." },
             "recipientId": { "type": "string", "description": "The ID of the user in the chat with." },
-            "lastActive": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity." }
+            "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity." }
         },
-        "required": ["status", "recipientId", "lastActive"]
+        "required": ["status", "recipientId", "createdAt"]
     }
   },
   "auth": {
@@ -131,4 +131,6 @@
     }
   }
 }
+    
+
     

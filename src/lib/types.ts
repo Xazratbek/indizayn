@@ -79,7 +79,7 @@ export interface TypingStatus {
     id: string; // Same as userId
     status: 'idle' | 'typing' | 'recording';
     recipientId: string; // The user they are in a chat with
-    lastActive: Timestamp;
+    createdAt: Timestamp;
 }
 
 
@@ -101,4 +101,6 @@ declare module 'next-auth/jwt' {
     id: string;
   }
 }
+    
+
     
