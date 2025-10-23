@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, ThumbsUp, Calendar, Wrench, ArrowLeft, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus } from 'lucide-react';
+import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -294,15 +294,15 @@ export default function ProjectDetailsPage() {
   const isLoading = isProjectLoading || isDesignerLoading || areCommentsLoading;
 
   if (isLoading && !project) {
-    return <LoadingPage />;
+    return <div className="h-screen w-full flex items-center justify-center"><LoadingPage /></div>;
   }
   
   if (error || !project) {
-    return <div className="flex h-[80vh] items-center justify-center"><p>Loyiha topilmadi yoki yuklashda xatolik yuz berdi.</p></div>;
+    return <div className="flex h-screen items-center justify-center"><p>Loyiha topilmadi yoki yuklashda xatolik yuz berdi.</p></div>;
   }
 
   if (!designer && !isDesignerLoading) {
-     return <div className="flex h-[80vh] items-center justify-center"><p>Dizayner ma'lumotlari topilmadi.</p></div>;
+     return <div className="flex h-screen items-center justify-center"><p>Dizayner ma'lumotlari topilmadi.</p></div>;
   }
   
   const projectImages = project.imageUrls && project.imageUrls.length > 0 ? project.imageUrls : [project.imageUrl];
@@ -311,16 +311,9 @@ export default function ProjectDetailsPage() {
   return (
     <>
       <div className="relative">
-        { !isModal && (
-            <div className="container mx-auto p-4 absolute top-0 left-0 z-10">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} className="mb-4 bg-background/50 hover:bg-background/80">
-                    <ArrowLeft className="h-5 w-5" />
-                </Button>
-            </div>
-        )}
         
         {/* Right Fixed Vertical Panel */}
-        <div className="fixed top-1/2 -translate-y-1/2 right-4 md:right-8 z-50 flex flex-col items-center gap-4">
+        <div className="fixed top-1/2 -translate-y-1/2 right-8 z-50 flex flex-col items-center gap-4">
             {designer && (
                  <div className="relative group">
                      <Link href={`/designers/${designer.id}`} className="block">
@@ -425,93 +418,96 @@ export default function ProjectDetailsPage() {
                 </Button>
             </div>
         </div>
-
-        <div className="space-y-6 md:px-8 lg:px-16">
-             <div className="text-center pt-10 pb-8">
-                <h1 className="font-headline text-3xl md:text-5xl font-bold">{project.name}</h1>
-                 {designer && (
-                    <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 mt-4 text-lg">
-                        <Avatar className="h-6 w-6 group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background transition-all">
-                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                            <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="group-hover:underline">{designer.name}</span>
-                    </Link>
-                 )}
-            </div>
-            
-             {projectImages.map((url, index) => (
-                <div key={index} className="relative w-full overflow-hidden rounded-lg bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
-                    <Image
-                        src={url}
-                        alt={`${project.name} - ${index + 1}`}
-                        width={1600}
-                        height={1200}
-                        className="w-full h-auto object-contain"
-                        data-ai-hint="project image"
-                        priority={index < 2}
-                    />
-                </div>
-            ))}
-
-            {/* ----- Comments Section ----- */}
-            <div className="max-w-3xl mx-auto w-full pt-16 pb-24">
-                <h2 className="font-headline text-2xl font-bold mb-6">
-                    Izohlar ({comments?.length || 0})
-                </h2>
-                <div className="space-y-8">
-                    {user && (
-                        <div className="flex items-start gap-4">
-                            <Avatar className="h-10 w-10">
-                                <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
-                                <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+        
+        {/* Main scrollable content */}
+        <div className="max-w-5xl mx-auto py-12 px-4 md:px-8 bg-card shadow-2xl my-8 rounded-lg">
+            <div className="space-y-6">
+                <div className="text-center pt-10 pb-8">
+                    <h1 className="font-headline text-3xl md:text-5xl font-bold">{project.name}</h1>
+                    {designer && (
+                        <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 mt-4 text-lg">
+                            <Avatar className="h-6 w-6 group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background transition-all">
+                                {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                                <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            <div className="flex-1 relative">
-                                <Textarea 
-                                    placeholder="Izohingizni yozing..."
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    disabled={isSubmittingComment}
-                                    className="bg-secondary min-h-[100px] pr-28"
-                                />
-                                <Button 
-                                    onClick={handleCommentSubmit} 
-                                    disabled={isSubmittingComment || !newComment.trim()}
-                                    className="absolute bottom-3 right-3"
-                                    size="sm"
-                                >
-                                    {isSubmittingComment ? <LoadingPage /> : 'Yuborish'}
-                                </Button>
-                            </div>
-                        </div>
+                            <span className="group-hover:underline">{designer.name}</span>
+                        </Link>
                     )}
+                </div>
                 
-                    <div className="space-y-6">
-                        {areCommentsLoading ? (
-                            <div className="space-y-6">
-                                <CommentSkeleton />
-                                <CommentSkeleton />
-                            </div>
-                        ) : comments && comments.length > 0 ? (
-                        comments.map(comment => (
-                            <div key={comment.id} className="flex items-start gap-4">
-                                <Avatar className="h-10 w-10">
-                                    <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
-                                    <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2 text-sm">
-                                        <p className="font-semibold">{comment.userName}</p>
-                                        <p className="text-muted-foreground">· {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}</p>
-                                    </div>
-                                    <p className="text-foreground/90 mt-1">{comment.content}</p>
+                {projectImages.map((url, index) => (
+                    <div key={index} className="relative w-full overflow-hidden rounded-lg bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
+                        <Image
+                            src={url}
+                            alt={`${project.name} - ${index + 1}`}
+                            width={1600}
+                            height={1200}
+                            className="w-full h-auto object-contain"
+                            data-ai-hint="project image"
+                            priority={index < 2}
+                        />
+                    </div>
+                ))}
 
+                {/* ----- Comments Section ----- */}
+                <div className="max-w-3xl mx-auto w-full pt-16 pb-24">
+                    <h2 className="font-headline text-2xl font-bold mb-6">
+                        Izohlar ({comments?.length || 0})
+                    </h2>
+                    <div className="space-y-8">
+                        {user && (
+                            <div className="flex items-start gap-4">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
+                                    <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 relative">
+                                    <Textarea 
+                                        placeholder="Izohingizni yozing..."
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        disabled={isSubmittingComment}
+                                        className="bg-secondary min-h-[100px] pr-28"
+                                    />
+                                    <Button 
+                                        onClick={handleCommentSubmit} 
+                                        disabled={isSubmittingComment || !newComment.trim()}
+                                        className="absolute bottom-3 right-3"
+                                        size="sm"
+                                    >
+                                        {isSubmittingComment ? <LoadingPage /> : 'Yuborish'}
+                                    </Button>
                                 </div>
                             </div>
-                        ))
-                        ) : (
-                            <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
                         )}
+                    
+                        <div className="space-y-6">
+                            {areCommentsLoading ? (
+                                <div className="space-y-6">
+                                    <CommentSkeleton />
+                                    <CommentSkeleton />
+                                </div>
+                            ) : comments && comments.length > 0 ? (
+                            comments.map(comment => (
+                                <div key={comment.id} className="flex items-start gap-4">
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
+                                        <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <p className="font-semibold">{comment.userName}</p>
+                                            <p className="text-muted-foreground">· {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}</p>
+                                        </div>
+                                        <p className="text-foreground/90 mt-1">{comment.content}</p>
+
+                                    </div>
+                                </div>
+                            ))
+                            ) : (
+                                <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -529,5 +525,3 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
-
-    

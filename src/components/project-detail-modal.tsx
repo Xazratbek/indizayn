@@ -27,7 +27,7 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
       <AnimatePresence>
         {!!projectId && (
           <DialogContent
-            className="w-full h-full max-w-none p-0 flex flex-col bg-background/95 backdrop-blur-sm border-0"
+            className="w-full h-full max-w-none p-0 bg-background/80 backdrop-blur-sm border-0 shadow-none"
             onInteractOutside={onClose}
           >
              <DialogTitle className="sr-only">Loyiha tafsilotlari</DialogTitle>
@@ -35,18 +35,18 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
                 Loyiha haqida to'liq ma'lumotni ko'rish uchun qalqib chiquvchi oyna.
             </DialogDescription>
             <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="absolute right-4 top-4 z-50 h-10 w-10 rounded-full bg-background/50 hover:bg-background/80">
-                    <X className="h-6 w-6" />
+                <Button variant="ghost" size="icon" className="absolute right-4 top-4 z-50 h-12 w-12 rounded-full bg-background/50 hover:bg-background/80">
+                    <X className="h-7 w-7" />
                     <span className="sr-only">Yopish</span>
                 </Button>
             </DialogClose>
 
             <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 50 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
-                className="relative h-full flex flex-col"
+                className="relative h-full w-full flex flex-col"
               >
                   <div className="flex-1 overflow-y-auto">
                     <ModalContext.Provider value={{ projectId }}>
@@ -60,5 +60,3 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
     </Dialog>
   );
 }
-
-    
