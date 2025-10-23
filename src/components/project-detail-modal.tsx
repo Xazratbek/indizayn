@@ -23,7 +23,7 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
       <AnimatePresence>
         {!!projectId && (
           <DialogContent
-            className="w-[calc(100%-2rem)] h-[calc(100%-2rem)] max-w-none p-0 bg-transparent border-0 shadow-none"
+            className="w-full h-full max-w-none p-0 bg-transparent border-0 shadow-none"
             onInteractOutside={onClose}
           >
              <DialogTitle className="sr-only">Loyiha tafsilotlari</DialogTitle>

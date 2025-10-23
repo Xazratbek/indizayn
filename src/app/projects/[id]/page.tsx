@@ -306,10 +306,9 @@ export default function ProjectDetailsPage() {
   
   const projectImages = project.imageUrls && project.imageUrls.length > 0 ? project.imageUrls : [project.imageUrl];
 
-  const content = (
-    <div className="relative w-full">
-      
-      <div className="absolute top-1/2 -translate-y-1/2 left-full ml-8 hidden xl:flex flex-col items-center gap-4">
+  return (
+    <div className="relative">
+      <div className="fixed top-1/2 -translate-y-1/2 right-8 hidden xl:flex flex-col items-center gap-4 z-[60]">
           {designer && (
                <div className="relative group">
                    <Link href={`/designers/${designer.id}`} className="block">
@@ -334,7 +333,7 @@ export default function ProjectDetailsPage() {
           
           <HoverCard openDelay={200} closeDelay={100}>
               <HoverCardTrigger asChild>
-                  <Button variant="secondary" size="icon" className="rounded-full h-12 w-12 bg-secondary/80 backdrop-blur-sm">
+                  <Button variant="secondary" size="icon" className="rounded-full h-12 w-12 bg-background/80 backdrop-blur-sm">
                       <Info className="h-6 w-6" />
                   </Button>
               </HoverCardTrigger>
@@ -396,7 +395,7 @@ export default function ProjectDetailsPage() {
               </HoverCardContent>
           </HoverCard>
 
-           <div className="p-2 bg-secondary/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
+           <div className="p-2 bg-background/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
               <Button onClick={handleLikeToggle} variant="ghost" size="icon" className="h-12 w-12 rounded-full" disabled={!user || isLikeLoading}>
                   {isLikeLoading ? <LoadingPage /> : <ThumbsUp className={`h-6 w-6 ${isLiked ? 'fill-current text-blue-500' : ''}`} />}
               </Button>
@@ -517,16 +516,4 @@ export default function ProjectDetailsPage() {
       )}
     </div>
   );
-
-  // If page is not in a modal, wrap with a standard layout
-  if (!modalContext?.projectId) {
-    return (
-      <div className="relative overflow-y-auto h-screen">
-        {content}
-      </div>
-    );
-  }
-
-  // If in a modal, return the content directly
-  return content;
 }
