@@ -220,7 +220,6 @@ export default function ProjectDetailsPage() {
         } else {
             await updateDoc(projectRef, { likes: arrayUnion(user.id), likeCount: increment(1) });
             setIsLiked(true);
-            // toast({ variant: "success", description: "Loyiha yoqtirilganlarga qo'shildi!"}); // REMOVED as per user request
             if (project.designerId !== user.id) { 
               const notificationsRef = collection(db, "notifications");
               await addDoc(notificationsRef, {
@@ -400,7 +399,12 @@ export default function ProjectDetailsPage() {
 
            <div className="p-2 bg-background/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
               <Button onClick={handleLikeToggle} variant="ghost" size="icon" className="h-12 w-12 rounded-full" disabled={!user || isLikeLoading}>
-                  {isLikeLoading ? <LoadingPage /> : <ThumbsUp className={`h-6 w-6 ${isLiked ? 'fill-current text-blue-500' : ''}`} />}
+                <motion.div
+                    animate={{ scale: isLiked ? 1.2 : 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                >
+                    <ThumbsUp className={`h-6 w-6 transition-colors ${isLiked ? 'fill-blue-500 text-blue-500' : ''}`} />
+                </motion.div>
               </Button>
               <Button onClick={handleShare} variant="ghost" size="icon" className="h-12 w-12 rounded-full">
                   <Share2 className="h-6 w-6" />
@@ -448,57 +452,64 @@ export default function ProjectDetailsPage() {
         {/* Action Bar for Mobile/Tablet */}
         <div className="px-4 md:px-8 py-8 xl:hidden">
             <Card>
-                <div className="relative p-4 overflow-hidden">
-                     <div className="flex items-center justify-between">
-                         {designer && (
-                             <Link href={`/designers/${designer.id}`} className="group flex items-center gap-3 text-lg">
-                                <Avatar className="h-12 w-12">
-                                    {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                                    <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                     <p className="font-bold leading-tight group-hover:underline">{designer.name}</p>
-                                     <p className="text-sm text-muted-foreground leading-tight">{designer.specialization}</p>
-                                </div>
-                            </Link>
-                         )}
-                         {user && designer && user.id !== designer.id && (
-                             <Button 
-                                size="sm" 
-                                variant={isFollowing ? "secondary" : "default"}
-                                disabled={isFollowLoading}
-                                onClick={handleFollowToggle}
-                            >
-                                {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                                {isFollowing ? "Obuna" : "Obuna bo'lish"}
-                            </Button>
-                         )}
-                     </div>
-                     <Separator className="my-4" />
-                     <div className="flex justify-around items-center">
-                          <Button onClick={handleLikeToggle} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground" disabled={!user || isLikeLoading}>
-                            {isLikeLoading ? <LoadingPage /> : <ThumbsUp className={`h-6 w-6 ${isLiked ? 'fill-current text-blue-500' : ''}`} />}
-                            <span className="text-xs">{project.likeCount}</span>
-                          </Button>
-                           <Button variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground">
-                               <Eye className="h-6 w-6"/>
-                               <span className="text-xs">{project.viewCount}</span>
-                           </Button>
-                           <Button variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground">
-                               <MessageSquare className="h-6 w-6"/>
-                               <span className="text-xs">{comments?.length || 0}</span>
-                           </Button>
-                           <Button onClick={handleShare} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground">
-                              <Share2 className="h-6 w-6" />
-                               <span className="text-xs">Ulashish</span>
-                           </Button>
-                     </div>
+                <div className="relative p-4">
+                    <div className="relative overflow-hidden">
+                         <div className="flex items-center justify-between">
+                             {designer && (
+                                 <Link href={`/designers/${designer.id}`} className="group flex items-center gap-3 text-lg">
+                                    <Avatar className="h-12 w-12">
+                                        {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                                        <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                         <p className="font-bold leading-tight group-hover:underline">{designer.name}</p>
+                                         <p className="text-sm text-muted-foreground leading-tight">{designer.specialization}</p>
+                                    </div>
+                                </Link>
+                             )}
+                             {user && designer && user.id !== designer.id && (
+                                 <Button 
+                                    size="sm" 
+                                    variant={isFollowing ? "secondary" : "default"}
+                                    disabled={isFollowLoading}
+                                    onClick={handleFollowToggle}
+                                >
+                                    {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                                    {isFollowing ? "Obuna" : "Obuna bo'lish"}
+                                </Button>
+                             )}
+                         </div>
+                         <Separator className="my-4" />
+                         <div className="flex justify-around items-center">
+                              <Button onClick={handleLikeToggle} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground" disabled={!user || isLikeLoading}>
+                                 <motion.div
+                                    animate={{ scale: isLiked ? 1.2 : 1 }}
+                                    transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                                >
+                                    <ThumbsUp className={`h-6 w-6 transition-colors ${isLiked ? 'fill-blue-500 text-blue-500' : 'text-foreground'}`} />
+                                </motion.div>
+                                <span className="text-xs">{project.likeCount}</span>
+                              </Button>
+                               <div className="flex flex-col h-auto gap-1 items-center justify-center text-foreground">
+                                   <Eye className="h-6 w-6"/>
+                                   <span className="text-xs">{project.viewCount}</span>
+                               </div>
+                               <div className="flex flex-col h-auto gap-1 items-center justify-center text-foreground">
+                                   <MessageSquare className="h-6 w-6"/>
+                                   <span className="text-xs">{comments?.length || 0}</span>
+                               </div>
+                               <Button onClick={handleShare} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground">
+                                  <Share2 className="h-6 w-6" />
+                                   <span className="text-xs">Ulashish</span>
+                               </Button>
+                         </div>
+                    </div>
                 </div>
             </Card>
         </div>
 
         {/* Info Card for Mobile/Tablet */}
-        <div className="px-4 md:px-8 xl:hidden">
+        <div className="px-4 md:px-8 pb-8 xl:hidden">
             <Card>
                 <CardHeader>
                     <CardTitle>Loyiha haqida</CardTitle>
