@@ -162,7 +162,7 @@ export default function Home() {
                             >
                                 <span className="inline-block">Лучшие</span>{' '}
                                 <RotatingText
-                                  texts={['проекты', 'таланты']}
+                                  texts={['проекты', 'таланты', 'авторы']}
                                   mainClassName="px-2 sm:px-2 md:px-2 bg-primary text-primary-foreground overflow-hidden py-0 justify-center rounded-lg"
                                   staggerFrom={"last"}
                                   initial={{ y: "100%" }}
