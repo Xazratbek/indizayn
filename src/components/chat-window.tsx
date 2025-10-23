@@ -5,8 +5,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from 'next-auth';
 import { useCollection, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, writeBatch, or, Timestamp } from 'firebase/firestore';
-import type { Message, Designer } from '@/lib/types';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, writeBatch, or, Timestamp, setDoc } from 'firebase/firestore';
+import type { Message, Designer, TypingStatus } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format, isSameDay } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import Link from 'next/link';
+import { useDebounce } from 'use-debounce';
 
 type OptimisticMessage = Message & { status?: 'uploading' | 'sent' | 'failed' };
 
@@ -129,6 +130,47 @@ function MessageSkeleton() {
     )
 }
 
+function TypingIndicator() {
+  return (
+    <div className="flex items-center space-x-1">
+      <span className="text-sm text-muted-foreground">Yozmoqda</span>
+      <motion.div
+        transition={{
+          repeat: Infinity,
+          duration: 1,
+          ease: "easeInOut",
+          staggerChildren: 0.2,
+        }}
+        animate="animate"
+        className="flex"
+      >
+        <motion.span
+          className="h-1.5 w-1.5 rounded-full bg-muted-foreground"
+          variants={{ animate: { y: [0, -3, 0] } }}
+        />
+        <motion.span
+          className="h-1.5 w-1.5 rounded-full bg-muted-foreground"
+          variants={{ animate: { y: [0, -3, 0] } }}
+        />
+        <motion.span
+          className="h-1.5 w-1.5 rounded-full bg-muted-foreground"
+          variants={{ animate: { y: [0, -3, 0] } }}
+        />
+      </motion.div>
+    </div>
+  );
+}
+
+function RecordingIndicator() {
+  return (
+    <div className="flex items-center space-x-2">
+      <span className="text-sm text-muted-foreground">Audio yubormoqda</span>
+      <Mic className="h-4 w-4 text-muted-foreground animate-pulse" />
+    </div>
+  );
+}
+
+
 export default function ChatWindow({ currentUser, selectedUserId, onBack }: ChatWindowProps) {
   const db = useFirestore();
   const { toast } = useToast();
@@ -146,6 +188,49 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Typing status logic
+  const [typingStatus, setTypingStatus] = useState<'idle' | 'typing'>('idle');
+  const [debouncedTypingStatus] = useDebounce(typingStatus, 1500); // 1.5 second debounce
+
+  const partnerTypingStatusRef = useMemoFirebase(() =>
+    db && selectedUserId ? doc(db, 'typingStatus', selectedUserId) : null,
+  [db, selectedUserId]);
+  const { data: partnerTypingStatus } = useDoc<TypingStatus>(partnerTypingStatusRef);
+
+  const isPartnerTyping = partnerTypingStatus?.status === 'typing' &&
+                        partnerTypingStatus?.recipientId === currentUser.id &&
+                        Timestamp.now().seconds - partnerTypingStatus.lastActive.seconds < 5;
+
+  const isPartnerRecording = partnerTypingStatus?.status === 'recording' &&
+                           partnerTypingStatus?.recipientId === currentUser.id &&
+                           Timestamp.now().seconds - partnerTypingStatus.lastActive.seconds < 60;
+
+
+  useEffect(() => {
+    const updateMyStatus = async (status: 'idle' | 'typing' | 'recording') => {
+      if (!db || !currentUser.id || !selectedUserId) return;
+      const myStatusRef = doc(db, 'typingStatus', currentUser.id);
+      await setDoc(myStatusRef, {
+        status: status,
+        recipientId: selectedUserId,
+        lastActive: serverTimestamp()
+      });
+    };
+    
+    if (isRecording) {
+      updateMyStatus('recording');
+    } else {
+      updateMyStatus(typingStatus);
+    }
+    
+  }, [typingStatus, isRecording, db, currentUser.id, selectedUserId]);
+  
+  useEffect(() => {
+    if (debouncedTypingStatus === 'typing') {
+      setTypingStatus('idle');
+    }
+  }, [debouncedTypingStatus]);
 
 
   const recipientDocRef = useMemoFirebase(
@@ -233,7 +318,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
              viewport.scrollTop = viewport.scrollHeight;
         }
     }
-  }, [combinedMessages]);
+  }, [combinedMessages, isPartnerTyping, isPartnerRecording]);
 
   useEffect(() => {
       if (isRecording && recordingMode === 'video' && videoPreviewRef.current && streamRef.current) {
@@ -435,6 +520,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     if (!newMessage.trim() || !selectedUserId || !db) return;
     const text = newMessage;
     setNewMessage('');
+    setTypingStatus('idle');
     
     try {
       const newDocRef = await addDoc(collection(db, 'messages'), {
@@ -621,6 +707,40 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         ) : (
             renderMessagesWithDateSeparators()
         )}
+        <AnimatePresence>
+          {isPartnerTyping && (
+             <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="flex items-end gap-2 my-2 max-w-[80%] clear-both mr-auto"
+              >
+                  <Avatar className="h-6 w-6">
+                      <AvatarImage src={partner?.photoURL} />
+                      <AvatarFallback>{partner?.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="p-3 rounded-lg relative shadow-md bg-background text-foreground rounded-bl-none">
+                     <TypingIndicator />
+                  </div>
+              </motion.div>
+          )}
+           {isPartnerRecording && (
+             <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="flex items-end gap-2 my-2 max-w-[80%] clear-both mr-auto"
+              >
+                  <Avatar className="h-6 w-6">
+                      <AvatarImage src={partner?.photoURL} />
+                      <AvatarFallback>{partner?.name.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div className="p-3 rounded-lg relative shadow-md bg-background text-foreground rounded-bl-none">
+                     <RecordingIndicator />
+                  </div>
+              </motion.div>
+          )}
+        </AnimatePresence>
       </ScrollArea>
         
       <canvas ref={canvasRef} className="hidden"></canvas>
@@ -684,7 +804,10 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                                 handleSendMessage();
                             }
                         }}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={(e) => {
+                            setNewMessage(e.target.value);
+                            setTypingStatus('typing');
+                        }}
                         placeholder="Xabar yozing..."
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm pr-20"
                     />

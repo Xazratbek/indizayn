@@ -74,6 +74,14 @@ export interface Comment {
     createdAt: Timestamp;
 }
 
+// Corresponds to the 'typingStatus' collection
+export interface TypingStatus {
+    id: string; // Same as userId
+    status: 'idle' | 'typing' | 'recording';
+    recipientId: string; // The user they are in a chat with
+    lastActive: Timestamp;
+}
+
 
 // Extending NextAuth types
 import type { DefaultSession, User } from 'next-auth';
@@ -93,5 +101,4 @@ declare module 'next-auth/jwt' {
     id: string;
   }
 }
-
     

@@ -88,6 +88,17 @@
             "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of comment creation." }
         },
         "required": ["projectId", "userId", "userName", "content", "createdAt"]
+    },
+    "TypingStatus": {
+        "title": "Typing Status",
+        "type": "object",
+        "description": "Represents the typing status of a user in a chat.",
+        "properties": {
+            "status": { "type": "string", "enum": ["idle", "typing", "recording"], "description": "The current status of the user." },
+            "recipientId": { "type": "string", "description": "The ID of the user in the chat with." },
+            "lastActive": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity." }
+        },
+        "required": ["status", "recipientId", "lastActive"]
     }
   },
   "auth": {
@@ -113,9 +124,11 @@
     "/notifications/{notificationId}": {
       "schema": { "$ref": "#/entities/Notification" },
       "description": "Stores notifications for users."
+    },
+    "/typingStatus/{userId}": {
+        "schema": { "$ref": "#/entities/TypingStatus" },
+        "description": "Stores the real-time typing status of a user for a specific chat."
     }
   }
 }
-    
-
     
