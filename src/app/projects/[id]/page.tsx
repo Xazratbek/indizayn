@@ -29,6 +29,7 @@ import {
 import { useModalContext } from '@/components/project-detail-modal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 
 function CommentSkeleton() {
@@ -335,8 +336,8 @@ export default function ProjectDetailsPage() {
           
           <HoverCard openDelay={200} closeDelay={100}>
               <HoverCardTrigger asChild>
-                  <Button variant="secondary" size="icon" className="rounded-full h-12 w-12 bg-background/80 backdrop-blur-sm">
-                      <Info className="h-6 w-6" />
+                  <Button variant="secondary" size="icon" className="rounded-full h-14 w-14 bg-background/80 backdrop-blur-sm">
+                      <Info className="h-7 w-7" />
                   </Button>
               </HoverCardTrigger>
               <HoverCardContent className="w-80" side="left" align="center">
@@ -398,19 +399,19 @@ export default function ProjectDetailsPage() {
           </HoverCard>
 
            <div className="p-2 bg-background/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
-              <Button onClick={handleLikeToggle} variant="ghost" size="icon" className="h-12 w-12 rounded-full" disabled={!user || isLikeLoading}>
+              <Button onClick={handleLikeToggle} variant="ghost" size="icon" className="h-14 w-14 rounded-full" disabled={!user || isLikeLoading}>
                 <motion.div
                     animate={{ scale: isLiked ? 1.2 : 1 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                 >
-                    <ThumbsUp className={`h-6 w-6 transition-colors ${isLiked ? 'fill-blue-500 text-blue-500' : ''}`} />
+                    <ThumbsUp className={cn('h-7 w-7 transition-colors', isLiked ? 'fill-blue-500 text-blue-500' : '')} />
                 </motion.div>
               </Button>
-              <Button onClick={handleShare} variant="ghost" size="icon" className="h-12 w-12 rounded-full">
-                  <Share2 className="h-6 w-6" />
+              <Button onClick={handleShare} variant="ghost" size="icon" className="h-14 w-14 rounded-full">
+                  <Share2 className="h-7 w-7" />
               </Button>
-              <Button onClick={handleDownload} variant="ghost" size="icon" className="h-12 w-12 rounded-full">
-                  <Download className="h-6 w-6" />
+              <Button onClick={handleDownload} variant="ghost" size="icon" className="h-14 w-14 rounded-full">
+                  <Download className="h-7 w-7" />
               </Button>
           </div>
       </div>
@@ -452,8 +453,8 @@ export default function ProjectDetailsPage() {
         {/* Action Bar for Mobile/Tablet */}
         <div className="px-4 md:px-8 py-8 xl:hidden">
             <Card>
-                <div className="relative p-4">
-                    <div className="relative overflow-hidden">
+                <div className="relative p-4 overflow-hidden">
+                    <div className="relative">
                          <div className="flex items-center justify-between">
                              {designer && (
                                  <Link href={`/designers/${designer.id}`} className="group flex items-center gap-3 text-lg">
@@ -483,11 +484,11 @@ export default function ProjectDetailsPage() {
                          <div className="flex justify-around items-center">
                               <Button onClick={handleLikeToggle} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground" disabled={!user || isLikeLoading}>
                                  <motion.div
-                                    animate={{ scale: isLiked ? 1.2 : 1 }}
+                                    animate={{ scale: isLiked ? 1.2 : 1, y: isLiked ? -2 : 0 }}
                                     transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-                                >
-                                    <ThumbsUp className={`h-6 w-6 transition-colors ${isLiked ? 'fill-blue-500 text-blue-500' : 'text-foreground'}`} />
-                                </motion.div>
+                                 >
+                                    <ThumbsUp className={cn('h-6 w-6 transition-colors', isLiked ? 'fill-blue-500 text-blue-500' : 'text-foreground')} />
+                                 </motion.div>
                                 <span className="text-xs">{project.likeCount}</span>
                               </Button>
                                <div className="flex flex-col h-auto gap-1 items-center justify-center text-foreground">
@@ -520,6 +521,7 @@ export default function ProjectDetailsPage() {
                             <p>{project.description}</p>
                         </div>
                      )}
+                     <Separator/>
                     {project.createdAt && (
                         <div className="flex items-start text-sm">
                             <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
