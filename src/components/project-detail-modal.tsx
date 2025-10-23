@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from 'lucide-react';
 import { Button } from "./ui/button";
 import { createContext, useContext } from "react";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface ProjectDetailModalProps {
   projectId: string;
@@ -37,19 +38,11 @@ export default function ProjectDetailModal({ projectId, onClose }: ProjectDetail
                 </Button>
             </DialogClose>
 
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
-                className="relative h-full w-full flex flex-col"
-              >
-                  <div className="flex-1 overflow-y-auto">
-                    <ModalContext.Provider value={{ projectId }}>
-                        <ProjectDetailsPage />
-                    </ModalContext.Provider>
-                  </div>
-              </motion.div>
+            <ScrollArea className="h-screen w-screen">
+                <ModalContext.Provider value={{ projectId }}>
+                    <ProjectDetailsPage />
+                </ModalContext.Provider>
+             </ScrollArea>
           </DialogContent>
         )}
       </AnimatePresence>
