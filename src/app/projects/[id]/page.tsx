@@ -11,9 +11,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, Heart, Calendar, Wrench, ArrowLeft, MessageSquare, Send, Tag, UserPlus, UserCheck } from 'lucide-react';
+import { Eye, Heart, Calendar, Wrench, ArrowLeft, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { format, formatDistanceToNowStrict } from 'date-fns';
+import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Project, Designer, Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -64,12 +64,11 @@ export default function ProjectDetailsPage() {
 
   const { toast } = useToast();
 
-  // Fetch project details and increment view count
   const projectDocRef = useMemoFirebase(() => (db && id) ? doc(db, 'projects', id) : null, [db, id]);
   const { data: project, isLoading: isProjectLoading, error } = useDoc<Project>(projectDocRef);
   
   useEffect(() => {
-    if (id && db) {
+    if (id && db && !isModal) {
         const projectRef = doc(db, 'projects', id);
         const viewedKey = `viewed_${id}`;
         const viewed = sessionStorage.getItem(viewedKey);
@@ -80,7 +79,7 @@ export default function ProjectDetailsPage() {
           sessionStorage.setItem(viewedKey, 'true');
         }
     }
-  }, [id, db]);
+  }, [id, db, isModal]);
 
 
   const designerDocRef = useMemoFirebase(() => 
@@ -105,70 +104,98 @@ export default function ProjectDetailsPage() {
     }
   }, [user, project, designer]);
 
-    const handleCommentSubmit = async () => {
-        if (!user || !project || !db) {
-            toast({
-                variant: "warning",
-                title: "Xatolik!",
-                description: "Izoh qoldirish uchun tizimga kiring.",
-            });
-            return;
-        }
-        if (!newComment.trim()) {
-            toast({ variant: "warning", description: "Izoh matni bo'sh bo'lishi mumkin emas." });
-            return;
-        }
-    
-        setIsSubmittingComment(true);
-        try {
-            const commentsCollectionRef = collection(db, `projects/${id}/comments`);
-            await addDoc(commentsCollectionRef, {
-                projectId: id,
-                userId: user.id,
-                userName: user.name,
-                userPhotoURL: user.image || '',
-                content: newComment,
-                createdAt: serverTimestamp(),
-            });
-    
-            if (project.designerId !== user.id) {
-                const notificationsRef = collection(db, "notifications");
-                await addDoc(notificationsRef, {
-                    userId: project.designerId,
-                    type: 'comment',
-                    senderId: user.id,
-                    senderName: user.name || 'Anonim',
-                    senderPhotoURL: user.image || '',
-                    isRead: false,
-                    projectId: project.id,
-                    projectName: project.name,
-                    messageSnippet: newComment.substring(0, 50) + (newComment.length > 50 ? '...' : ''),
-                    createdAt: serverTimestamp(),
-                });
-            }
-    
-            setNewComment("");
-            toast({ variant: "success", title: "Muvaffaqiyatli!", description: "Izohingiz qo'shildi." });
-        } catch (error) {
-            console.error("Izoh qo'shishda xatolik:", error);
-            toast({
-                variant: "destructive",
-                title: "Xatolik!",
-                description: "Izohni yuborishda muammo yuz berdi.",
-            });
-        } finally {
-            setIsSubmittingComment(false);
-        }
-    };
+  const handleShare = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        toast({
+            title: "Havola nusxalandi!",
+            description: "Loyihani do'stlaringiz bilan ulashishingiz mumkin.",
+        });
+    }).catch(err => {
+         toast({
+            variant: "destructive",
+            title: "Xatolik",
+            description: "Havolani nusxalashda muammo yuz berdi.",
+        });
+    });
+  };
+
+  const handleDownload = async () => {
+      if (!project?.imageUrl) return;
+      try {
+        const response = await fetch(project.imageUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${project.name.replace(/ /g, '_')}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        toast({ title: "Muvaffaqiyatli", description: "Rasm yuklab olinmoqda." });
+      } catch (error) {
+         toast({
+            variant: "destructive",
+            title: "Xatolik",
+            description: "Rasmni yuklab olishda xatolik yuz berdi.",
+        });
+      }
+  };
+
+
+  const handleCommentSubmit = async () => {
+      if (!user || !project || !db) {
+          toast({ variant: "warning", title: "Xatolik!", description: "Izoh qoldirish uchun tizimga kiring." });
+          return;
+      }
+      if (!newComment.trim()) {
+          toast({ variant: "warning", description: "Izoh matni bo'sh bo'lishi mumkin emas." });
+          return;
+      }
+  
+      setIsSubmittingComment(true);
+      try {
+          const commentsCollectionRef = collection(db, `projects/${id}/comments`);
+          await addDoc(commentsCollectionRef, {
+              projectId: id,
+              userId: user.id,
+              userName: user.name,
+              userPhotoURL: user.image || '',
+              content: newComment,
+              createdAt: serverTimestamp(),
+          });
+  
+          if (project.designerId !== user.id) {
+              const notificationsRef = collection(db, "notifications");
+              await addDoc(notificationsRef, {
+                  userId: project.designerId,
+                  type: 'comment',
+                  senderId: user.id,
+                  senderName: user.name || 'Anonim',
+                  senderPhotoURL: user.image || '',
+                  isRead: false,
+                  projectId: project.id,
+                  projectName: project.name,
+                  messageSnippet: newComment.substring(0, 50) + (newComment.length > 50 ? '...' : ''),
+                  createdAt: serverTimestamp(),
+              });
+          }
+  
+          setNewComment("");
+          toast({ variant: "success", title: "Muvaffaqiyatli!", description: "Izohingiz qo'shildi." });
+      } catch (error) {
+          console.error("Izoh qo'shishda xatolik:", error);
+          toast({ variant: "destructive", title: "Xatolik!", description: "Izohni yuborishda muammo yuz berdi."});
+      } finally {
+          setIsSubmittingComment(false);
+      }
+  };
 
 
   const handleLikeToggle = async () => {
     if (!user || !project || !designer || !db) {
-      toast({
-        variant: "warning",
-        title: "Xatolik!",
-        description: "Loyiha yoqishi uchun tizimga kiring.",
-      });
+      toast({ variant: "warning", title: "Xatolik!", description: "Loyiha yoqishi uchun tizimga kiring." });
       return;
     }
 
@@ -182,19 +209,12 @@ export default function ProjectDetailsPage() {
 
     try {
         if (isLiked) {
-            await updateDoc(projectRef, {
-                likes: arrayRemove(user.id),
-                likeCount: increment(-1)
-            });
+            await updateDoc(projectRef, { likes: arrayRemove(user.id), likeCount: increment(-1) });
             setIsLiked(false);
         } else {
-            await updateDoc(projectRef, {
-                likes: arrayUnion(user.id),
-                likeCount: increment(1)
-            });
+            await updateDoc(projectRef, { likes: arrayUnion(user.id), likeCount: increment(1) });
             setIsLiked(true);
-             toast({ variant: "success", description: "Loyiha yoqtirilganlarga qo'shildi!"});
-
+            toast({ variant: "success", description: "Loyiha yoqtirilganlarga qo'shildi!"});
             if (project.designerId !== user.id) { 
               const notificationsRef = collection(db, "notifications");
               await addDoc(notificationsRef, {
@@ -212,11 +232,7 @@ export default function ProjectDetailsPage() {
         }
     } catch (err) {
         console.error("Like/Unlike error", err);
-        toast({
-            variant: "destructive",
-            title: "Xatolik!",
-            description: "Amalni bajarishda xatolik yuz berdi.",
-        });
+        toast({ variant: "destructive", title: "Xatolik!", description: "Amalni bajarishda xatolik yuz berdi." });
     } finally {
         setIsLikeLoading(false);
     }
@@ -237,17 +253,11 @@ export default function ProjectDetailsPage() {
     
     try {
         if (isFollowing) {
-            await updateDoc(designerRef, {
-                followers: arrayRemove(user.id),
-                subscriberCount: increment(-1)
-            });
+            await updateDoc(designerRef, { followers: arrayRemove(user.id), subscriberCount: increment(-1) });
             setIsFollowing(false);
             toast({ description: `${designer?.name} obunasidan chiqdingiz.` });
         } else {
-            await updateDoc(designerRef, {
-                followers: arrayUnion(user.id),
-                subscriberCount: increment(1)
-            });
+            await updateDoc(designerRef, { followers: arrayUnion(user.id), subscriberCount: increment(1) });
             setIsFollowing(true);
             toast({ variant: "success", description: `${designer?.name} ga obuna bo'ldingiz.` });
             if (designer.id !== user.id ) { 
@@ -295,100 +305,176 @@ export default function ProjectDetailsPage() {
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 20 }}
-        transition={{ duration: 0.3 }}
-        className="pb-24" // Add padding to the bottom to avoid being hidden by the sticky footer
-      >
-        <div className="max-w-4xl py-8 px-4 md:px-6 lg:px-8 mx-auto">
-          { !isModal && (
-              <div className="relative mb-8">
-                  <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute -left-4 top-1/2 -translate-y-1/2">
+      <div className="bg-secondary/30">
+        { !isModal && (
+              <div className="container mx-auto p-4">
+                  <Button variant="ghost" size="icon" onClick={() => router.back()} className="mb-4">
                       <ArrowLeft className="h-5 w-5" />
                   </Button>
               </div>
           )}
-
-          {/* ----- Designer Info Header ----- */}
-          {designer && (
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <Link href={`/designers/${designer.id}`} className="flex items-center gap-4 group">
-                    <Avatar className="h-16 w-16">
-                        {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                        <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p className="text-xl font-bold group-hover:underline">{project.name}</p>
-                        <p className="text-md text-muted-foreground">
-                            <span className="font-semibold">{designer.name}</span> tomonidan
-                        </p>
+        <div className="container mx-auto grid grid-cols-1 md:grid-cols-[1fr_320px] gap-12 py-8 px-4">
+            {/* Left Column - Scrollable Content */}
+            <div className="space-y-6">
+                 {projectImages.map((url, index) => (
+                    <div key={index} className="relative w-full overflow-hidden rounded-lg bg-background cursor-pointer" onClick={() => openLightbox(index)}>
+                        <Image
+                            src={url}
+                            alt={`${project.name} - ${index + 1}`}
+                            width={1200}
+                            height={800}
+                            className="w-full h-auto object-contain"
+                            data-ai-hint="project image"
+                            priority={index < 2}
+                        />
                     </div>
-                </Link>
-                 {user && user.id !== designer.id && (
-                    <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading} className="w-full sm:w-auto">
-                        {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                        {isFollowing ? "Obuna bo'lingan" : "Obuna bo'lish"}
-                    </Button>
-                )}
-            </div>
-          )}
-          
-          <div className="space-y-6">
-            {/* ----- Project Images ----- */}
-            {projectImages.map((url, index) => (
-                <div key={index} className="relative w-full overflow-hidden rounded-lg bg-secondary/30 cursor-pointer" onClick={() => openLightbox(index)}>
-                    <Image
-                        src={url}
-                        alt={`${project.name} - ${index + 1}`}
-                        width={1200}
-                        height={800}
-                        className="w-full h-auto object-contain"
-                        data-ai-hint="project image"
-                        priority={index < 2}
-                    />
-                </div>
-            ))}
+                ))}
 
-            {/* ----- Description & Metadata ----- */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
-                <div className="md:col-span-2">
-                    <div className="prose prose-lg max-w-none text-muted-foreground leading-relaxed">
-                        <p>{project.description}</p>
-                    </div>
-                </div>
-                <div className="space-y-6">
-                    <Card>
-                        <CardContent className="p-4 space-y-3 text-sm">
-                        {project.createdAt && (
-                            <div className="flex items-start">
-                            <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                            <div>
-                                <h4 className="font-semibold">Chop etilgan</h4>
-                                <p className="text-muted-foreground">
-                                {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
-                                </p>
-                            </div>
+                 {/* ----- Comments Section ----- */}
+                 <Card className="pt-6">
+                    <CardHeader>
+                        <h2 className="font-headline text-2xl font-bold flex items-center gap-2">
+                            <MessageSquare className="w-6 h-6" />
+                            Izohlar ({comments?.length || 0})
+                        </h2>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {user && (
+                            <div className="flex items-start gap-3">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
+                                    <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 space-y-2">
+                                    <Textarea 
+                                        placeholder="Izohingizni yozing..."
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        disabled={isSubmittingComment}
+                                    />
+                                    <div className="flex justify-end">
+                                        <Button onClick={handleCommentSubmit} disabled={isSubmittingComment || !newComment.trim()}>
+                                            {isSubmittingComment ? <LoadingPage /> : <Send className="mr-2 h-4 w-4"/>}
+                                            Yuborish
+                                        </Button>
+                                    </div>
+                                </div>
                             </div>
                         )}
-                         <Separator />
-                         <div className="flex justify-around text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1.5">
-                                <Heart className="w-4 h-4" />
-                                <span>{project.likeCount || 0} yoqdi</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <Eye className="w-4 h-4" />
-                                <span>{project.viewCount || 0} ko'rishlar</span>
-                            </div>
-                        </div>
+                    
+                        <Separator />
 
+                        <div className="space-y-6">
+                            {areCommentsLoading ? (
+                                <div className="space-y-6">
+                                    <CommentSkeleton />
+                                    <CommentSkeleton />
+                                </div>
+                            ) : comments && comments.length > 0 ? (
+                            comments.map(comment => (
+                                <div key={comment.id} className="flex items-start gap-3">
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
+                                        <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-semibold">{comment.userName}</p>
+                                        </div>
+                                        <p className="text-muted-foreground">{comment.content}</p>
+                                    </div>
+                                </div>
+                            ))
+                            ) : (
+                                <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Right Column - Sticky Sidebar */}
+            <div className="relative">
+                <div className="sticky top-20 space-y-6">
+                    {designer && (
+                        <Card>
+                             <CardContent className="p-4">
+                                <div className="flex items-center gap-4">
+                                    <Link href={`/designers/${designer.id}`} className="group">
+                                        <Avatar className="h-12 w-12">
+                                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                                            <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                    </Link>
+                                    <div className="flex-1">
+                                         <Link href={`/designers/${designer.id}`} className="group">
+                                            <p className="font-bold group-hover:underline">{designer.name}</p>
+                                         </Link>
+                                        <p className="text-sm text-muted-foreground">{designer.specialization}</p>
+                                    </div>
+                                    {user && user.id !== designer.id && (
+                                        <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} size="sm" disabled={isFollowLoading}>
+                                            {isFollowLoading ? <LoadingPage /> : <UserPlus className="mr-2 h-4 w-4" />}
+                                            {isFollowing ? "Obuna" : "Obuna"}
+                                        </Button>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    <Card>
+                        <CardContent className="p-4 flex flex-col gap-2">
+                             <Button onClick={handleLikeToggle} variant={isLiked ? "default" : "secondary"} disabled={!user || isLikeLoading} size="lg" className="w-full justify-start text-base">
+                                {isLikeLoading ? <LoadingPage /> : <Heart className={`mr-2 h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />}
+                                <span>Yoqdi ({project.likeCount})</span>
+                            </Button>
+                            <Button onClick={handleShare} variant="secondary" size="lg" className="w-full justify-start text-base">
+                                <Share2 className="mr-2 h-5 w-5" /> Ulashish
+                            </Button>
+                            <Button onClick={handleDownload} variant="secondary" size="lg" className="w-full justify-start text-base">
+                                <Download className="mr-2 h-5 w-5" /> Yuklab olish
+                            </Button>
                         </CardContent>
                     </Card>
+
                      <Card>
-                        <CardContent className="p-4 space-y-3 text-sm">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Loyiha haqida</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 text-sm">
+                            <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
+                                <p>{project.description}</p>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-around text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1.5">
+                                    <Heart className="w-4 h-4" />
+                                    <span>{project.likeCount || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Eye className="w-4 h-4" />
+                                    <span>{project.viewCount || 0}</span>
+                                </div>
+                                 <div className="flex items-center gap-1.5">
+                                    <MessageSquare className="w-4 h-4" />
+                                    <span>{comments?.length || 0}</span>
+                                </div>
+                            </div>
+                            {project.createdAt && (
+                                <div className="flex items-start">
+                                <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                                <div>
+                                    <h4 className="font-semibold">Chop etilgan</h4>
+                                    <p className="text-muted-foreground">
+                                    {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
+                                    </p>
+                                </div>
+                                </div>
+                            )}
                             {project.tools && project.tools.length > 0 && (
+                                <>
+                                <Separator/>
                                 <div className="flex items-start">
                                 <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
                                 <div>
@@ -398,6 +484,7 @@ export default function ProjectDetailsPage() {
                                     </div>
                                 </div>
                                 </div>
+                                </>
                             )}
                             {project.tags && project.tags.length > 0 && (
                                 <>
@@ -417,109 +504,8 @@ export default function ProjectDetailsPage() {
                     </Card>
                 </div>
             </div>
-
-            {/* ----- Comments Section ----- */}
-             <Card className="pt-6">
-                <CardHeader>
-                    <h2 className="font-headline text-2xl font-bold flex items-center gap-2">
-                        <MessageSquare className="w-6 h-6" />
-                        Izohlar ({comments?.length || 0})
-                    </h2>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {user && (
-                         <div className="flex items-start gap-3">
-                            <Avatar className="h-10 w-10">
-                                <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
-                                <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 space-y-2">
-                                <Textarea 
-                                    placeholder="Izohingizni yozing..."
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    disabled={isSubmittingComment}
-                                />
-                                <div className="flex justify-end">
-                                    <Button onClick={handleCommentSubmit} disabled={isSubmittingComment || !newComment.trim()}>
-                                        {isSubmittingComment ? <LoadingPage /> : <Send className="mr-2 h-4 w-4"/>}
-                                        Yuborish
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                   
-                    <Separator />
-
-                    <div className="space-y-6">
-                        {areCommentsLoading ? (
-                            <div className="space-y-6">
-                                <CommentSkeleton />
-                                <CommentSkeleton />
-                            </div>
-                        ) : comments && comments.length > 0 ? (
-                           comments.map(comment => (
-                               <div key={comment.id} className="flex items-start gap-3">
-                                   <Avatar className="h-10 w-10">
-                                       <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
-                                       <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
-                                   </Avatar>
-                                   <div className="flex-1">
-                                       <div className="flex items-center gap-2">
-                                           <p className="font-semibold">{comment.userName}</p>
-                                           <p className="text-xs text-muted-foreground">
-                                               {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}
-                                           </p>
-                                       </div>
-                                       <p className="text-muted-foreground">{comment.content}</p>
-                                   </div>
-                               </div>
-                           ))
-                        ) : (
-                            <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-          </div>
         </div>
-      </motion.div>
-
-    {/* Sticky Footer for Actions */}
-    {!isModal && designer && (
-        <div className="sticky bottom-0 left-0 right-0 z-40">
-            <div className="container max-w-4xl mx-auto px-4">
-                 <Card className="shadow-2xl bg-background/80 backdrop-blur-lg">
-                    <CardContent className="p-2 sm:p-3 flex justify-between items-center">
-                         <Link href={`/designers/${designer.id}`} className="flex items-center gap-2 group flex-1 min-w-0">
-                            <Avatar className="h-10 w-10">
-                                {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                                <AvatarFallback>{designer.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0">
-                                <p className="font-semibold group-hover:underline truncate">{designer.name}</p>
-                                <p className="text-xs text-muted-foreground truncate">{designer.specialization}</p>
-                            </div>
-                        </Link>
-                        <div className="flex items-center gap-2">
-                            {user && user.id !== designer.id && (
-                                <Button onClick={handleFollowToggle} variant={isFollowing ? "secondary" : "default"} disabled={isFollowLoading} size="sm">
-                                    {isFollowLoading ? <LoadingPage /> : <UserPlus className="mr-2 h-4 w-4" />}
-                                    {isFollowing ? "Obuna bo'lingan" : "Obuna"}
-                                </Button>
-                            )}
-                             <Button onClick={handleLikeToggle} variant={isLiked ? "secondary" : "default"} disabled={!user || isLikeLoading} size="sm">
-                                {isLikeLoading ? <LoadingPage /> : <Heart className={`mr-2 h-4 w-4 ${isLiked ? 'fill-current text-red-500' : ''}`} />}
-                                {project.likeCount}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        </div>
-    )}
-
+      </div>
 
       {lightboxOpen && (
         <Lightbox 
