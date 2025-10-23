@@ -337,7 +337,7 @@ export default function ProjectDetailsPage() {
           <HoverCard openDelay={200} closeDelay={100}>
               <HoverCardTrigger asChild>
                   <Button variant="secondary" size="icon" className="rounded-full h-14 w-14 bg-background/80 backdrop-blur-sm">
-                      <Info className="h-7 w-7" />
+                      <Info className="h-6 w-6" />
                   </Button>
               </HoverCardTrigger>
               <HoverCardContent className="w-80" side="left" align="center">
@@ -404,14 +404,14 @@ export default function ProjectDetailsPage() {
                     animate={{ scale: isLiked ? 1.2 : 1 }}
                     transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                 >
-                    <ThumbsUp className={cn('h-7 w-7 transition-colors', isLiked ? 'fill-blue-500 text-blue-500' : '')} />
+                    <ThumbsUp className={cn('h-6 w-6 transition-colors', isLiked ? 'fill-blue-500 text-blue-500' : '')} />
                 </motion.div>
               </Button>
               <Button onClick={handleShare} variant="ghost" size="icon" className="h-14 w-14 rounded-full">
-                  <Share2 className="h-7 w-7" />
+                  <Share2 className="h-6 w-6" />
               </Button>
               <Button onClick={handleDownload} variant="ghost" size="icon" className="h-14 w-14 rounded-full">
-                  <Download className="h-7 w-7" />
+                  <Download className="h-6 w-6" />
               </Button>
           </div>
       </div>
