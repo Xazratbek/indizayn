@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -117,7 +116,7 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
                             sizes="25vw"
                             data-ai-hint="project image"
                         />
-                         <div className="absolute inset-0 bg-black/10 backdrop-blur-[1px]"></div>
+                         <div className="absolute inset-0 bg-black/10 backdrop-blur-sm"></div>
                     </div>
                 </motion.div>
             ))}
@@ -173,15 +172,14 @@ export default function Home() {
                                   transition={{ type: "spring", damping: 25, stiffness: 300 }}
                                   rotationInterval={2000}
                                 />
-                                <br className="md:hidden" />
-                               <span className="inline-block">Узбекистана на <span className="font-bold">InDizayn</span></span>
+                                <span className="w-full">Узбекистана на <span className="font-bold">InDizayn</span></span>
                             </motion.h1>
 
                             <motion.p
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
-                                className="mt-4 max-w-xl text-lg text-foreground/80"
+                                className="mt-4 max-w-xl mx-auto text-lg text-foreground/80"
                             >
                               Комплексная платформа, которая поможет нанимателям и авторам ориентироваться в творческом мире: от поиска вдохновения до общения.
                             </motion.p>
@@ -315,15 +313,4 @@ export default function Home() {
 
     </div>
   );
-
-    
-
-    
-
-
-
-    
-
-    
-
-    
+}
