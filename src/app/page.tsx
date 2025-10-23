@@ -266,45 +266,36 @@ export default function Home() {
       
       {!user && !isUserLoading && (
         <motion.section 
-            className="py-16 md:py-24 bg-secondary/50"
+            className="py-20 md:py-32 starry-background relative overflow-hidden"
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
+            viewport={{ once: true, amount: 0.2 }}
             variants={sectionVariants}
         >
-            <div className="container px-4 md:px-6 lg:px-8">
-            <div className="text-center mb-12">
-                <h2 className="font-headline text-3xl md:text-4xl font-bold">Platformaning afzalliklari</h2>
-                <p className="text-muted-foreground mt-2">Nima uchun dizaynerlar bizni tanlashadi?</p>
+             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0b1120]/80 to-[#0b1120]"></div>
+            <div className="container px-4 md:px-6 lg:px-8 relative z-10">
+            <div className="text-center mb-16">
+                <h2 className="font-headline text-4xl md:text-5xl font-bold liquid-text">Platformaning afzalliklari</h2>
+                <p className="text-slate-300 mt-4 text-lg">Nima uchun dizaynerlar bizni tanlashadi?</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {advantages.map((adv, index) => (
                     <motion.div
                     key={index}
-                    custom={index}
-                    initial="hidden"
-                    whileInView="visible"
+                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
                     viewport={{ once: true, amount: 0.5 }}
-                    variants={{
-                        hidden: { opacity: 0, y: 50 },
-                        visible: { 
-                        opacity: 1, 
-                        y: 0,
-                        transition: { duration: 0.5, delay: index * 0.1 }
-                        }
-                    }}
-                    whileHover={{ y: -8, boxShadow: "0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.5, delay: index * 0.15, ease: "easeOut" }}
                     >
-                    <Card className="text-center p-6 h-full">
-                        <CardHeader className="items-center">
-                            <div className="p-4 bg-primary/10 rounded-full mb-4">
+                    <div className="animated-border-box h-full">
+                        <div className="bg-[#0b1120]/70 backdrop-blur-md p-8 rounded-md text-center h-full flex flex-col items-center">
+                             <div className="p-4 bg-primary/10 rounded-full mb-6 ring-2 ring-primary/30">
                                 {adv.icon}
                             </div>
-                            <CardTitle className="font-headline text-xl">{adv.title}</CardTitle>
-                            <CardDescription className="pt-2">{adv.description}</CardDescription>
-                        </CardHeader>
-                    </Card>
+                            <h3 className="font-headline text-xl text-slate-100 mb-2">{adv.title}</h3>
+                            <p className="text-slate-400 text-sm flex-grow">{adv.description}</p>
+                        </div>
+                    </div>
                     </motion.div>
                 ))}
             </div>
