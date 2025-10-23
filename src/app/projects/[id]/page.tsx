@@ -448,7 +448,7 @@ export default function ProjectDetailsPage() {
         {/* Action Bar for Mobile/Tablet */}
         <div className="px-4 md:px-8 py-8 xl:hidden">
             <Card>
-                <CardContent className="p-4">
+                <div className="relative p-4 overflow-hidden">
                      <div className="flex items-center justify-between">
                          {designer && (
                              <Link href={`/designers/${designer.id}`} className="group flex items-center gap-3 text-lg">
@@ -476,34 +476,39 @@ export default function ProjectDetailsPage() {
                      </div>
                      <Separator className="my-4" />
                      <div className="flex justify-around items-center">
-                          <Button onClick={handleLikeToggle} variant="ghost" size="lg" className="flex-col h-auto gap-1" disabled={!user || isLikeLoading}>
+                          <Button onClick={handleLikeToggle} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground" disabled={!user || isLikeLoading}>
                             {isLikeLoading ? <LoadingPage /> : <ThumbsUp className={`h-6 w-6 ${isLiked ? 'fill-current text-blue-500' : ''}`} />}
                             <span className="text-xs">{project.likeCount}</span>
                           </Button>
-                           <Button variant="ghost" size="lg" className="flex-col h-auto gap-1">
+                           <Button variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground">
                                <Eye className="h-6 w-6"/>
                                <span className="text-xs">{project.viewCount}</span>
                            </Button>
-                           <Button variant="ghost" size="lg" className="flex-col h-auto gap-1">
+                           <Button variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground">
                                <MessageSquare className="h-6 w-6"/>
                                <span className="text-xs">{comments?.length || 0}</span>
                            </Button>
-                           <Button onClick={handleShare} variant="ghost" size="lg" className="flex-col h-auto gap-1">
+                           <Button onClick={handleShare} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground">
                               <Share2 className="h-6 w-6" />
                                <span className="text-xs">Ulashish</span>
                            </Button>
                      </div>
-                </CardContent>
+                </div>
             </Card>
         </div>
 
         {/* Info Card for Mobile/Tablet */}
-        <div className="px-4 md:px-8 mt-8 xl:hidden">
+        <div className="px-4 md:px-8 xl:hidden">
             <Card>
                 <CardHeader>
                     <CardTitle>Loyiha haqida</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                     {project.description && (
+                        <div>
+                            <p>{project.description}</p>
+                        </div>
+                     )}
                     {project.createdAt && (
                         <div className="flex items-start text-sm">
                             <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />

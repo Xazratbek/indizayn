@@ -48,8 +48,7 @@ export default function NewProjectPage() {
   const [tools, setTools] = useState<string[]>([]);
 
   // Progress state
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [submissionProgress, setSubmissionProgress] = useState(0);
+  const [overallProgress, setOverallProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
 
 
@@ -144,23 +143,24 @@ export default function NewProjectPage() {
     }
 
     setIsSubmitting(true);
-    setUploadStatus('Rasmlar yuklanmoqda...');
-
+    
     try {
       if(!db) throw new Error("Database connection not found.");
       
+      // Image upload stage
+      setUploadStatus('Rasmlar yuklanmoqda...');
       const imageUrls: string[] = [];
       for (let i = 0; i < imageFiles.length; i++) {
         const file = imageFiles[i];
         const url = await uploadImageWithApi(file);
         imageUrls.push(url);
-        // Update image upload progress
-        setUploadProgress(((i + 1) / imageFiles.length) * 100);
+        setOverallProgress(((i + 1) / imageFiles.length) * 100);
       }
       
-      setUploadStatus('Ma\'lumotlar saqlanmoqda...');
-      setSubmissionProgress(50); // Simulate start of DB submission
-
+      // Data submission stage
+      setUploadStatus('Loyiha saqlanmoqda...');
+      setOverallProgress(0); // Reset for the next stage
+      
       const newProjectData = {
         name: data.name,
         description: data.description,
@@ -174,18 +174,18 @@ export default function NewProjectPage() {
         likes: [],
         createdAt: serverTimestamp(),
       };
-
-      const projectRef = await addDoc(collection(db, "projects"), newProjectData);
-      setSubmissionProgress(75);
       
-      // Fetch designer's data to get followers
+      // Simulate submission progress
+      setOverallProgress(30);
+      const projectRef = await addDoc(collection(db, "projects"), newProjectData);
+      setOverallProgress(60);
+      
       const designerRef = doc(db, "users", user.id);
       const designerSnap = await getDoc(designerRef);
       if (designerSnap.exists()) {
-          // Pass the full designer object with ID to the notify function
           await notifyFollowers({ ...designerSnap.data(), id: designerSnap.id } as Designer, projectRef.id, data.name);
       }
-      setSubmissionProgress(100);
+      setOverallProgress(100);
       
       toast({
         variant: "success",
@@ -204,9 +204,8 @@ export default function NewProjectPage() {
         title: "Xatolik!",
         description: error.message || "Loyihani yuklashda kutilmagan xatolik yuz berdi.",
       });
-      setIsSubmitting(false); // Re-enable button on error
-      setUploadProgress(0);
-      setSubmissionProgress(0);
+      setIsSubmitting(false);
+      setOverallProgress(0);
       setUploadStatus('');
     }
   };
@@ -235,7 +234,6 @@ export default function NewProjectPage() {
                         onSubmit={form.handleSubmit(onSubmit)} 
                         className="space-y-6"
                         onKeyDown={(e) => {
-                            // Prevent form submission on Enter key press in any input except Textarea
                             if (e.key === 'Enter' && (e.target as HTMLElement).tagName.toLowerCase() !== 'textarea') {
                                 e.preventDefault();
                             }
@@ -331,20 +329,12 @@ export default function NewProjectPage() {
                          </div>
 
                          {isSubmitting && (
-                          <div className="space-y-4 pt-4">
-                              <p className="text-sm font-medium text-center text-muted-foreground">{uploadStatus}</p>
-                              {uploadProgress > 0 && (
-                                <div className="space-y-2">
-                                    <Label>Rasmlar yuklanishi</Label>
-                                    <Progress value={uploadProgress} />
-                                </div>
-                              )}
-                              {submissionProgress > 0 && (
-                                <div className="space-y-2">
-                                    <Label>Loyiha saqlanishi</Label>
-                                    <Progress value={submissionProgress} />
-                                </div>
-                              )}
+                          <div className="space-y-2 pt-4">
+                              <div className="flex justify-between items-center mb-1">
+                                <p className="text-sm font-medium text-muted-foreground">{uploadStatus}</p>
+                                <p className="text-sm font-semibold text-primary">{Math.round(overallProgress)}%</p>
+                              </div>
+                              <Progress value={overallProgress} />
                           </div>
                          )}
 
@@ -364,5 +354,3 @@ export default function NewProjectPage() {
     </div>
   );
 }
-
-    
