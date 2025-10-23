@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -160,9 +159,9 @@ export default function Home() {
                                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
                                 className="text-4xl md:text-6xl font-bold font-headline mb-4 flex flex-wrap justify-center items-center gap-x-2"
                             >
-                                <span className="inline-block">Лучшие</span>{' '}
+                                <span className="inline-block">Eng sara</span>{' '}
                                 <RotatingText
-                                  texts={['проекты', 'таланты', 'авторы']}
+                                  texts={["loyihalar", "iste'dodlar", "dizaynlar"]}
                                   mainClassName="px-2 sm:px-2 md:px-2 bg-primary text-primary-foreground overflow-hidden py-0 justify-center rounded-lg"
                                   staggerFrom={"last"}
                                   initial={{ y: "100%" }}
@@ -173,7 +172,7 @@ export default function Home() {
                                   transition={{ type: "spring", damping: 25, stiffness: 300 }}
                                   rotationInterval={2000}
                                 />
-                                <span className="w-full">Узбекистана на <span className="font-bold">InDizayn</span></span>
+                                <span className="w-full">inDizayn platformasida</span>
                             </motion.h1>
 
                             <motion.p
@@ -182,7 +181,7 @@ export default function Home() {
                                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
                                 className="mt-4 max-w-xl mx-auto text-lg text-foreground/80"
                             >
-                              Комплексная платформа, которая поможет нанимателям и авторам ориентироваться в творческом мире: от поиска вдохновения до общения.
+                              Ijodkorlar va ish beruvchilar uchun yagona platforma: ilhomlanishdan tortib, hamkorlik qilishgacha.
                             </motion.p>
                           
                             <motion.div
