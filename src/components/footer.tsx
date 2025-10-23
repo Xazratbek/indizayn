@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 
 export function Footer() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [isClient, setIsClient] = useState(false);
   const pathname = usePathname();
 
@@ -25,28 +25,25 @@ export function Footer() {
   }
 
   return (
-    <footer className={cn(
-        "w-full border-t",
-        !session ? "starry-background text-slate-300 border-slate-800" : "bg-background border-border"
-        )}>
+    <footer className="w-full border-t bg-background border-border">
       <div className="py-6 px-4 md:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
             <Link href="/" className="flex items-center gap-2">
-              <Logo className={cn("w-6 h-6", !session ? "text-primary" : "text-primary")} />
-              <span className={cn("font-semibold font-headline", !session ? "text-white" : "text-foreground")}>inDizayn</span>
+              <Logo className="w-6 h-6 text-primary" />
+              <span className="font-semibold font-headline text-foreground">inDizayn</span>
             </Link>
-            <p className={cn("text-sm hidden md:block", !session ? "text-slate-400" : "text-muted-foreground")}>
+            <p className="text-sm hidden md:block text-muted-foreground">
               © {new Date().getFullYear()} inDizayn. Barcha huquqlar himoyalangan.
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
             <nav className="flex flex-wrap items-center justify-center gap-4">
-                <Link href="/browse" className={cn("hover:text-foreground", !session ? "text-slate-400 hover:text-white" : "text-muted-foreground")}>Loyihalar</Link>
-                <Link href="/designers" className={cn("hover:text-foreground", !session ? "text-slate-400 hover:text-white" : "text-muted-foreground")}>Dizaynerlar</Link>
-                <Link href="/about" className={cn("hover:text-foreground", !session ? "text-slate-400 hover:text-white" : "text-muted-foreground")}>Haqida</Link>
+                <Link href="/browse" className="text-muted-foreground hover:text-foreground">Loyihalar</Link>
+                <Link href="/designers" className="text-muted-foreground hover:text-foreground">Dizaynerlar</Link>
+                <Link href="/about" className="text-muted-foreground hover:text-foreground">Haqida</Link>
             </nav>
-             <p className={cn("text-sm md:hidden", !session ? "text-slate-400" : "text-muted-foreground")}>
+             <p className="text-sm md:hidden text-muted-foreground">
               © {new Date().getFullYear()} inDizayn. Barcha huquqlar himoyalangan.
             </p>
           </div>
@@ -55,3 +52,5 @@ export function Footer() {
     </footer>
   );
 }
+
+    

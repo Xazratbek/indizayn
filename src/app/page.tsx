@@ -266,39 +266,36 @@ export default function Home() {
       
       {!user && !isUserLoading && (
         <motion.section 
-            className="py-20 md:py-32 starry-background relative overflow-hidden"
+            className="py-20 md:py-32 bg-secondary/50"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, amount: 0.2 }}
             variants={sectionVariants}
         >
-             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0b1120]/80 to-[#0b1120]"></div>
-            <div className="container px-4 md:px-6 lg:px-8 relative z-10">
-            <div className="text-center mb-16">
-                <h2 className="font-headline text-4xl md:text-5xl font-bold liquid-text">Platformaning afzalliklari</h2>
-                <p className="text-slate-300 mt-4 text-lg">Nima uchun dizaynerlar bizni tanlashadi?</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {advantages.map((adv, index) => (
-                    <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                    viewport={{ once: true, amount: 0.5 }}
-                    transition={{ duration: 0.5, delay: index * 0.15, ease: "easeOut" }}
-                    >
-                    <div className="animated-border-box h-full">
-                        <div className="bg-[#0b1120]/70 backdrop-blur-md p-8 rounded-md text-center h-full flex flex-col items-center">
-                             <div className="p-4 bg-primary/10 rounded-full mb-6 ring-2 ring-primary/30">
-                                {adv.icon}
-                            </div>
-                            <h3 className="font-headline text-xl text-slate-100 mb-2">{adv.title}</h3>
-                            <p className="text-slate-400 text-sm flex-grow">{adv.description}</p>
-                        </div>
-                    </div>
-                    </motion.div>
-                ))}
-            </div>
+            <div className="container px-4 md:px-6 lg:px-8">
+                <div className="text-center mb-16">
+                    <h2 className="font-headline text-4xl md:text-5xl font-bold">Platformaning afzalliklari</h2>
+                    <p className="text-muted-foreground mt-4 text-lg max-w-3xl mx-auto">Nima uchun dizaynerlar bizni tanlashadi?</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {advantages.map((adv, index) => (
+                        <motion.div
+                            key={index}
+                            initial={{ opacity: 0, y: 50 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, amount: 0.5 }}
+                            transition={{ duration: 0.5, delay: index * 0.15 }}
+                        >
+                            <Card className="text-center h-full p-8 shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+                                <div className="p-4 bg-primary/10 rounded-full inline-block mb-6 ring-4 ring-primary/20">
+                                    {adv.icon}
+                                </div>
+                                <CardTitle className="mb-2 text-xl">{adv.title}</CardTitle>
+                                <CardDescription className="text-base">{adv.description}</CardDescription>
+                            </Card>
+                        </motion.div>
+                    ))}
+                </div>
             </div>
         </motion.section>
       )}
@@ -306,3 +303,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
