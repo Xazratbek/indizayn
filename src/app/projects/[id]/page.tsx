@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus } from 'lucide-react';
+import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus, Eye } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -20,7 +20,6 @@ import { useToast } from '@/hooks/use-toast';
 import Lightbox from '@/components/lightbox';
 import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
-import { useModalContext } from '@/components/project-detail-modal';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -49,10 +48,8 @@ function CommentSkeleton() {
 export default function ProjectDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const modalContext = useModalContext();
 
-  const id = modalContext.projectId || (typeof params.id === 'string' ? params.id : '');
-  const isModal = !!modalContext.projectId;
+  const id = typeof params.id === 'string' ? params.id : '';
 
   const db = useFirestore();
   const { data: session } = useSession();
@@ -73,7 +70,7 @@ export default function ProjectDetailsPage() {
   const { data: project, isLoading: isProjectLoading, error } = useDoc<Project>(projectDocRef);
   
   useEffect(() => {
-    if (id && db && !isModal) {
+    if (id && db) {
         const projectRef = doc(db, 'projects', id);
         const viewedKey = `viewed_${id}`;
         const viewed = sessionStorage.getItem(viewedKey);
@@ -84,7 +81,7 @@ export default function ProjectDetailsPage() {
           sessionStorage.setItem(viewedKey, 'true');
         }
     }
-  }, [id, db, isModal]);
+  }, [id, db]);
 
 
   const designerDocRef = useMemoFirebase(() => 
@@ -110,7 +107,7 @@ export default function ProjectDetailsPage() {
   }, [user, project, designer]);
 
   const handleShare = () => {
-    const url = window.location.origin + `/projects/${id}`;
+    const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
         toast({
             title: "Havola nusxalandi!",
@@ -525,3 +522,5 @@ export default function ProjectDetailsPage() {
     </>
   );
 }
+
+    
