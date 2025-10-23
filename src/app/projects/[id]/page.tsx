@@ -2,18 +2,17 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp, collection, query, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp, collection, query, orderBy, deleteDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus, Eye } from 'lucide-react';
-import { useState, useEffect, useContext } from 'react';
-import { format, formatDistanceToNowStrict } from 'date-fns';
+import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus, Eye, Pencil, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Project, Designer, Comment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +20,6 @@ import Lightbox from '@/components/lightbox';
 import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   HoverCard,
@@ -48,10 +46,9 @@ function CommentSkeleton() {
 
 export default function ProjectDetailsPage() {
   const params = useParams();
-  const router = useRouter();
   const modalContext = useModalContext();
 
-  const id = modalContext.projectId || (typeof params.id === 'string' ? params.id : '');
+  const id = modalContext?.projectId || (typeof params.id === 'string' ? params.id : '');
 
   const db = useFirestore();
   const { data: session } = useSession();
@@ -75,15 +72,18 @@ export default function ProjectDetailsPage() {
     if (id && db) {
         const projectRef = doc(db, 'projects', id);
         const viewedKey = `viewed_${id}`;
-        const viewed = sessionStorage.getItem(viewedKey);
-        if (!viewed) {
-          updateDoc(projectRef, {
-              viewCount: increment(1)
-          }).catch(err => console.error("Failed to increment view count: ", err));
-          sessionStorage.setItem(viewedKey, 'true');
+        // Only increment view count if not in modal view
+        if (!modalContext?.projectId) {
+            const viewed = sessionStorage.getItem(viewedKey);
+            if (!viewed) {
+              updateDoc(projectRef, {
+                  viewCount: increment(1)
+              }).catch(err => console.error("Failed to increment view count: ", err));
+              sessionStorage.setItem(viewedKey, 'true');
+            }
         }
     }
-  }, [id, db]);
+  }, [id, db, modalContext?.projectId]);
 
 
   const designerDocRef = useMemoFirebase(() => 
@@ -306,210 +306,204 @@ export default function ProjectDetailsPage() {
   
   const projectImages = project.imageUrls && project.imageUrls.length > 0 ? project.imageUrls : [project.imageUrl];
 
-
-  return (
+  const content = (
     <>
-      <div className="relative">
-        <div className="fixed top-1/2 -translate-y-1/2 right-4 z-50 flex flex-col items-center gap-4">
-            {designer && (
-                 <div className="relative group">
-                     <Link href={`/designers/${designer.id}`} className="block">
-                        <Avatar className="h-16 w-16 border-2 border-background shadow-lg">
-                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                            <AvatarFallback className="text-2xl">{designer.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                     </Link>
-                     {user && user.id !== designer.id && (
-                        <Button 
-                            size="icon" 
-                            className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full border-2 border-background"
-                            variant={isFollowing ? "secondary" : "default"}
-                            disabled={isFollowLoading}
-                            onClick={handleFollowToggle}
-                        >
-                            {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                        </Button>
-                     )}
-                 </div>
-            )}
-            
-            <HoverCard openDelay={200} closeDelay={100}>
-                <HoverCardTrigger asChild>
-                    <Button variant="secondary" size="icon" className="rounded-full h-12 w-12 bg-secondary/80 backdrop-blur-sm">
-                        <Info className="h-6 w-6" />
-                    </Button>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80" side="left" align="center">
-                    <div className="space-y-4">
-                        <h3 className="font-bold text-lg">{project.name}</h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                            {project.description}
-                        </p>
-                        <Separator />
-                        <div className="flex justify-around text-sm text-muted-foreground">
-                             <div className="flex items-center gap-1.5">
-                                <ThumbsUp className="w-4 h-4" />
-                                <span>{project.likeCount || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <Eye className="w-4 h-4" />
-                                <span>{project.viewCount || 0}</span>
-                            </div>
-                                <div className="flex items-center gap-1.5">
-                                <MessageSquare className="w-4 h-4" />
-                                <span>{comments?.length || 0}</span>
-                            </div>
-                        </div>
-                        {project.createdAt && (
-                            <div className="flex items-start text-sm">
-                                <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                                <div>
-                                    <h4 className="font-semibold">Chop etilgan</h4>
-                                    <p className="text-muted-foreground">
-                                    {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                        {project.tools && project.tools.length > 0 && (
-                            <>
-                            <Separator/>
-                            <div className="flex items-start text-sm">
-                            <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                            <div>
-                                <h4 className="font-semibold">Foydalanilgan vositalar</h4>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
-                                </div>
-                            </div>
-                            </div>
-                            </>
-                        )}
-                        {project.tags && project.tags.length > 0 && (
-                            <>
-                            <Separator/>
-                            <div className="flex items-start text-sm">
-                            <Tag className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
-                            <div>
-                                <h4 className="font-semibold">Teglar</h4>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
-                                </div>
-                            </div>
-                            </div>
-                            </>
-                        )}
-                    </div>
-                </HoverCardContent>
-            </HoverCard>
+      <div className="fixed top-1/2 -translate-y-1/2 right-4 z-50 flex flex-col items-center gap-4">
+          {designer && (
+               <div className="relative group">
+                   <Link href={`/designers/${designer.id}`} className="block">
+                      <Avatar className="h-16 w-16 border-2 border-background shadow-lg">
+                          {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                          <AvatarFallback className="text-2xl">{designer.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                   </Link>
+                   {user && user.id !== designer.id && (
+                      <Button 
+                          size="icon" 
+                          className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-7 w-7 rounded-full border-2 border-background"
+                          variant={isFollowing ? "secondary" : "default"}
+                          disabled={isFollowLoading}
+                          onClick={handleFollowToggle}
+                      >
+                          {isFollowLoading ? <LoadingPage /> : isFollowing ? <UserCheck className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                      </Button>
+                   )}
+               </div>
+          )}
+          
+          <HoverCard openDelay={200} closeDelay={100}>
+              <HoverCardTrigger asChild>
+                  <Button variant="secondary" size="icon" className="rounded-full h-12 w-12 bg-secondary/80 backdrop-blur-sm">
+                      <Info className="h-6 w-6" />
+                  </Button>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80" side="left" align="center">
+                  <div className="space-y-4">
+                      <h3 className="font-bold text-lg">{project.name}</h3>
+                       <div className="flex justify-around text-sm text-muted-foreground">
+                           <div className="flex items-center gap-1.5">
+                              <ThumbsUp className="w-4 h-4" />
+                              <span>{project.likeCount || 0}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                              <Eye className="w-4 h-4" />
+                              <span>{project.viewCount || 0}</span>
+                          </div>
+                              <div className="flex items-center gap-1.5">
+                              <MessageSquare className="w-4 h-4" />
+                              <span>{comments?.length || 0}</span>
+                          </div>
+                      </div>
+                      {project.createdAt && (
+                          <div className="flex items-start text-sm">
+                              <Calendar className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                              <div>
+                                  <h4 className="font-semibold">Chop etilgan</h4>
+                                  <p className="text-muted-foreground">
+                                  {project.createdAt?.toDate && format(project.createdAt.toDate(), 'd MMMM, yyyy', { locale: uz })}
+                                  </p>
+                              </div>
+                          </div>
+                      )}
+                      {project.tools && project.tools.length > 0 && (
+                          <>
+                          <div className="flex items-start text-sm">
+                          <Wrench className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                          <div>
+                              <h4 className="font-semibold">Foydalanilgan vositalar</h4>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                              {project.tools.map(tool => <Badge key={tool} variant="secondary">{tool}</Badge>)}
+                              </div>
+                          </div>
+                          </div>
+                          </>
+                      )}
+                      {project.tags && project.tags.length > 0 && (
+                          <>
+                          <div className="flex items-start text-sm">
+                          <Tag className="w-4 h-4 mr-3 mt-1 text-muted-foreground shrink-0" />
+                          <div>
+                              <h4 className="font-semibold">Teglar</h4>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                              {project.tags.map(tag => <Badge key={tag} variant="outline">#{tag}</Badge>)}
+                              </div>
+                          </div>
+                          </div>
+                          </>
+                      )}
+                  </div>
+              </HoverCardContent>
+          </HoverCard>
 
-             <div className="p-2 bg-secondary/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
-                <Button onClick={handleLikeToggle} variant="ghost" size="icon" className="h-12 w-12 rounded-full" disabled={!user || isLikeLoading}>
-                    {isLikeLoading ? <LoadingPage /> : <ThumbsUp className={`h-6 w-6 ${isLiked ? 'fill-current text-blue-500' : ''}`} />}
-                </Button>
-                <Button onClick={handleShare} variant="ghost" size="icon" className="h-12 w-12 rounded-full">
-                    <Share2 className="h-6 w-6" />
-                </Button>
-                <Button onClick={handleDownload} variant="ghost" size="icon" className="h-12 w-12 rounded-full">
-                    <Download className="h-6 w-6" />
-                </Button>
-            </div>
+           <div className="p-2 bg-secondary/80 backdrop-blur-sm rounded-full flex flex-col gap-2">
+              <Button onClick={handleLikeToggle} variant="ghost" size="icon" className="h-12 w-12 rounded-full" disabled={!user || isLikeLoading}>
+                  {isLikeLoading ? <LoadingPage /> : <ThumbsUp className={`h-6 w-6 ${isLiked ? 'fill-current text-blue-500' : ''}`} />}
+              </Button>
+              <Button onClick={handleShare} variant="ghost" size="icon" className="h-12 w-12 rounded-full">
+                  <Share2 className="h-6 w-6" />
+              </Button>
+              <Button onClick={handleDownload} variant="ghost" size="icon" className="h-12 w-12 rounded-full">
+                  <Download className="h-6 w-6" />
+              </Button>
+          </div>
+      </div>
+      
+      <div className="max-w-5xl mx-auto rounded-lg bg-card text-card-foreground my-8">
+        <div className="p-4 md:p-8">
+             {designer && (
+                <div className="flex items-center gap-4">
+                    <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 text-lg">
+                        <Avatar className="h-12 w-12 group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background transition-all">
+                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                            <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                             <span className="group-hover:underline">{designer.name}</span>
+                        </div>
+                    </Link>
+                    
+                </div>
+             )}
+            <h1 className="font-headline text-2xl md:text-3xl font-bold mt-4">{project.name}</h1>
         </div>
         
-        <div className="max-w-5xl mx-auto py-12 px-4 md:px-8 bg-card shadow-2xl my-8 rounded-lg">
-            <div className="space-y-6">
-                 {designer && (
-                    <div className="flex items-center gap-4">
-                        <Link href={`/designers/${designer.id}`} className="group inline-flex items-center gap-2 text-lg">
-                            <Avatar className="h-12 w-12 group-hover:ring-2 group-hover:ring-primary group-hover:ring-offset-2 group-hover:ring-offset-background transition-all">
-                                {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                                <AvatarFallback className="text-xl">{designer.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                        </Link>
-                        <div>
-                             <h1 className="font-headline text-2xl md:text-3xl font-bold">{project.name}</h1>
-                             <Link href={`/designers/${designer.id}`} className="hover:underline">
-                                <span >{designer.name}</span>
-                             </Link>
-                        </div>
-                    </div>
-                 )}
-                
-                {projectImages.map((url, index) => (
-                    <div key={index} className="relative w-full overflow-hidden rounded-lg bg-secondary cursor-pointer" onClick={() => openLightbox(index)}>
-                        <Image
-                            src={url}
-                            alt={`${project.name} - ${index + 1}`}
-                            width={1600}
-                            height={1200}
-                            className="w-full h-auto object-contain"
-                            data-ai-hint="project image"
-                            priority={index < 2}
-                        />
-                    </div>
-                ))}
-
-                <div className="max-w-3xl mx-auto w-full pt-16 pb-24">
-                    <h2 className="font-headline text-2xl font-bold mb-6">
-                        Izohlar ({comments?.length || 0})
-                    </h2>
-                    <div className="space-y-8">
-                        {user && (
-                            <div className="flex items-start gap-4">
-                                <Avatar className="h-10 w-10">
-                                    <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
-                                    <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 relative">
-                                    <Textarea 
-                                        placeholder="Izohingizni yozing..."
-                                        value={newComment}
-                                        onChange={(e) => setNewComment(e.target.value)}
-                                        disabled={isSubmittingComment}
-                                        className="bg-secondary min-h-[100px] pr-28"
-                                    />
-                                    <Button 
-                                        onClick={handleCommentSubmit} 
-                                        disabled={isSubmittingComment || !newComment.trim()}
-                                        className="absolute bottom-3 right-3"
-                                        size="sm"
-                                    >
-                                        {isSubmittingComment ? <LoadingPage /> : 'Yuborish'}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
-                    
-                        <div className="space-y-6">
-                            {areCommentsLoading ? (
-                                <div className="space-y-6">
-                                    <CommentSkeleton />
-                                    <CommentSkeleton />
-                                </div>
-                            ) : comments && comments.length > 0 ? (
-                            comments.map(comment => (
-                                <div key={comment.id} className="flex items-start gap-4">
-                                    <Avatar className="h-10 w-10">
-                                        <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
-                                        <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 text-sm">
-                                            <p className="font-semibold">{comment.userName}</p>
-                                            <p className="text-muted-foreground">· {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}</p>
-                                        </div>
-                                        <p className="text-foreground/90 mt-1">{comment.content}</p>
-
-                                    </div>
-                                </div>
-                            ))
-                            ) : (
-                                <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
-                            )}
-                        </div>
-                    </div>
+        <div className="space-y-4 md:space-y-8">
+            {projectImages.map((url, index) => (
+                <div key={index} className="relative w-full overflow-hidden bg-secondary cursor-pointer px-4 md:px-8" onClick={() => openLightbox(index)}>
+                    <Image
+                        src={url}
+                        alt={`${project.name} - ${index + 1}`}
+                        width={1600}
+                        height={1200}
+                        className="w-full h-auto object-contain"
+                        data-ai-hint="project image"
+                        priority={index < 2}
+                    />
                 </div>
-            </div>
+            ))}
+        </div>
+
+        <div className="p-4 md:p-8">
+          <div className="max-w-3xl mx-auto w-full pt-16 pb-24">
+              <h2 className="font-headline text-2xl font-bold mb-6">
+                  Izohlar ({comments?.length || 0})
+              </h2>
+              <div className="space-y-8">
+                  {user && (
+                      <div className="flex items-start gap-4">
+                          <Avatar className="h-10 w-10">
+                              <AvatarImage src={user.image ?? ''} alt={user.name ?? ''} />
+                              <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 relative">
+                              <Textarea 
+                                  placeholder="Izohingizni yozing..."
+                                  value={newComment}
+                                  onChange={(e) => setNewComment(e.target.value)}
+                                  disabled={isSubmittingComment}
+                                  className="bg-secondary min-h-[100px] pr-28"
+                              />
+                              <Button 
+                                  onClick={handleCommentSubmit} 
+                                  disabled={isSubmittingComment || !newComment.trim()}
+                                  className="absolute bottom-3 right-3"
+                                  size="sm"
+                              >
+                                  {isSubmittingComment ? <LoadingPage /> : 'Yuborish'}
+                              </Button>
+                          </div>
+                      </div>
+                  )}
+              
+                  <div className="space-y-6">
+                      {areCommentsLoading ? (
+                          <div className="space-y-6">
+                              <CommentSkeleton />
+                              <CommentSkeleton />
+                          </div>
+                      ) : comments && comments.length > 0 ? (
+                      comments.map(comment => (
+                          <div key={comment.id} className="flex items-start gap-4">
+                              <Avatar className="h-10 w-10">
+                                  <AvatarImage src={comment.userPhotoURL} alt={comment.userName} />
+                                  <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1">
+                                  <div className="flex items-center gap-2 text-sm">
+                                      <p className="font-semibold">{comment.userName}</p>
+                                      <p className="text-muted-foreground">· {comment.createdAt ? formatDistanceToNowStrict(comment.createdAt.toDate(), { addSuffix: true, locale: uz }) : ''}</p>
+                                  </div>
+                                  <p className="text-foreground/90 mt-1">{comment.content}</p>
+
+                              </div>
+                          </div>
+                      ))
+                      ) : (
+                          <p className="text-center text-muted-foreground py-8">Hali izohlar yo'q. Birinchi bo'lib siz yozing!</p>
+                      )}
+                  </div>
+              </div>
+          </div>
         </div>
       </div>
 
@@ -523,6 +517,16 @@ export default function ProjectDetailsPage() {
       )}
     </>
   );
-}
 
-    
+  // If page is not in a modal, wrap with a standard layout
+  if (!modalContext?.projectId) {
+    return (
+      <div className="relative">
+        {content}
+      </div>
+    );
+  }
+
+  // If in a modal, return the content directly
+  return content;
+}
