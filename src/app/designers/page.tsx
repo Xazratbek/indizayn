@@ -30,6 +30,7 @@ import { useSession } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
+const DESIGNERS_PER_PAGE = 20;
 
 function DesignerCard({ designer }: { designer: Designer }) {
     const { data: session } = useSession();
