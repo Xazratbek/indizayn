@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -34,7 +35,7 @@ const PROJECTS_PER_PAGE = 12;
 
 export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('trending');
+  const [sortBy, setSortBy] = useState('latest'); // Default sort to 'latest'
   const [activeTag, setActiveTag] = useState<string | null>(null);
   
   const [pages, setPages] = useState<QueryDocumentSnapshot<DocumentData>[]>([]);
@@ -53,12 +54,12 @@ export default function BrowsePage() {
     let baseQuery = collection(db, 'projects');
     
     let q;
-    if (sortBy === 'latest') {
-      q = query(baseQuery, orderBy('createdAt', 'desc'));
-    } else if (sortBy === 'popular') {
+    if (sortBy === 'popular') {
       q = query(baseQuery, orderBy('likeCount', 'desc'));
-    } else { // trending
+    } else if (sortBy === 'trending') {
       q = query(baseQuery, orderBy('viewCount', 'desc'));
+    } else { // 'latest' is the default
+      q = query(baseQuery, orderBy('createdAt', 'desc'));
     }
     
     if (activeTag) {
@@ -99,9 +100,9 @@ export default function BrowsePage() {
 
             // Sort the combined array based on the current sort order
              return combined.sort((a,b) => {
-                 if (sortBy === 'latest') return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
                  if (sortBy === 'popular') return b.likeCount - a.likeCount;
-                 return b.viewCount - a.viewCount;
+                 if (sortBy === 'trending') return b.viewCount - a.viewCount;
+                 return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0); // Default to latest
              });
         });
     }
@@ -118,7 +119,12 @@ export default function BrowsePage() {
   }, [isIntersecting, hasMore, isLoading, loadMore]);
 
   const resetAndSort = (newSortBy: string) => {
-    setSortBy(newSortBy);
+    // If the new sort value is the same as the current one, reset to default ('latest')
+    if (newSortBy === sortBy) {
+        setSortBy('latest');
+    } else {
+        setSortBy(newSortBy);
+    }
     setAllProjects([]);
     setPages([]);
     setHasMore(true);
@@ -175,12 +181,12 @@ export default function BrowsePage() {
                 <div className="py-4">
                   <RadioGroup value={sortBy} onValueChange={resetAndSort}>
                     <div className="flex items-center space-x-2 py-2">
-                      <RadioGroupItem value="trending" id="trending" />
-                      <Label htmlFor="trending">Trenddagilar</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 py-2">
                       <RadioGroupItem value="latest" id="latest" />
                       <Label htmlFor="latest">Eng so'nggilari</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 py-2">
+                      <RadioGroupItem value="trending" id="trending" />
+                      <Label htmlFor="trending">Trenddagilar</Label>
                     </div>
                     <div className="flex items-center space-x-2 py-2">
                       <RadioGroupItem value="popular" id="popular" />
