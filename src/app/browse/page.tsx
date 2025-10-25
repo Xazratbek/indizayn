@@ -26,10 +26,8 @@ import { AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import { PREDEFINED_TAGS } from '@/lib/predefined-tags';
 import { ScrollArea } from '@/components/ui/scroll-area';
-
 
 const PROJECTS_PER_PAGE = 12;
 
@@ -38,124 +36,177 @@ export default function BrowsePage() {
   const [sortBy, setSortBy] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   
-  const [pages, setPages] = useState<QueryDocumentSnapshot<DocumentData>[]>([]);
-  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
   const selectedProjectId = searchParams.get('projectId');
   const db = useFirestore();
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   
-  const projectsQuery = useMemoFirebase(() => {
+  const createBaseQuery = () => {
     if (!db) return null;
-    let baseQuery = collection(db, 'projects');
-    
-    let q;
-    if (sortBy === 'popular') {
-      q = query(baseQuery, orderBy('likeCount', 'desc'));
-    } else if (sortBy === 'trending') {
-      q = query(baseQuery, orderBy('viewCount', 'desc'));
-    } else { // Default to 'latest' if sortBy is null or 'latest'
-      q = query(baseQuery, orderBy('createdAt', 'desc'));
-    }
-    
+    let baseQuery: Query<DocumentData> = collection(db, 'projects');
+
     if (activeTag) {
-      q = query(q, where('tags', 'array-contains', activeTag));
+      baseQuery = query(baseQuery, where('tags', 'array-contains', activeTag));
+    }
+    
+    if (sortBy === 'popular') {
+      baseQuery = query(baseQuery, orderBy('likeCount', 'desc'));
+    } else if (sortBy === 'trending') {
+        baseQuery = query(baseQuery, orderBy('viewCount', 'desc'));
+    } else {
+      // Default to 'latest' if sortBy is null or 'latest'
+      baseQuery = query(baseQuery, orderBy('createdAt', 'desc'));
+    }
+    
+    return baseQuery;
+  }
+  
+  const fetchProjects = useCallback(async (isInitialLoad = false) => {
+    if (!db) return;
+    if (!isInitialLoad && !hasMore) return;
+
+    if (isInitialLoad) {
+      setIsLoading(true);
+      setProjects([]);
+      setLastDoc(null);
+    } else {
+      setIsLoadingMore(true);
     }
 
+    try {
+      let q = createBaseQuery();
+      if (!q) return;
 
-    q = query(q, limit(PROJECTS_PER_PAGE));
-    const lastDoc = pages[pages.length - 1];
-    if (lastDoc) {
+      q = query(q, limit(PROJECTS_PER_PAGE));
+
+      if (!isInitialLoad && lastDoc) {
         q = query(q, startAfter(lastDoc));
-    }
-    return q;
-  }, [db, sortBy, pages, activeTag]);
+      }
 
-  const { data: newProjects, isLoading, error, snapshot } = useCollection<Project>(projectsQuery);
-
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
-  const isIntersecting = useIntersectionObserver(loadMoreRef);
-
-  const loadMore = useCallback(() => {
-    if (snapshot && snapshot.docs.length > 0) {
-      const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-      setPages(prev => [...prev, lastDoc]);
-    }
-  }, [snapshot]);
-
-  useEffect(() => {
-    if (newProjects) {
-        setAllProjects(prev => {
-             // Create a Set of new project IDs for efficient lookup
-            const newProjectIds = new Set(newProjects.map(p => p.id));
-            
-            // Filter out any projects in the previous state that are also in the new batch
-            const filteredPrev = prev.filter(p => !newProjectIds.has(p.id));
-
-            const combined = [...filteredPrev, ...newProjects];
-
-            // Sort the combined array based on the current sort order
-             return combined.sort((a,b) => {
-                 if (sortBy === 'popular') return b.likeCount - a.likeCount;
-                 if (sortBy === 'trending') return b.viewCount - a.viewCount;
-                 return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0); // Default to latest
-             });
-        });
-    }
-     if (snapshot) {
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const newProjects = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Project));
+        
+        setProjects(prev => isInitialLoad ? newProjects : [...prev, ...newProjects]);
+        
+        const newLastDoc = snapshot.docs[snapshot.docs.length - 1];
+        setLastDoc(newLastDoc || null);
         setHasMore(snapshot.docs.length === PROJECTS_PER_PAGE);
-     }
-  }, [newProjects, snapshot, sortBy]);
+        
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      }, (error) => {
+        console.error("Error fetching projects: ", error);
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      });
 
+      return unsubscribe;
 
-  useEffect(() => {
-    if (isIntersecting && hasMore && !isLoading) {
-      loadMore();
+    } catch (error) {
+      console.error("Failed to build query:", error);
+      setIsLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [isIntersecting, hasMore, isLoading, loadMore]);
+  }, [db, activeTag, sortBy, lastDoc, hasMore]);
+
+
+  // Initial load and filter changes
+  useEffect(() => {
+    const unsubscribePromise = fetchProjects(true);
+    return () => {
+        unsubscribePromise?.then(unsub => unsub && unsub());
+    };
+  }, [activeTag, sortBy]);
+
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
+          fetchProjects(false);
+        }
+      },
+      { rootMargin: '100px' }
+    );
+    
+    const currentRef = loadMoreRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
+    }
+
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef);
+      }
+    };
+  }, [loadMoreRef, hasMore, isLoading, isLoadingMore, fetchProjects]);
+
 
   const handleSortChange = (newSortBy: string) => {
-    setSortBy(prevSortBy => {
-      const updatedSortBy = prevSortBy === newSortBy ? null : newSortBy;
-      // Reset projects only if the sort order actually changes
-      if (prevSortBy !== updatedSortBy) {
-        setAllProjects([]);
-        setPages([]);
-        setHasMore(true);
-      }
-      return updatedSortBy;
-    });
+    const updatedSortBy = sortBy === newSortBy ? null : newSortBy;
+    setSortBy(updatedSortBy);
+    // When sorting, clear tag filter for simplicity and to avoid complex queries
+    if(updatedSortBy !== null) {
+        setActiveTag(null);
+    }
   }
 
-  const handleTagClick = (tag: string) => {
+  const handleTagClick = (tag: string | null) => {
     const newActiveTag = tag === activeTag ? null : tag;
-    if (newActiveTag !== activeTag) {
-        setAllProjects([]);
-        setPages([]);
-        setHasMore(true);
-        setActiveTag(newActiveTag);
+    setActiveTag(newActiveTag);
+    // When filtering by tag, reset sort to default for predictable results
+    if (newActiveTag !== null) {
+        setSortBy(null);
     }
   }
 
   const filteredProjects = useMemo(() => {
-    if (!allProjects) return [];
-    if (!searchTerm) return allProjects;
+    if (!projects) return [];
+    if (!searchTerm) return projects;
 
-    return allProjects.filter(project =>
+    return projects.filter(project =>
       project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
     );
-  }, [allProjects, searchTerm]);
+  }, [projects, searchTerm]);
 
   const handleModalClose = () => {
     const params = new URLSearchParams(searchParams);
     params.delete('projectId');
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
+
+  const renderSkeletons = () => (
+     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        {Array.from({ length: 12 }).map((_, i) => (
+            <Card key={i} className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full")}>
+              <CardContent className="p-0">
+                <Skeleton className="aspect-video w-full" />
+                <div className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-6 rounded-full" />
+                        <Skeleton className="h-4 w-24" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                       <Skeleton className="h-4 w-8" />
+                       <Skeleton className="h-4 w-8" />
+                    </div>
+                </div>
+              </CardContent>
+            </Card>
+        ))}
+    </div>
+  );
 
   return (
     <>
@@ -184,9 +235,9 @@ export default function BrowsePage() {
                 </SheetHeader>
                 <div className="py-4">
                   <RadioGroup value={sortBy ?? ""} onValueChange={handleSortChange}>
-                    <div className="flex items-center space-x-2 py-2">
-                      <RadioGroupItem value="latest" id="latest" />
-                      <Label htmlFor="latest">Eng so'nggilari</Label>
+                     <div className="flex items-center space-x-2 py-2">
+                      <RadioGroupItem value="" id="latest"/>
+                      <Label htmlFor="latest">Eng so'nggilari (Standart)</Label>
                     </div>
                     <div className="flex items-center space-x-2 py-2">
                       <RadioGroupItem value="trending" id="trending" />
@@ -218,7 +269,7 @@ export default function BrowsePage() {
              <div className="flex gap-2 pb-2">
                  <Button 
                     variant={activeTag === null ? 'default' : 'outline'}
-                    onClick={() => handleTagClick(null!)}
+                    onClick={() => handleTagClick(null)}
                     className="rounded-full h-9 px-4"
                   >
                     Barchasi
@@ -238,30 +289,8 @@ export default function BrowsePage() {
         </div>
       </div>
       
-      {isLoading && allProjects.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {Array.from({ length: 12 }).map((_, i) => (
-                <Card key={i} className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full")}>
-                  <CardContent className="p-0">
-                    <Skeleton className="aspect-video w-full" />
-                    <div className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Skeleton className="h-6 w-6 rounded-full" />
-                            <Skeleton className="h-4 w-24" />
-                        </div>
-                        <div className="flex items-center gap-3">
-                           <Skeleton className="h-4 w-8" />
-                           <Skeleton className="h-4 w-8" />
-                        </div>
-                    </div>
-                  </CardContent>
-                </Card>
-            ))}
-        </div>
-      ) : error ? (
-        <div className="text-center py-16 text-destructive-foreground bg-destructive/10 border border-destructive/20 rounded-lg">
-            <p>Ma'lumotlarni yuklashda xatolik yuz berdi.</p>
-        </div>
+      {isLoading ? (
+        renderSkeletons()
       ) : filteredProjects && filteredProjects.length > 0 ? (
         <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -269,11 +298,10 @@ export default function BrowsePage() {
                 <PortfolioCard key={project.id} project={project} />
             ))}
             </div>
-            <div ref={loadMoreRef} className="h-10 mt-8">
-                {isLoading && allProjects.length > 0 && (
-                     <div className="flex justify-center items-center">
-                        <LoadingPage />
-                     </div>
+            <div ref={loadMoreRef} className="h-10 mt-8 flex justify-center items-center">
+                {isLoadingMore && <LoadingPage />}
+                {!hasMore && projects.length > PROJECTS_PER_PAGE && (
+                    <p className='text-muted-foreground'>Boshqa loyihalar yo'q.</p>
                 )}
             </div>
         </>
