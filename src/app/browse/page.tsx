@@ -35,7 +35,7 @@ const PROJECTS_PER_PAGE = 12;
 
 export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('latest'); // Default sort to 'latest'
+  const [sortBy, setSortBy] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   
   const [pages, setPages] = useState<QueryDocumentSnapshot<DocumentData>[]>([]);
@@ -58,7 +58,7 @@ export default function BrowsePage() {
       q = query(baseQuery, orderBy('likeCount', 'desc'));
     } else if (sortBy === 'trending') {
       q = query(baseQuery, orderBy('viewCount', 'desc'));
-    } else { // 'latest' is the default
+    } else { // Default to 'latest' if sortBy is null or 'latest'
       q = query(baseQuery, orderBy('createdAt', 'desc'));
     }
     
@@ -118,23 +118,27 @@ export default function BrowsePage() {
     }
   }, [isIntersecting, hasMore, isLoading, loadMore]);
 
-  const resetAndSort = (newSortBy: string) => {
-    // If the new sort value is the same as the current one, reset to default ('latest')
-    if (newSortBy === sortBy) {
-        setSortBy('latest');
-    } else {
-        setSortBy(newSortBy);
-    }
-    setAllProjects([]);
-    setPages([]);
-    setHasMore(true);
+  const handleSortChange = (newSortBy: string) => {
+    setSortBy(prevSortBy => {
+      const updatedSortBy = prevSortBy === newSortBy ? null : newSortBy;
+      // Reset projects only if the sort order actually changes
+      if (prevSortBy !== updatedSortBy) {
+        setAllProjects([]);
+        setPages([]);
+        setHasMore(true);
+      }
+      return updatedSortBy;
+    });
   }
 
   const handleTagClick = (tag: string) => {
-    setAllProjects([]);
-    setPages([]);
-    setHasMore(true);
-    setActiveTag(tag === activeTag ? null : tag);
+    const newActiveTag = tag === activeTag ? null : tag;
+    if (newActiveTag !== activeTag) {
+        setAllProjects([]);
+        setPages([]);
+        setHasMore(true);
+        setActiveTag(newActiveTag);
+    }
   }
 
   const filteredProjects = useMemo(() => {
@@ -179,7 +183,7 @@ export default function BrowsePage() {
                   <SheetTitle>Saralash</SheetTitle>
                 </SheetHeader>
                 <div className="py-4">
-                  <RadioGroup value={sortBy} onValueChange={resetAndSort}>
+                  <RadioGroup value={sortBy ?? ""} onValueChange={handleSortChange}>
                     <div className="flex items-center space-x-2 py-2">
                       <RadioGroupItem value="latest" id="latest" />
                       <Label htmlFor="latest">Eng so'nggilari</Label>
