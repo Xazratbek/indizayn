@@ -7,9 +7,9 @@ import type { Designer } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { UserPlus, Users2, Search, SlidersHorizontal, PackageSearch } from "lucide-react";
+import { UserPlus, Users2, Search, SlidersHorizontal, PackageSearch, UserCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { collection, query, orderBy, where, limit, startAfter, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, query, orderBy, where, limit, startAfter, QueryDocumentSnapshot, DocumentData, updateDoc, doc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { PREDEFINED_SPECIALIZATIONS } from '@/lib/predefined-tags';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,17 +26,102 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useIntersectionObserver } from '@/hooks/use-intersection-observer';
 import LoadingPage from '../loading';
+import { useSession } from 'next-auth/react';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
-const DESIGNERS_PER_PAGE = 12;
+
+function DesignerCard({ designer }: { designer: Designer }) {
+    const { data: session } = useSession();
+    const user = session?.user;
+    const db = useFirestore();
+    const { toast } = useToast();
+
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [isFollowLoading, setIsFollowLoading] = useState(false);
+    
+    useEffect(() => {
+        if (user && designer?.followers) {
+            setIsFollowing(designer.followers.includes(user.id));
+        }
+    }, [user, designer]);
+
+    const handleFollowToggle = async (e: React.MouseEvent) => {
+        e.stopPropagation(); 
+        e.preventDefault();
+
+        if (!user || !designer || !db) {
+            toast({ variant: "warning", description: "Obuna bo'lish uchun tizimga kiring." });
+            return;
+        }
+        if (user.id === designer.id) {
+            toast({ variant: "destructive", description: "O'zingizga obuna bo'la olmaysiz." });
+            return;
+        }
+
+        setIsFollowLoading(true);
+        const designerRef = doc(db, "users", designer.id);
+
+        try {
+            if (isFollowing) {
+                await updateDoc(designerRef, { followers: arrayRemove(user.id), subscriberCount: increment(-1) });
+                setIsFollowing(false);
+                toast({ description: `${designer?.name} obunasidan chiqdingiz.` });
+            } else {
+                await updateDoc(designerRef, { followers: arrayUnion(user.id), subscriberCount: increment(1) });
+                setIsFollowing(true);
+                toast({ variant: "success", description: `${designer?.name} ga obuna bo'ldingiz.` });
+            }
+        } catch (error) {
+            console.error("Follow/unfollow error", error);
+            toast({ variant: "destructive", title: "Xatolik", description: "Amalni bajarishda xatolik yuz berdi." });
+        } finally {
+            setIsFollowLoading(false);
+        }
+    };
+
+    return (
+        <Link href={`/designers/${designer.id}`} className="block">
+            <Card className="text-center hover:shadow-xl transition-shadow duration-300 h-full group">
+                <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+                    <div className="relative mb-2">
+                        <Avatar className="w-20 h-20 mx-auto border-4 border-transparent group-hover:border-primary/20 transition-colors duration-300">
+                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                            <AvatarFallback className="text-3xl">{designer.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        {user && user.id !== designer.id && (
+                             <Button
+                                size="icon"
+                                variant={isFollowing ? 'secondary' : 'default'}
+                                onClick={handleFollowToggle}
+                                disabled={isFollowLoading}
+                                className="absolute -bottom-2 -right-2 h-7 w-7 rounded-full border-2 border-background"
+                            >
+                                {isFollowLoading 
+                                    ? <Loader2 className="h-4 w-4 animate-spin"/> 
+                                    : isFollowing 
+                                        ? <UserCheck className="h-4 w-4" /> 
+                                        : <UserPlus className="h-4 w-4" />
+                                }
+                            </Button>
+                        )}
+                    </div>
+                    <h3 className="font-headline text-base font-bold truncate w-full">{designer.name}</h3>
+                    <p className="text-muted-foreground text-xs truncate w-full">{designer.specialization}</p>
+                </CardContent>
+            </Card>
+        </Link>
+    );
+}
+
 
 function DesignerCardSkeleton() {
     return (
         <Card className="text-center h-full">
-            <CardContent className="p-6 flex flex-col items-center justify-center h-full">
-                <Skeleton className="w-24 h-24 rounded-full mx-auto mb-4" />
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2 mb-4" />
-                <Skeleton className="h-9 w-32" />
+            <CardContent className="p-4 flex flex-col items-center justify-center h-full">
+                <Skeleton className="w-20 h-20 rounded-full mx-auto mb-2" />
+                <Skeleton className="h-5 w-3/4 mb-1" />
+                <Skeleton className="h-3 w-1/2" />
             </CardContent>
         </Card>
     );
@@ -183,29 +268,15 @@ export default function DesignersPage() {
       </div>
       
       {isLoading && allDesigners.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {Array.from({length: 12}).map((_, i) => <DesignerCardSkeleton key={i} />)}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {Array.from({length: 10}).map((_, i) => <DesignerCardSkeleton key={i} />)}
         </div>
       ) : filteredDesigners && filteredDesigners.length > 0 ? (
         <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {filteredDesigners.map((designer) => (
-                <Link key={designer.id} href={`/designers/${designer.id}`}>
-                <Card className="text-center hover:shadow-xl transition-shadow duration-300 h-full">
-                    <CardContent className="p-6 flex flex-col items-center justify-center h-full">
-                    <Avatar className="w-24 h-24 mx-auto mb-4 border-4 border-primary/20">
-                        {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                        <AvatarFallback className="text-3xl">{designer.name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <h3 className="font-headline text-xl font-bold">{designer.name}</h3>
-                    <p className="text-muted-foreground mb-4 h-6">{designer.specialization}</p>
-                    <Button variant="outline" size="sm">
-                        <UserPlus className="mr-2 h-4 w-4" /> Profilni ko'rish
-                    </Button>
-                    </CardContent>
-                </Card>
-                </Link>
-            ))}
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {filteredDesigners.map((designer) => (
+                  <DesignerCard key={designer.id} designer={designer} />
+              ))}
             </div>
             <div ref={loadMoreRef} className="h-10 mt-8">
                 {isLoading && allDesigners.length > 0 && (
