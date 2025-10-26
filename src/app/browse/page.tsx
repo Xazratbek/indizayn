@@ -1,340 +1,319 @@
+"use client"
 
-"use client";
-
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { useFirestore } from '@/firebase';
-import PortfolioCard from '@/components/portfolio-card';
-import { Input } from '@/components/ui/input';
+import Link from 'next/link';
+import { MoveRight, Palette, UserCheck, ThumbsUp, Loader2, ImageOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Search, PackageSearch, SlidersHorizontal } from 'lucide-react';
-import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot, where, getDocs, Query } from 'firebase/firestore';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
 import type { Project } from '@/lib/types';
-import LoadingPage from '../loading';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import ProjectDetailModal from '@/components/project-detail-modal';
-import { AnimatePresence } from 'framer-motion';
+import { useSession, signIn } from 'next-auth/react';
+import { useState, useRef, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { PREDEFINED_TAGS } from '@/lib/predefined-tags';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { Check } from 'lucide-react';
 import Image from 'next/image';
-import { TAG_VISUALS } from '@/lib/tag-visuals';
+import PortfolioCard from '@/components/portfolio-card';
+import RotatingText from '@/components/RotatingText';
 
-const PROJECTS_PER_PAGE = 12;
-
-export default function BrowsePage() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'viewCount' | 'likeCount' | null>(null);
-  
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const selectedProjectId = searchParams.get('projectId');
-  const db = useFirestore();
-  const loadMoreRef = useRef<HTMLDivElement>(null);
-  
-  // Drag-to-scroll state
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    if (!scrollContainerRef.current) return;
-    setIsDragging(true);
-    setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
-    setScrollLeft(scrollContainerRef.current.scrollLeft);
-    scrollContainerRef.current.style.cursor = 'grabbing';
-    scrollContainerRef.current.style.userSelect = 'none';
-  };
-
-  const onMouseLeaveOrUp = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.style.cursor = 'grab';
-      scrollContainerRef.current.style.userSelect = 'auto';
+const advantages = [
+    {
+        icon: <Palette className="w-10 h-10 text-primary" />,
+        title: "Portfoliongizni Namoyish Eting",
+        description: "O'z ijodiy ishlaringizni keng auditoriyaga taqdim eting va professionallar hamjamiyatidan fikr-mulohazalar oling."
+    },
+    {
+        icon: <UserCheck className="w-10 h-10 text-primary" />,
+        title: "Dizaynerlarga Obuna Bo'ling",
+        description: "O'zingiz yoqtirgan dizaynerlarning ijodini kuzatib boring va ularning so'nggi ishlaridan birinchilardan bo'lib xabardor bo'ling."
+    },
+    {
+        icon: <ThumbsUp className="w-10 h-10 text-primary" />,
+        title: "Ishlarni Baholang va Fikr Bildiring",
+        description: "Boshqa dizaynerlarning ishlariga 'layk' bosing, izohlar qoldiring va ijodiy muhokamalarda faol ishtirok eting."
     }
-  };
+];
 
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !scrollContainerRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollContainerRef.current.offsetLeft;
-    const walk = (x - startX) * 2; // scroll-fast
-    scrollContainerRef.current.scrollLeft = scrollLeft - walk;
-  };
+const sectionVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" }
+  }
+};
 
 
-  const fetchProjects = useCallback(async (isInitialLoad = false) => {
-    if (!db) return;
-    if (!isInitialLoad && !hasMore) return;
+const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
+    const ref = useRef(null);
+    const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+    const [isMobile, setIsMobile] = useState(false);
 
-    if (isInitialLoad) {
-      setIsLoading(true);
-      setProjects([]);
-      setLastDoc(null);
-      setHasMore(true);
-    } else {
-      setIsLoadingMore(true);
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const numProjects = isMobile ? 6 : 10;
+    const displayProjects = [...projects];
+    while (displayProjects.length > 0 && displayProjects.length < numProjects) {
+        displayProjects.push(...projects.slice(0, numProjects - displayProjects.length));
     }
+    if (displayProjects.length === 0) return null;
 
-    try {
-      let q: Query<DocumentData> = collection(db, 'projects');
-
-      if (activeTag) {
-        q = query(q, where('tags', 'array-contains', activeTag));
-      }
-      
-      if (sortBy) {
-        q = query(q, orderBy(sortBy, 'desc'));
-      } else {
-        q = query(q, orderBy('createdAt', 'desc'));
-      }
-      
-      q = query(q, limit(PROJECTS_PER_PAGE));
-
-      if (!isInitialLoad && lastDoc) {
-        q = query(q, startAfter(lastDoc));
-      }
-
-      const querySnapshot = await getDocs(q);
-      const newProjects = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Project));
-      
-      setProjects(prev => isInitialLoad ? newProjects : [...prev, ...newProjects]);
-      
-      const newLastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
-      setLastDoc(newLastDoc || null);
-      setHasMore(querySnapshot.docs.length === PROJECTS_PER_PAGE);
-      
-    } catch (error) {
-      console.error("Error fetching projects: ", error);
-      if (error instanceof Error && error.message.includes('requires an index')) {
-          console.warn("Composite index required, falling back to no specific ordering for this query.");
-          if (activeTag) setSortBy(null);
-      }
-    } finally {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-    }
-  }, [db, activeTag, lastDoc, hasMore, sortBy]);
-
-  // Initial load and filter changes
-  useEffect(() => {
-    fetchProjects(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTag, sortBy]);
-
-  // Infinite scroll observer
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !isLoading && !isLoadingMore) {
-          fetchProjects(false);
-        }
-      },
-      { rootMargin: '200px' }
-    );
+     const desktopPositions = [
+        // Left Side
+        { top: '10%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-48 h-36', delay: 0.2 },
+        { top: '40%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-56 h-40', delay: 1.5 },
+        { top: '70%', left: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -25]), className: 'w-40 h-56', delay: 0.7 },
+        
+        // Right Side
+        { top: '12%', right: '4%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-44 h-56', delay: 0.9 },
+        { top: '45%', right: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -20]), className: 'w-36 h-28', delay: 2.2 },
+        { top: '68%', right: '1%', y: useTransform(scrollYProgress, [0, 1], [0, -35]), className: 'w-56 h-48', delay: 1.4 },
+        
+        // Additional
+        { bottom: '5%', left: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-32 h-32 opacity-0 md:opacity-100', delay: 2.5 },
+        { bottom: '8%', right: '22%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-48 h-40 opacity-0 md:opacity-100', delay: 0.4 },
+        { top: '18%', left: '20%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-24 h-24 opacity-0 md:opacity-100', delay: 3 },
+        { top: '55%', right: '25%', y: useTransform(scrollYProgress, [0, 1], [0, -15]), className: 'w-28 h-28 opacity-0 md:opacity-100', delay: 1.8 },
+    ];
     
-    const currentRef = loadMoreRef.current;
-    if (currentRef) {
-      observer.observe(currentRef);
-    }
+    const mobilePositions = [
+        { top: '8%', left: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -30]), className: 'w-32 h-24', delay: 0.2 },
+        { top: '15%', right: '8%', y: useTransform(scrollYProgress, [0, 1], [0, -40]), className: 'w-28 h-36', delay: 1 },
+        { top: '40%', left: '10%', y: useTransform(scrollYProgress, [0, 1], [0, -50]), className: 'w-36 h-28', delay: 0.5 },
+        { bottom: '25%', right: '5%', y: useTransform(scrollYProgress, [0, 1], [0, -35]), className: 'w-40 h-32', delay: 1.5 },
+        { bottom: '8%', left: '2%', y: useTransform(scrollYProgress, [0, 1], [0, -60]), className: 'w-24 h-32', delay: 0.4 },
+        { bottom: '5%', right: '40%', y: useTransform(scrollYProgress, [0, 1], [0, -28]), className: 'w-28 h-28', delay: 2 },
+    ];
 
-    return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
-    };
-  }, [loadMoreRef, hasMore, isLoading, isLoadingMore, fetchProjects]);
+    const positions = isMobile ? mobilePositions : desktopPositions;
 
-  const handleTagClick = (tag: string | null) => {
-    setActiveTag(prevTag => {
-      const newTag = prevTag === tag ? null : tag;
-      return newTag;
-    });
-  }
+    return (
+        <div ref={ref} className="absolute inset-0 z-0 h-full w-full">
+            {displayProjects.slice(0, numProjects).map((project, i) => (
+                <motion.div
+                    key={`${project.id}-${i}`}
+                    className={`absolute rounded-lg shadow-lg overflow-hidden float-anim ${positions[i].className}`}
+                    style={{
+                        top: positions[i].top,
+                        left: positions[i].left,
+                        right: positions[i].right,
+                        bottom: positions[i].bottom,
+                        y: positions[i].y,
+                        animationDelay: `${positions[i].delay}s`
+                    }}
+                >
+                     <div className="relative w-full h-full">
+                        <Image
+                            src={project.imageUrl}
+                            alt={project.name}
+                            fill
+                            className="object-cover"
+                            sizes="25vw"
+                            data-ai-hint="project image"
+                        />
+                         <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px]"></div>
+                    </div>
+                </motion.div>
+            ))}
+        </div>
+    );
+};
 
-  const handleSortChange = (sortOption: 'viewCount' | 'likeCount' | null) => {
-    setSortBy(sortOption);
+export default function Home() {
+  const { data: session, status } = useSession();
+  const user = session?.user;
+  const isUserLoading = status === 'loading';
+  const router = useRouter();
+  const db = useFirestore();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
+  const featuredProjectsQuery = useMemoFirebase(() =>
+    db ? query(collection(db, 'projects'), orderBy('viewCount', 'desc'), limit(12)) : null
+  , [db]);
+  const { data: featuredProjects, isLoading: areProjectsLoading } = useCollection<Project>(featuredProjectsQuery);
+
+  const handleStartClick = () => {
+    setIsSigningIn(true);
+    signIn('google');
   };
 
-  const filteredProjects = useMemo(() => {
-    if (!projects) return [];
-    if (!searchTerm) return projects;
-
-    return projects.filter(project =>
-      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (project.tags && project.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
-    );
-  }, [projects, searchTerm]);
-
-  const handleModalClose = () => {
-    const params = new URLSearchParams(searchParams);
-    params.delete('projectId');
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }
-
-  const renderSkeletons = () => (
-     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-        {Array.from({ length: 12 }).map((_, i) => (
-            <Card key={i} className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full")}>
-              <CardContent className="p-0">
-                <Skeleton className="aspect-video w-full" />
-                <div className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Skeleton className="h-6 w-6 rounded-full" />
-                        <Skeleton className="h-4 w-24" />
-                    </div>
-                    <div className="flex items-center gap-3">
-                       <Skeleton className="h-4 w-8" />
-                       <Skeleton className="h-4 w-8" />
-                    </div>
-                </div>
-              </CardContent>
-            </Card>
-        ))}
-    </div>
-  );
-  
-  const sortOptions = [
-    { value: null, label: 'Eng so\'nggilar' },
-    { value: 'viewCount', label: 'Trenddagilar' },
-    { value: 'likeCount', label: 'Mashhurlar' },
-  ];
-
-  const allFilterTags = ['Barchasi', ...PREDEFINED_TAGS];
+  const isLoading = areProjectsLoading || isUserLoading;
 
   return (
-    <>
-      <AnimatePresence>
-        {selectedProjectId && (
-          <ProjectDetailModal 
-            projectId={selectedProjectId} 
-            onClose={handleModalClose}
-          />
-        )}
-      </AnimatePresence>
-      <div className="pb-8 px-4 md:px-6 lg:px-8">
-       <div className="sticky top-14 md:top-[68px] z-40 bg-background/95 backdrop-blur-lg -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 mb-8 border-b">
-        <div className="flex flex-col gap-4 max-w-full mx-auto">
-          <div className="flex gap-2">
-              <div className="relative w-full">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    type="search"
-                    placeholder="Loyiha, dizayner yoki teg bo'yicha qidirish..."
-                    className="w-full pl-10 h-11 text-base"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-              </div>
-              <Sheet>
-                <SheetTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-11 w-11 flex-shrink-0">
-                        <SlidersHorizontal className="h-5 w-5"/>
-                    </Button>
-                </SheetTrigger>
-                <SheetContent>
-                    <SheetHeader>
-                        <SheetTitle>Saralash</SheetTitle>
-                    </SheetHeader>
-                    <div className="py-4">
-                        {sortOptions.map(option => (
-                           <SheetClose asChild key={option.label}>
-                                <button
-                                    onClick={() => handleSortChange(option.value as 'viewCount' | 'likeCount' | null)}
-                                    className={cn(
-                                        "w-full text-left p-3 rounded-md flex items-center justify-between",
-                                        sortBy === option.value ? "bg-secondary font-semibold" : "hover:bg-secondary/80"
-                                    )}
-                                >
-                                    {option.label}
-                                    {sortBy === option.value && <Check className="h-4 w-4" />}
-                                </button>
-                           </SheetClose>
-                        ))}
+    <div className="flex flex-col">
+       {!user && !isUserLoading ? (
+            <>
+                <section className="relative w-full min-h-[80vh] md:min-h-screen bg-background overflow-hidden flex items-center justify-center">
+                    {featuredProjects && <FloatingShowcase projects={featuredProjects} />}
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+                        <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px]"></div>
+                        <div className="relative z-20 text-center p-4">
+                            <motion.h1
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                                className="text-4xl md:text-6xl font-bold font-headline mb-4 flex flex-wrap justify-center items-center gap-x-2"
+                            >
+                                <span className="inline-block">Eng sara</span>{' '}
+                                <RotatingText
+                                  texts={["loyihalar", "iste'dodlar", "dizaynlar"]}
+                                  mainClassName="px-2 sm:px-2 md:px-2 bg-primary text-primary-foreground overflow-hidden py-0 justify-center rounded-lg"
+                                  staggerFrom={"last"}
+                                  initial={{ y: "100%" }}
+                                  animate={{ y: 0 }}
+                                  exit={{ y: "-120%" }}
+                                  staggerDuration={0.025}
+                                  splitLevelClassName="overflow-hidden"
+                                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                                  rotationInterval={2000}
+                                />
+                                <span className="w-full">inDizayn platformasida</span>
+                            </motion.h1>
+
+                            <motion.p
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+                                className="mt-4 max-w-xl mx-auto text-lg text-foreground/80"
+                            >
+                              Ijodkorlar va ish beruvchilar uchun yagona platforma: ilhomlanishdan tortib, hamkorlik qilishgacha.
+                            </motion.p>
+                          
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
+                                className="mt-8 flex flex-col sm:flex-row gap-4 justify-center"
+                            >
+                                {isSigningIn ? (
+                                    <div className="flex flex-col items-center gap-4">
+                                        <Loader2 className="h-10 w-10 text-primary animate-spin" />
+                                        <p className="text-muted-foreground animate-pulse">Google'ga yo'naltirilmoqda...</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                      <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground py-7" onClick={() => router.push('/account/new-project')}>
+                                          Loyiha joylash
+                                      </Button>
+                                       <Button size="lg" variant="secondary" className="py-7" onClick={() => router.push('/designers')}>
+                                          Dizaynerlarni ko'rish
+                                      </Button>
+                                    </>
+                                )}
+                            </motion.div>
+                        </div>
                     </div>
-                </SheetContent>
-              </Sheet>
-          </div>
-          <div
-            ref={scrollContainerRef}
-            className="w-full overflow-x-auto no-scrollbar cursor-grab"
-            onMouseDown={onMouseDown}
-            onMouseLeave={onMouseLeaveOrUp}
-            onMouseUp={onMouseLeaveOrUp}
-            onMouseMove={onMouseMove}
-          >
-             <div className="flex gap-3 pb-2">
-                {allFilterTags.map(tag => {
-                  const visual = TAG_VISUALS[tag] || { icon: Search, imageUrl: 'https://picsum.photos/seed/default/200/100' };
-                  const Icon = visual.icon;
-                  const isAllButton = tag === 'Barchasi';
-                  const currentActiveTag = activeTag ?? 'Barchasi';
+                </section>
+                 <motion.section 
+                    className="py-20 md:py-24 bg-background"
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.2 }}
+                    variants={sectionVariants}
+                >
+                    <div className="container px-4 md:px-6 lg:px-8">
+                        <div className="text-center mb-16">
+                            <h2 className="font-headline text-4xl md:text-5xl font-bold">Platformaning afzalliklari</h2>
+                            <p className="text-muted-foreground mt-4 text-lg max-w-3xl mx-auto">Nima uchun dizaynerlar bizni tanlashadi?</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {advantages.map((adv, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 50 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, amount: 0.5 }}
+                                    transition={{ duration: 0.5, delay: index * 0.15 }}
+                                >
+                                    <Card className="text-center h-full p-8 shadow-lg hover:shadow-primary/20 hover:-translate-y-2 transition-all duration-300 rounded-xl">
+                                        <div className="p-4 bg-primary/10 rounded-full inline-block mb-6 ring-4 ring-primary/20">
+                                            {adv.icon}
+                                        </div>
+                                        <CardTitle className="mb-2 text-xl">{adv.title}</CardTitle>
+                                        <CardDescription className="text-base">{adv.description}</CardDescription>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </motion.section>
+                 <motion.section 
+                    className="py-20 md:py-24 bg-secondary/30"
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, amount: 0.3 }}
+                    variants={sectionVariants}
+                >
+                    <div className="container text-center">
+                        <h2 className="font-headline text-4xl font-bold">Hamjamiyatimizga qo'shiling</h2>
+                        <p className="text-muted-foreground mt-4 text-lg max-w-2xl mx-auto">
+                            O'zbekistonning eng yaxshi dizaynerlari qatoriga qo'shiling, ijodingizni namoyish eting va yangi imkoniyatlar eshigini oching.
+                        </p>
+                        <Button size="lg" className="mt-8" onClick={handleStartClick}>
+                            Hozir Boshlash
+                            <MoveRight className="ml-2" />
+                        </Button>
+                    </div>
+                </motion.section>
+            </>
+        ) : (
+           <section 
+                className="py-16 md:py-24 px-4 md:px-6 lg:px-8"
+              >
+                
                   
-                  return (
-                    <button
-                      key={tag}
-                      onClick={() => handleTagClick(isAllButton ? null : tag)}
-                      className={cn(
-                          "relative flex items-center gap-2 h-12 pl-4 pr-5 rounded-lg overflow-hidden shrink-0 text-white group",
-                          "transition-all duration-300 ease-in-out transform hover:scale-105",
-                          currentActiveTag === tag ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "ring-1 ring-transparent"
-                      )}
-                    >
-                      <Image
-                        src={visual.imageUrl}
-                        alt={tag}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        data-ai-hint="abstract background"
-                      />
-                      <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors"></div>
-                      <Icon className="relative z-10 h-5 w-5 shrink-0" />
-                      <span className="relative z-10 font-semibold whitespace-nowrap">{tag}</span>
-                    </button>
-                  )
-                })}
-            </div>
-          </div>
-        </div>
-      </div>
+                  {isLoading ? (
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {Array.from({ length: 12 }).map((_, i) => (
+                            <Card key={i} className="overflow-hidden w-full h-full">
+                              <CardContent className="p-0">
+                                <Skeleton className="aspect-video w-full" />
+                                <div className="p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Skeleton className="h-6 w-6 rounded-full" />
+                                        <Skeleton className="h-4 w-24" />
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                       <Skeleton className="h-4 w-8" />
+                                       <Skeleton className="h-4 w-8" />
+                                    </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                        ))}
+                     </div>
+                  ) : featuredProjects && featuredProjects.length > 0 ? (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {featuredProjects.map(project => (
+                            <PortfolioCard key={project.id} project={project} />
+                        ))}
+                        </div>
+                         <div className="text-center mt-12">
+                            <Button asChild variant="outline">
+                            <Link href="/browse">Barcha Loyihalarni Ko'rish</Link>
+                            </Button>
+                        </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
+                        <ImageOff className="mx-auto h-16 w-16 text-muted-foreground/50" />
+                        <p className="floating-text text-2xl mt-4">Hozircha loyihalar yo'q.</p>
+                        <p className="text-muted-foreground mt-2 mb-6">Birinchi loyihani yuklagan siz bo'ling!</p>
+                         <Button asChild>
+                            <Link href="/account/new-project">Loyiha Yuklash</Link>
+                        </Button>
+                    </div>
+                  )}
+                
+            </section>
+        )}
       
-      {isLoading ? (
-        renderSkeletons()
-      ) : filteredProjects && filteredProjects.length > 0 ? (
-        <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {filteredProjects.map(project => (
-                <PortfolioCard key={project.id} project={project} />
-            ))}
-            </div>
-            <div ref={loadMoreRef} className="h-10 mt-8 flex justify-center items-center">
-                {isLoadingMore && <LoadingPage />}
-                {!hasMore && projects.length > PROJECTS_PER_PAGE && (
-                    <p className='text-muted-foreground'>Boshqa loyihalar yo'q.</p>
-                )}
-            </div>
-        </>
-      ) : (
-        <div className="text-center py-20 bg-card border rounded-lg shadow-sm">
-            <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground/50" />
-            <p className="floating-text text-2xl mt-4">Hech qanday loyiha topilmadi.</p>
-            <p className="text-muted-foreground mt-2">Boshqa qidiruv so'zini sinab ko'ring yoki filtrlarni o'zgartiring.</p>
-        </div>
-      )}
     </div>
-    </>
   );
 }

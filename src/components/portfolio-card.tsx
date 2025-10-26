@@ -130,18 +130,16 @@ export default function PortfolioCard({ project, className, showAdminControls = 
     : `/projects/${project.id}`;
 
   return (
-    <motion.div
-      whileHover={{ scale: 1.03, z: 10 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="relative"
-    >
-      <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full bg-card", className)}>
-        <CardContent className="p-0">
-          <div className="aspect-video relative overflow-hidden rounded-t-lg">
-            <Link href={projectLink} onClick={handleClick} scroll={false} className="block w-full h-full">
-               <motion.div
-                 className="absolute inset-0"
-               >
+    <Card className={cn("overflow-hidden group transition-shadow duration-300 w-full h-full bg-card", className)}>
+      <CardContent className="p-0">
+        <Link href={projectLink} onClick={handleClick} scroll={false} className="block w-full h-full">
+          <motion.div
+              whileHover={{ scale: 1.03, z: 10 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="relative"
+            >
+            <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                <motion.div className="absolute inset-0">
                   <Image
                     src={project.imageUrl || `https://picsum.photos/seed/${project.id}/400/300`}
                     alt={project.name}
@@ -150,122 +148,130 @@ export default function PortfolioCard({ project, className, showAdminControls = 
                     className="object-cover"
                     data-ai-hint="project image"
                   />
-               </motion.div>
-               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-            </Link>
-            {showAdminControls && (
-                  <div className="absolute top-2 right-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
-                    <Button asChild size="icon" className="h-8 w-8">
-                        <Link href={`/account/projects/edit/${project.id}`}>
-                            <Pencil className="h-4 w-4" />
-                        </Link>
-                    </Button>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon" className="h-8 w-8">
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Haqiqatan ham o'chirmoqchimisiz?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Bu amalni qaytarib bo'lmaydi. Bu loyihani butunlay o'chirib yuboradi.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDeleteProject} disabled={isDeleting}>
-                                    {isDeleting ? "O'chirilmoqda..." : "O'chirish"}
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
-            )}
-          </div>
+                </motion.div>
+                
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                    <h3 className="text-white font-bold text-lg truncate">{project.name}</h3>
+                </motion.div>
 
-          <div className="p-4 flex items-center justify-between">
-            <HoverCard>
-                <HoverCardTrigger asChild>
-                     <div className="flex items-center gap-2">
-                        <Link href={`/designers/${designer.id}`} className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                            {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
-                            <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{designer.name}</span>
-                        </Link>
-                    </div>
-                </HoverCardTrigger>
-                <HoverCardContent className="w-80">
-                    <div className="flex flex-col space-y-4">
-                        <div className="h-20 bg-secondary relative rounded-t-md">
-                            {designer.coverPhotoURL && (
-                                <Image 
-                                src={designer.coverPhotoURL}
-                                alt={`${designer.name}ning muqova surati`}
-                                fill
-                                className="w-full h-full object-cover rounded-t-md"
-                                />
-                            )}
-                        </div>
-                        <div className="flex justify-between items-start">
-                            <div className="flex gap-4">
-                                <Avatar className="h-16 w-16 -mt-10 border-4 border-popover">
-                                    <AvatarImage src={designer.photoURL} />
-                                    <AvatarFallback className="text-2xl">{designer.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <h4 className="text-sm font-semibold">{designer.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{designer.specialization}</p>
-                                </div>
-                            </div>
-                            <Button asChild variant="secondary" size="sm">
-                                <Link href={`/designers/${designer.id}`}>Profil</Link>
-                            </Button>
-                        </div>
-                        <div className="flex items-center pt-2 gap-4">
-                            <div className="flex items-center text-sm text-muted-foreground">
-                                <Users className="mr-1 h-4 w-4" /> {designer.subscriberCount || 0} obunachi
-                            </div>
-                        </div>
-                    </div>
-                </HoverCardContent>
-            </HoverCard>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                    <ThumbsUp className="w-4 h-4" />
-                    <AnimatePresence mode="popLayout">
-                        <motion.span
-                        key={project.likeCount}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                        >
-                        {project.likeCount || 0}
-                        </motion.span>
-                    </AnimatePresence>
-                </div>
-                <div className="flex items-center gap-1">
-                    <Eye className="w-4 h-4" />
-                     <AnimatePresence mode="popLayout">
-                        <motion.span
-                        key={project.viewCount}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                        >
-                        {project.viewCount || 0}
-                        </motion.span>
-                    </AnimatePresence>
-                </div>
+              {showAdminControls && (
+                    <div className="absolute top-2 right-2 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                      <Button asChild size="icon" className="h-8 w-8">
+                          <Link href={`/account/projects/edit/${project.id}`}>
+                              <Pencil className="h-4 w-4" />
+                          </Link>
+                      </Button>
+                      <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="icon" className="h-8 w-8">
+                                  <Trash2 className="h-4 w-4" />
+                              </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Haqiqatan ham o'chirmoqchimisiz?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                      Bu amalni qaytarib bo'lmaydi. Bu loyihani butunlay o'chirib yuboradi.
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel>Bekor qilish</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleDeleteProject} disabled={isDeleting}>
+                                      {isDeleting ? "O'chirilmoqda..." : "O'chirish"}
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
+                  </div>
+              )}
             </div>
+          </motion.div>
+        </Link>
+        <div className="p-4 flex items-center justify-between">
+          <HoverCard>
+              <HoverCardTrigger asChild>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/designers/${designer.id}`} className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                          {designer.photoURL && <AvatarImage src={designer.photoURL} alt={designer.name} />}
+                          <AvatarFallback className="text-xs">{designer.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">{designer.name}</span>
+                      </Link>
+                  </div>
+              </HoverCardTrigger>
+              <HoverCardContent className="w-80">
+                  <div className="flex flex-col space-y-4">
+                      <div className="h-20 bg-secondary relative rounded-t-md">
+                          {designer.coverPhotoURL && (
+                              <Image 
+                              src={designer.coverPhotoURL}
+                              alt={`${designer.name}ning muqova surati`}
+                              fill
+                              className="w-full h-full object-cover rounded-t-md"
+                              />
+                          )}
+                      </div>
+                      <div className="flex justify-between items-start">
+                          <div className="flex gap-4">
+                              <Avatar className="h-16 w-16 -mt-10 border-4 border-popover">
+                                  <AvatarImage src={designer.photoURL} />
+                                  <AvatarFallback className="text-2xl">{designer.name.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                  <h4 className="text-sm font-semibold">{designer.name}</h4>
+                                  <p className="text-sm text-muted-foreground">{designer.specialization}</p>
+                              </div>
+                          </div>
+                          <Button asChild variant="secondary" size="sm">
+                              <Link href={`/designers/${designer.id}`}>Profil</Link>
+                          </Button>
+                      </div>
+                      <div className="flex items-center pt-2 gap-4">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                              <Users className="mr-1 h-4 w-4" /> {designer.subscriberCount || 0} obunachi
+                          </div>
+                      </div>
+                  </div>
+              </HoverCardContent>
+          </HoverCard>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                  <ThumbsUp className="w-4 h-4" />
+                  <AnimatePresence mode="popLayout">
+                      <motion.span
+                      key={project.likeCount}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                      >
+                      {project.likeCount || 0}
+                      </motion.span>
+                  </AnimatePresence>
+              </div>
+              <div className="flex items-center gap-1">
+                  <Eye className="w-4 h-4" />
+                    <AnimatePresence mode="popLayout">
+                      <motion.span
+                      key={project.viewCount}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                      >
+                      {project.viewCount || 0}
+                      </motion.span>
+                  </AnimatePresence>
+              </div>
           </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

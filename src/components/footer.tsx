@@ -41,7 +41,7 @@ export function Footer() {
             <nav className="flex flex-wrap items-center justify-center gap-4">
                 <Link href="/browse" className="text-muted-foreground hover:text-foreground">Loyihalar</Link>
                 <Link href="/designers" className="text-muted-foreground hover:text-foreground">Dizaynerlar</Link>
-                <Link href="/about" className="text-muted-foreground hover:text-foreground">Haqida</Link>
+                <Link href="/about" className="text-muted-foreground hover:text-foreground">Biz haqimizda</Link>
             </nav>
              <p className="text-sm md:hidden text-muted-foreground">
               © {new Date().getFullYear()} inDizayn. Barcha huquqlar himoyalangan.

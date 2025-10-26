@@ -49,7 +49,7 @@ export function Header() {
     { href: "/browse", label: "Loyihalar" },
     { href: "/designers", label: "Dizaynerlar" },
     { href: "/messages", label: "Xabarlar" },
-    { href: "/about", label: "Haqida" },
+    { href: "/about", label: "Biz haqimizda" },
   ];
 
   const navContent = !isMobile ? (
