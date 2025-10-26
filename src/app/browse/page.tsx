@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
@@ -16,16 +17,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PREDEFINED_TAGS } from '@/lib/predefined-tags';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Check } from 'lucide-react';
+import Image from 'next/image';
+import { TAG_VISUALS } from '@/lib/tag-visuals';
 
 const PROJECTS_PER_PAGE = 12;
 
 export default function BrowsePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTag, setActiveTag] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'viewCount' | 'likeCount' | 'createdAt' | null>(null);
+  const [sortBy, setSortBy] = useState<'viewCount' | 'likeCount' | null>(null);
   
   const [projects, setProjects] = useState<Project[]>([]);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
@@ -49,6 +52,7 @@ export default function BrowsePage() {
       setIsLoading(true);
       setProjects([]);
       setLastDoc(null);
+      setHasMore(true);
     } else {
       setIsLoadingMore(true);
     }
@@ -58,10 +62,15 @@ export default function BrowsePage() {
 
       if (activeTag) {
         q = query(q, where('tags', 'array-contains', activeTag));
+        // Reset sort when a tag is active to avoid needing complex composite indexes
+        // if(sortBy) setSortBy(null); 
       }
       
-      const effectiveSortBy = sortBy || 'createdAt';
-      q = query(q, orderBy(effectiveSortBy, 'desc'));
+      if (sortBy) {
+        q = query(q, orderBy(sortBy, 'desc'));
+      } else { // default to latest
+        q = query(q, orderBy('createdAt', 'desc'));
+      }
       
       q = query(q, limit(PROJECTS_PER_PAGE));
 
@@ -80,18 +89,21 @@ export default function BrowsePage() {
       
     } catch (error) {
       console.error("Error fetching projects: ", error);
+      if (error instanceof Error && error.message.includes('requires an index')) {
+          console.warn("Composite index required, falling back to no specific ordering for this query.");
+          if (activeTag) setSortBy(null);
+      }
     } finally {
         setIsLoading(false);
         setIsLoadingMore(false);
     }
   }, [db, activeTag, lastDoc, hasMore, sortBy]);
 
-
   // Initial load and filter changes
   useEffect(() => {
     fetchProjects(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTag, sortBy]);
-
 
   // Infinite scroll observer
   useEffect(() => {
@@ -116,25 +128,15 @@ export default function BrowsePage() {
     };
   }, [loadMoreRef, hasMore, isLoading, isLoadingMore, fetchProjects]);
 
-
   const handleTagClick = (tag: string | null) => {
     setActiveTag(prevTag => {
       const newTag = prevTag === tag ? null : tag;
-      if (newTag !== null && sortBy !== 'createdAt' && sortBy !== null) {
-        setSortBy('createdAt'); 
-      }
       return newTag;
     });
   }
 
-  const handleSortChange = (sortOption: 'viewCount' | 'likeCount' | 'createdAt' | null) => {
-    setSortBy(prevSort => {
-      const newSort = prevSort === sortOption ? null : sortOption;
-      if (newSort !== null && newSort !== 'createdAt' && activeTag !== null) {
-        setActiveTag(null);
-      }
-      return newSort;
-    });
+  const handleSortChange = (sortOption: 'viewCount' | 'likeCount' | null) => {
+    setSortBy(sortOption);
   };
 
   const filteredProjects = useMemo(() => {
@@ -176,14 +178,16 @@ export default function BrowsePage() {
   );
   
   const sortOptions = [
-    { value: 'createdAt', label: 'Eng so\'nggilari' },
+    { value: null, label: 'Eng so\'nggilar' },
     { value: 'viewCount', label: 'Trenddagilar' },
     { value: 'likeCount', label: 'Mashhurlar' },
   ];
 
+  const allFilterTags = ['Barchasi', ...PREDEFINED_TAGS];
+
   return (
     <>
-    <AnimatePresence>
+      <AnimatePresence>
         {selectedProjectId && (
           <ProjectDetailModal 
             projectId={selectedProjectId} 
@@ -191,7 +195,7 @@ export default function BrowsePage() {
           />
         )}
       </AnimatePresence>
-    <div className="py-8 px-4 md:px-6 lg:px-8">
+      <div className="py-8 px-4 md:px-6 lg:px-8">
        <div className="sticky top-14 md:top-[68px] z-40 bg-background/95 backdrop-blur-lg -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 mb-8 border-b">
         <div className="flex flex-col gap-4 max-w-full mx-auto">
           <div className="flex gap-2">
@@ -207,7 +211,7 @@ export default function BrowsePage() {
               </div>
               <Sheet>
                 <SheetTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-11 w-11">
+                    <Button variant="outline" size="icon" className="h-11 w-11 flex-shrink-0">
                         <SlidersHorizontal className="h-5 w-5"/>
                     </Button>
                 </SheetTrigger>
@@ -217,9 +221,9 @@ export default function BrowsePage() {
                     </SheetHeader>
                     <div className="py-4">
                         {sortOptions.map(option => (
-                           <SheetClose asChild key={option.value}>
+                           <SheetClose asChild key={option.label}>
                                 <button
-                                    onClick={() => handleSortChange(option.value as 'createdAt' | 'viewCount' | 'likeCount' | null)}
+                                    onClick={() => handleSortChange(option.value as 'viewCount' | 'likeCount' | null)}
                                     className={cn(
                                         "w-full text-left p-3 rounded-md flex items-center justify-between",
                                         sortBy === option.value ? "bg-secondary font-semibold" : "hover:bg-secondary/80"
@@ -235,25 +239,38 @@ export default function BrowsePage() {
               </Sheet>
           </div>
           <ScrollArea className="w-full whitespace-nowrap">
-             <div className="flex gap-2 pb-2">
-                 <Button 
-                    variant={activeTag === null ? 'default' : 'outline'}
-                    onClick={() => handleTagClick(null)}
-                    className="rounded-full h-9 px-4 shrink-0"
-                  >
-                    Barchasi
-                  </Button>
-                {[...PREDEFINED_TAGS].slice(0, 15).map(tag => (
-                  <Button 
-                    key={tag}
-                    variant={activeTag === tag ? 'default' : 'outline'}
-                    onClick={() => handleTagClick(tag)}
-                    className="rounded-full h-9 px-4 shrink-0"
-                  >
-                    {tag}
-                  </Button>
-                ))}
+             <div className="flex gap-3 pb-2">
+                {allFilterTags.map(tag => {
+                  const visual = TAG_VISUALS[tag] || { icon: Search, imageUrl: 'https://picsum.photos/seed/default/200/100' };
+                  const Icon = visual.icon;
+                  const isAllButton = tag === 'Barchasi';
+                  const currentActiveTag = activeTag ?? 'Barchasi';
+                  
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => handleTagClick(isAllButton ? null : tag)}
+                      className={cn(
+                          "relative flex items-center gap-2 h-12 pl-4 pr-5 rounded-lg overflow-hidden shrink-0 text-white group",
+                          "transition-all duration-300 ease-in-out transform hover:scale-105",
+                          currentActiveTag === tag ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : "ring-1 ring-transparent"
+                      )}
+                    >
+                      <Image
+                        src={visual.imageUrl}
+                        alt={tag}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        data-ai-hint="abstract background"
+                      />
+                      <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors"></div>
+                      <Icon className="relative z-10 h-5 w-5 shrink-0" />
+                      <span className="relative z-10 font-semibold whitespace-nowrap">{tag}</span>
+                    </button>
+                  )
+                })}
             </div>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
         </div>
       </div>
