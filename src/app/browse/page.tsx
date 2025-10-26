@@ -17,7 +17,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { PREDEFINED_TAGS } from '@/lib/predefined-tags';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { Check } from 'lucide-react';
 import Image from 'next/image';
@@ -44,6 +43,39 @@ export default function BrowsePage() {
   const db = useFirestore();
   const loadMoreRef = useRef<HTMLDivElement>(null);
   
+  // Drag-to-scroll state
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
+    setScrollLeft(scrollContainerRef.current.scrollLeft);
+    scrollContainerRef.current.style.cursor = 'grabbing';
+    scrollContainerRef.current.style.userSelect = 'none';
+  };
+
+  const onMouseLeaveOrUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.style.cursor = 'grab';
+      scrollContainerRef.current.style.userSelect = 'auto';
+    }
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // scroll-fast
+    scrollContainerRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+
   const fetchProjects = useCallback(async (isInitialLoad = false) => {
     if (!db) return;
     if (!isInitialLoad && !hasMore) return;
@@ -62,13 +94,11 @@ export default function BrowsePage() {
 
       if (activeTag) {
         q = query(q, where('tags', 'array-contains', activeTag));
-        // Reset sort when a tag is active to avoid needing complex composite indexes
-        // if(sortBy) setSortBy(null); 
       }
       
       if (sortBy) {
         q = query(q, orderBy(sortBy, 'desc'));
-      } else { // default to latest
+      } else {
         q = query(q, orderBy('createdAt', 'desc'));
       }
       
@@ -195,7 +225,7 @@ export default function BrowsePage() {
           />
         )}
       </AnimatePresence>
-      <div className="py-8 px-4 md:px-6 lg:px-8">
+      <div className="pb-8 px-4 md:px-6 lg:px-8">
        <div className="sticky top-14 md:top-[68px] z-40 bg-background/95 backdrop-blur-lg -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-4 mb-8 border-b">
         <div className="flex flex-col gap-4 max-w-full mx-auto">
           <div className="flex gap-2">
@@ -238,7 +268,14 @@ export default function BrowsePage() {
                 </SheetContent>
               </Sheet>
           </div>
-          <ScrollArea className="w-full whitespace-nowrap">
+          <div
+            ref={scrollContainerRef}
+            className="w-full overflow-x-auto no-scrollbar cursor-grab"
+            onMouseDown={onMouseDown}
+            onMouseLeave={onMouseLeaveOrUp}
+            onMouseUp={onMouseLeaveOrUp}
+            onMouseMove={onMouseMove}
+          >
              <div className="flex gap-3 pb-2">
                 {allFilterTags.map(tag => {
                   const visual = TAG_VISUALS[tag] || { icon: Search, imageUrl: 'https://picsum.photos/seed/default/200/100' };
@@ -270,8 +307,7 @@ export default function BrowsePage() {
                   )
                 })}
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          </div>
         </div>
       </div>
       

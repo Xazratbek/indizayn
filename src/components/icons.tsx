@@ -1,11 +1,10 @@
-
 import type { SVGProps } from "react";
 import Image from "next/image";
 
 export function Logo(props: SVGProps<SVGSVGElement>) {
   return (
     <Image
-      src="https://i.postimg.cc/bNC6jcKq/Bezymannyj-2.png"
+      src="https://i.postimg.cc/ydmVDs42/katta-xolang.png"
       alt="inDizayn Logo"
       width={24}
       height={24}

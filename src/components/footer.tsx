@@ -14,13 +14,13 @@ export function Footer() {
   const [isClient, setIsClient] = useState(false);
   const pathname = usePathname();
 
-  const isAuthPage = pathname.startsWith('/auth');
-
   useEffect(() => {
     setIsClient(true);
   }, []);
   
-  if (isAuthPage && isClient) {
+  const isAuthPage = isClient && pathname.startsWith('/auth');
+  
+  if (isAuthPage) {
     return null; // Don't render footer on auth page
   }
 

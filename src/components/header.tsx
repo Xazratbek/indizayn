@@ -93,7 +93,7 @@ export function Header() {
                <Skeleton className="h-8 w-8 rounded-full" />
              ) : user ? (
                <>
-                {!isMobile && (
+                {isClient && !isMobile && (
                   <Button asChild size="sm">
                     <Link href="/account/new-project"><PlusSquare className="mr-2 h-4 w-4"/> Loyiha Yuklash</Link>
                   </Button>
@@ -131,7 +131,7 @@ export function Header() {
                </>
               ) : (
                 <>
-                  {!isMobile && (
+                  {isClient && !isMobile && (
                     <div className="flex items-center gap-2">
                         <Button variant="ghost" onClick={handleSignIn}>
                             Kirish
