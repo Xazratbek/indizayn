@@ -10,7 +10,7 @@ import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimes
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus, Eye } from 'lucide-react';
+import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus, Eye, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -30,6 +30,8 @@ import { useModalContext } from '@/components/project-detail-modal';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 
 function CommentSkeleton() {
@@ -59,6 +61,7 @@ export default function ProjectDetailsPage() {
 
   const [isLiked, setIsLiked] = useState(false);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxStartIndex, setLightboxStartIndex] = useState(0);
   const [newComment, setNewComment] = useState("");
@@ -126,25 +129,45 @@ export default function ProjectDetailsPage() {
   };
 
   const handleDownload = async () => {
-      if (!project?.imageUrl) return;
+      if (!project?.imageUrls || project.imageUrls.length === 0) {
+        toast({
+            variant: "destructive",
+            title: "Xatolik",
+            description: "Yuklab olish uchun rasmlar topilmadi.",
+        });
+        return;
+      }
+      
+      setIsDownloading(true);
+      toast({
+          title: "Arxivlanmoqda...",
+          description: "Rasmlar ZIP-arxivga joylanmoqda. Bu biroz vaqt olishi mumkin.",
+      });
+
       try {
-        const response = await fetch(project.imageUrl);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${project.name.replace(/ /g, '_')}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
-        toast({ title: "Muvaffaqiyatli", description: "Rasm yuklab olinmoqda." });
+        const zip = new JSZip();
+        
+        for (let i = 0; i < project.imageUrls.length; i++) {
+            const url = project.imageUrls[i];
+            const response = await fetch(url);
+            const blob = await response.blob();
+            // Get file extension from url or blob type
+            const fileExtension = url.split('.').pop()?.split('?')[0] || blob.type.split('/')[1] || 'jpg';
+            zip.file(`image-${i + 1}.${fileExtension}`, blob);
+        }
+
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, `${project.name.replace(/ /g, '_')}.zip`);
+
       } catch (error) {
          toast({
             variant: "destructive",
             title: "Xatolik",
-            description: "Rasmni yuklab olishda xatolik yuz berdi.",
+            description: "Rasmlarni arxivlashda xatolik yuz berdi.",
         });
+         console.error("ZIP Error: ", error);
+      } finally {
+        setIsDownloading(false);
       }
   };
 
@@ -344,8 +367,8 @@ export default function ProjectDetailsPage() {
               <Button onClick={handleShare} variant="ghost" size="icon" className="h-14 w-14 rounded-full">
                   <Share2 className="h-6 w-6" />
               </Button>
-              <Button onClick={handleDownload} variant="ghost" size="icon" className="h-14 w-14 rounded-full">
-                  <Download className="h-6 w-6" />
+              <Button onClick={handleDownload} variant="ghost" size="icon" className="h-14 w-14 rounded-full" disabled={isDownloading}>
+                  {isDownloading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Download className="h-6 w-6" />}
               </Button>
           </div>
       </div>
@@ -437,6 +460,10 @@ export default function ProjectDetailsPage() {
                              <Button onClick={handleShare} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground">
                                 <Share2 className="h-6 w-6" />
                                  <span className="text-xs">Ulashish</span>
+                             </Button>
+                             <Button onClick={handleDownload} variant="ghost" size="lg" className="flex-col h-auto gap-1 text-foreground" disabled={isDownloading}>
+                                {isDownloading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Download className="h-6 w-6" />}
+                                 <span className="text-xs">Yuklash</span>
                              </Button>
                        </div>
                   </div>
@@ -572,5 +599,3 @@ export default function ProjectDetailsPage() {
     </div>
   );
 }
-
-    
