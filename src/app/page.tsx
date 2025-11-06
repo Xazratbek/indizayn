@@ -181,7 +181,7 @@ export default function Home() {
                                 transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
                                 className="mt-4 max-w-xl mx-auto text-lg text-foreground/80"
                             >
-                              Ijodkorlar va ish beruvchilar uchun yagona platforma: ilhomlanishdan tortib, hamkorlik qilishgacha.
+                            
                             </motion.p>
                           
                             <motion.div
