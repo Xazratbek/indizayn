@@ -1,7 +1,7 @@
 
 import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
 // O'zgartirish: `db` obyekti markazlashtirilgan `initializeFirebase` orqali olinadi.
 import { initializeFirebase } from "@/firebase";
 import type { Designer } from "@/lib/types";
@@ -55,6 +55,7 @@ export const authOptions: NextAuthOptions = {
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
+          // YANGI FOYDALANUVCHI: hujjatni 'pushSubscriptions' bilan yaratamiz
           const newUserDocRef = doc(usersRef); 
           await setDoc(newUserDocRef, {
             id: newUserDocRef.id,
@@ -68,8 +69,18 @@ export const authOptions: NextAuthOptions = {
             bio: '',
             subscriberCount: 0,
             followers: [],
-            pushSubscriptions: [] // Yangi maydon
+            pushSubscriptions: [] // Yangi foydalanuvchi uchun bo'sh massiv
           });
+        } else {
+          // MAVJUD FOYDALANUVCHI: 'pushSubscriptions' maydoni borligini tekshiramiz
+          const userDoc = querySnapshot.docs[0];
+          const userData = userDoc.data();
+          if (!userData.pushSubscriptions) {
+            // Agar maydon mavjud bo'lmasa, uni qo'shamiz
+            await updateDoc(userDoc.ref, {
+              pushSubscriptions: []
+            });
+          }
         }
         return true;
       } catch (error) {

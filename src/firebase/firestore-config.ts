@@ -1,9 +1,3 @@
-
-import { initializeFirebase } from ".";
-
-// This is a separate config file specifically for Firestore to be used in server-side contexts like API routes
-// where we don't want the full client-side provider setup.
-// It safely initializes Firebase, ensuring it's only done once.
-const { firestore } = initializeFirebase();
-
-export const db = firestore;
+// Bu fayl endi ishlatilmaydi, chunki uning logikasi `src/firebase/index.ts` ga ko'chirildi.
+// Loyihani toza saqlash uchun bu faylni o'chirib tashlashingiz mumkin.
+// Men hozircha uni bo'sh qoldiraman.
