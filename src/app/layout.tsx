@@ -9,6 +9,8 @@ import { Footer } from '@/components/footer';
 import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 import AuthProvider from '@/components/AuthProvider';
 import { FirebaseClientProvider } from '@/firebase';
+import { SpeedInsights } from "@vercel/speed-insights/next"
+
 
 const roboto = Roboto({
   subsets: ['latin'],
