@@ -10,7 +10,7 @@ import { MobileBottomNav } from '@/components/mobile-bottom-nav';
 import AuthProvider from '@/components/AuthProvider';
 import { FirebaseClientProvider } from '@/firebase';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-
+import { Analytics } from '@vercel/analytics/react';
 
 
 const roboto = Roboto({
@@ -54,6 +54,7 @@ export default function RootLayout({
           </FirebaseClientProvider>
         </AuthProvider>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
