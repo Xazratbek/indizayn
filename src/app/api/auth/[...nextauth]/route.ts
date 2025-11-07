@@ -1,18 +1,28 @@
 
-import NextAuth from "next-auth";
-import type { NextAuthOptions } from "next-auth";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/firebase/firestore-config";
+// O'zgartirish: `db` obyekti markazlashtirilgan `initializeFirebase` orqali olinadi.
+import { initializeFirebase } from "@/firebase";
 import type { Designer } from "@/lib/types";
 
-const ONE_WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
+
+if (!process.env.GOOGLE_CLIENT_ID) {
+  throw new Error("Missing GOOGLE_CLIENT_ID in .env");
+}
+
+if (!process.env.GOOGLE_CLIENT_SECRET) {
+  throw new Error("Missing GOOGLE_CLIENT_SECRET in .env");
+}
+
+// Firebase'ni ishga tushirish
+const { firestore: db } = initializeFirebase();
 
 export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       authorization: {
         params: {
           prompt: "consent",
@@ -25,31 +35,30 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: ONE_WEEK_IN_SECONDS,
+    maxAge: 30 * 24 * 60 * 60, // 30 kun
   },
   jwt: {
-    maxAge: ONE_WEEK_IN_SECONDS,
+    maxAge: 30 * 24 * 60 * 60, // 30 kun
+  },
+  pages: {
+    signIn: "/auth",
   },
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider !== "google" || !user.email) {
         return false;
       }
+      
       try {
-        if (!db) {
-          console.error("Firestore instance is not available.");
-          return false;
-        }
-
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("email", "==", user.email));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          const newUserDocRef = doc(usersRef);
+          const newUserDocRef = doc(usersRef); 
           await setDoc(newUserDocRef, {
             id: newUserDocRef.id,
-            uid: user.id, // Google's user ID
+            uid: user.id,
             name: user.name,
             email: user.email,
             photoURL: user.image,
@@ -59,29 +68,30 @@ export const authOptions: NextAuthOptions = {
             bio: '',
             subscriberCount: 0,
             followers: [],
+            pushSubscriptions: [] // Yangi maydon
           });
         }
         return true;
       } catch (error) {
-        console.error("Error in signIn callback: ", error);
+        console.error("signIn callback xatoligi:", error);
         return false;
       }
     },
     
-    async jwt({ token, user, account, profile }) {
-        if (user && user.email) {
-          const usersRef = collection(db, "users");
-          const q = query(usersRef, where("email", "==", user.email));
-          const querySnapshot = await getDocs(q);
-          
-          if (!querySnapshot.empty) {
-            const userDoc = querySnapshot.docs[0];
-            token.id = userDoc.id; 
-          }
+    async jwt({ token, user }) {
+      if (user && user.email) {
+        const usersRef = collection(db, "users");
+        const q = query(usersRef, where("email", "==", user.email));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          token.id = userDoc.id; 
         }
-        return token;
-      },
-    
+      }
+      return token;
+    },
+
     async session({ session, token }) {
       if (session.user && token.id) {
           const userDocRef = doc(db, 'users', token.id as string);
@@ -90,11 +100,11 @@ export const authOptions: NextAuthOptions = {
               const userData = userDoc.data() as Designer;
               session.user.id = userDoc.id;
               session.user.name = userData.name;
-              session.user.image = userData.photoURL; // Ensure session.user.image is the Firestore photoURL
+              session.user.image = userData.photoURL;
           }
       }
       return session;
-    },
+    }
   },
 };
 
