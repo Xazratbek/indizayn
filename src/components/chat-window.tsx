@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -19,6 +20,8 @@ import { format, isSameDay } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import Link from 'next/link';
 import { useDebounce } from 'use-debounce';
+import { sendNotification } from './PushNotificationsProvider';
+
 
 type OptimisticMessage = Message & { status?: 'uploading' | 'sent' | 'failed' };
 
@@ -266,16 +269,18 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
     const getMessageTime = (message: Message | OptimisticMessage): number => {
         const createdAt = message.createdAt;
         if (!createdAt) return 0;
-    
+
+        // Firestore Timestamp
         if (createdAt instanceof Timestamp) {
             return createdAt.toMillis();
         }
+        // JavaScript Date (for optimistic updates)
         if (createdAt instanceof Date) { 
             return createdAt.getTime();
         }
-        // Handle Firestore's object representation before it's converted to a Timestamp instance
+        // Firestore ServerTimestamp placeholder
         if (typeof createdAt === 'object' && 'seconds' in createdAt && typeof (createdAt as any).seconds === 'number') {
-            return new Timestamp((createdAt as any).seconds, (createdAt as any).nanoseconds).toMillis();
+            return (createdAt as any as Timestamp).toMillis();
         }
         return 0;
     };
@@ -463,7 +468,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
             audioUrl: mode === 'audio' ? localMediaUrl : undefined,
             videoUrl: mode === 'video' ? localMediaUrl : undefined,
             content: '',
-            createdAt: new Date(), 
+            createdAt: Timestamp.now(),
             isRead: false,
             status: 'uploading',
         };
@@ -497,6 +502,10 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
             });
             
              if(partner) {
+                const notificationTitle = mode === 'audio' ? 'Ovozli xabar 🎙️' : 'Video xabar 📹';
+                const notificationBody = `${currentUser.name || 'Kimdir'} sizga yangi ${mode === 'audio' ? 'ovozli' : 'video'} xabar yubordi.`;
+
+                // Firestore notification
                 const notificationsRef = collection(db, "notifications");
                 await addDoc(notificationsRef, {
                   userId: partner.id,
@@ -507,6 +516,14 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
                   isRead: false,
                   messageSnippet: mode === 'audio' ? "Ovozli xabar" : "Video xabar",
                   createdAt: serverTimestamp(),
+                });
+
+                // Push notification
+                await sendNotification({
+                    targetUserId: partner.id,
+                    title: notificationTitle,
+                    body: notificationBody,
+                    url: `/messages?userId=${currentUser.id}`
                 });
             }
             setOptimisticMessages(prev => prev.filter(m => m.id !== optimisticId));
@@ -535,6 +552,7 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
       });
       
       if(partner) {
+          // Firestore Notification
           const notificationsRef = collection(db, "notifications");
           await addDoc(notificationsRef, {
             userId: partner.id,
@@ -546,6 +564,14 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
             messageSnippet: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
             createdAt: serverTimestamp(),
           });
+          
+          // Push Notification
+           await sendNotification({
+                targetUserId: partner.id,
+                title: `Yangi xabar: ${currentUser.name || 'Kimdir'}`,
+                body: text,
+                url: `/messages?userId=${currentUser.id}`
+           });
       }
     } catch (error) {
       console.error("Xabar yuborishda xatolik:", error);
@@ -573,17 +599,14 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         let lastDate: Date | null = null;
         const messageElements: React.ReactNode[] = [];
 
-        combinedMessages.forEach((msg) => {
-            const createdAt = msg.createdAt;
-            if (!createdAt) {
+        combinedMessages.forEach((msg, index) => {
+            const msgTime = getMessageTime(msg);
+            if (msgTime === 0) {
                  messageElements.push(renderMessage(msg));
                  return;
             };
-    
-            const msgDate = (createdAt instanceof Timestamp) 
-                ? createdAt.toDate() 
-                : createdAt;
-    
+            const msgDate = new Date(msgTime);
+
             if (!lastDate || !isSameDay(msgDate, lastDate)) {
                 messageElements.push(
                     <div key={`date-${msg.id}`} className="text-center text-xs text-muted-foreground my-4">

@@ -25,6 +25,8 @@ import { TagSelector } from "@/components/tag-selector";
 import { PREDEFINED_TAGS } from "@/lib/predefined-tags";
 import type { Designer } from "@/lib/types";
 import { Progress } from "@/components/ui/progress";
+import { sendNotification } from "@/components/PushNotificationsProvider";
+
 
 const projectSchema = z.object({
   name: z.string().min(3, { message: "Loyiha nomi kamida 3 belgidan iborat bo'lishi kerak." }),
@@ -118,6 +120,7 @@ export default function NewProjectPage() {
       const notificationsRef = collection(db, "notifications");
       
       for (const followerId of designer.followers) {
+          // Firestore notification
           await addDoc(notificationsRef, {
               userId: followerId,
               type: 'new_project',
@@ -128,6 +131,14 @@ export default function NewProjectPage() {
               projectId: projectId,
               projectName: projectName,
               createdAt: serverTimestamp(),
+          });
+          
+          // Push notification
+          await sendNotification({
+              targetUserId: followerId,
+              title: `📢 Yangi loyiha: ${designer.name}`,
+              body: `"${projectName}" nomli yangi ijod namunasini ko'ring!`,
+              url: `/projects/${projectId}`
           });
       }
   };
@@ -183,7 +194,7 @@ export default function NewProjectPage() {
       const designerRef = doc(db, "users", user.id);
       const designerSnap = await getDoc(designerRef);
       if (designerSnap.exists()) {
-          await notifyFollowers({ ...designerSnap.data(), id: designerSnap.id } as Designer, projectRef.id, data.name);
+          await notifyFollowers({ id: designerSnap.id, ...designerSnap.data() } as Designer, projectRef.id, data.name);
       }
       setOverallProgress(100);
       

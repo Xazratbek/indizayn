@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from "firebase/firestore";
 
 // Corresponds to the 'users' collection in Firestore
@@ -17,6 +16,7 @@ export interface Designer {
   phoneNumber?: string;
   telegramUrl?: string;
   createdAt: Timestamp;
+  pushSubscriptions?: any[]; // For Web Push Notifications
 }
 
 // Corresponds to the 'projects' collection in Firestore
@@ -101,6 +101,4 @@ declare module 'next-auth/jwt' {
     id: string;
   }
 }
-    
-
     

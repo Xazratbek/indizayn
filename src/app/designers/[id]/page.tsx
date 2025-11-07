@@ -18,6 +18,7 @@ import { useSession } from 'next-auth/react';
 import LoadingPage from '@/app/loading';
 import { TelegramIcon } from '@/components/icons';
 import { Separator } from '@/components/ui/separator';
+import { sendNotification } from '@/components/PushNotificationsProvider';
 
 const StatCard = ({ label, value, icon: Icon }: { label: string; value: number | string; icon: React.ElementType }) => (
      <div className="flex-1 text-center p-4">
@@ -107,6 +108,14 @@ export default function DesignerProfilePage() {
                   senderPhotoURL: user.image || '',
                   isRead: false,
                   createdAt: serverTimestamp(),
+              });
+              
+              // Send push notification
+              await sendNotification({
+                targetUserId: designer.id,
+                title: 'Yangi Obunachi 👋',
+                body: `${user.name || 'Kimdir'} sizga obuna bo'ldi.`,
+                url: `/designers/${user.id}`
               });
             }
         }

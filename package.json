@@ -64,6 +64,7 @@
     "three": "^0.165.0",
     "tsparticles": "^2.12.0",
     "use-debounce": "^10.0.1",
+    "web-push": "^3.6.7",
     "zod": "^3.24.2",
     "jszip": "^3.10.1",
     "file-saver": "^2.0.5"
@@ -74,6 +75,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/three": "^0.165.0",
+    "@types/web-push": "^3.6.3",
     "cross-env": "^7.0.3",
     "genkit-cli": "^1.20.0",
     "postcss": "^8",

@@ -32,6 +32,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { sendNotification } from '@/components/PushNotificationsProvider';
 
 
 function CommentSkeleton() {
@@ -184,19 +185,19 @@ export default function ProjectDetailsPage() {
   
       setIsSubmittingComment(true);
       try {
-          const commentsCollectionRef = collection(db, `projects/${id}/comments`);
-          await addDoc(commentsCollectionRef, {
+          const commentData = {
               projectId: id,
               userId: user.id,
               userName: user.name,
               userPhotoURL: user.image || '',
               content: newComment,
               createdAt: serverTimestamp(),
-          });
+          };
+          const commentsCollectionRef = collection(db, `projects/${id}/comments`);
+          await addDoc(commentsCollectionRef, commentData);
   
           if (project.designerId !== user.id) {
-              const notificationsRef = collection(db, "notifications");
-              await addDoc(notificationsRef, {
+              const notificationData = {
                   userId: project.designerId,
                   type: 'comment',
                   senderId: user.id,
@@ -207,6 +208,16 @@ export default function ProjectDetailsPage() {
                   projectName: project.name,
                   messageSnippet: newComment.substring(0, 50) + (newComment.length > 50 ? '...' : ''),
                   createdAt: serverTimestamp(),
+              };
+              const notificationsRef = collection(db, "notifications");
+              await addDoc(notificationsRef, notificationData);
+
+              // Send push notification
+              await sendNotification({
+                targetUserId: project.designerId,
+                title: 'Yangi Izoh ✍️',
+                body: `${user.name || 'Kimdir'} loyihangizga izoh qoldirdi: "${project.name}"`,
+                url: `/projects/${project.id}`
               });
           }
   
@@ -255,6 +266,14 @@ export default function ProjectDetailsPage() {
                   projectName: project.name,
                   createdAt: serverTimestamp(),
               });
+
+              // Send push notification
+              await sendNotification({
+                targetUserId: project.designerId,
+                title: 'Yangi "Like" 👍',
+                body: `${user.name || 'Kimdir'} sizning "${project.name}" loyihangizni yoqtirdi.`,
+                url: `/projects/${project.id}`
+              });
             }
         }
     } catch (err) {
@@ -297,6 +316,14 @@ export default function ProjectDetailsPage() {
                   senderPhotoURL: user.image || '',
                   isRead: false,
                   createdAt: serverTimestamp(),
+              });
+
+              // Send push notification
+              await sendNotification({
+                targetUserId: designer.id,
+                title: 'Yangi Obunachi 👋',
+                body: `${user.name || 'Kimdir'} sizga obuna bo'ldi.`,
+                url: `/designers/${user.id}`
               });
             }
         }
