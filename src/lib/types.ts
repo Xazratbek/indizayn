@@ -1,10 +1,9 @@
-
 import { Timestamp } from "firebase/firestore";
 
 // Corresponds to the 'users' collection in Firestore
 export interface Designer {
-  id: string; // The user's UID from Firebase Auth (now from next-auth token.sub)
-  uid: string;
+  id: string; // The document ID from Firestore
+  uid: string; // The user's UID from Firebase Auth
   name: string;
   email: string;
   photoURL?: string;
@@ -101,4 +100,3 @@ declare module 'next-auth/jwt' {
     id: string;
   }
 }
-    

@@ -602,27 +602,27 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
         combinedMessages.forEach((msg, index) => {
             const msgTime = getMessageTime(msg);
             if (msgTime === 0) {
-                 messageElements.push(renderMessage(msg));
+                 messageElements.push(renderMessage(msg, `msg-${msg.id || index}`));
                  return;
             };
             const msgDate = new Date(msgTime);
 
             if (!lastDate || !isSameDay(msgDate, lastDate)) {
                 messageElements.push(
-                    <div key={`date-${msg.id}`} className="text-center text-xs text-muted-foreground my-4">
+                    <div key={`date-${msg.id || index}`} className="text-center text-xs text-muted-foreground my-4">
                         {format(msgDate, 'd MMMM, yyyy', { locale: uz })}
                     </div>
                 );
             }
             lastDate = msgDate;
-            messageElements.push(renderMessage(msg));
+            messageElements.push(renderMessage(msg, `msg-${msg.id || index}`));
         });
         return messageElements;
     }
 
-    const renderMessage = (msg: Message | OptimisticMessage) => (
+    const renderMessage = (msg: Message | OptimisticMessage, key: string) => (
          <div
-            key={msg.id}
+            key={key}
             className={cn(
                 'flex items-end gap-2 my-2 max-w-[80%] clear-both',
                 msg.senderId === currentUser.id ? 'ml-auto flex-row-reverse' : 'mr-auto'
