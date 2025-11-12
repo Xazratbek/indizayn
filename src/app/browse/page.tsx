@@ -7,8 +7,8 @@ import PortfolioCard from '@/components/portfolio-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, PackageSearch, SlidersHorizontal } from 'lucide-react';
-import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot, where, getDocs, Query } from 'firebase/firestore';
-import type { Project } from '@/lib/types';
+import { collection, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot, where, getDocs, Query, doc, getDoc } from 'firebase/firestore';
+import type { Project, Designer } from '@/lib/types';
 import LoadingPage from '../loading';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import ProjectDetailModal from '@/components/project-detail-modal';
@@ -35,6 +35,9 @@ export default function BrowsePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // Batch fetch designers for all projects
+  const [designers, setDesigners] = useState<Record<string, Designer>>({});
+
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -49,31 +52,32 @@ export default function BrowsePage() {
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  const onMouseDown = (e: React.MouseEvent) => {
+  // Optimized: Use useCallback to prevent recreating handlers on every render
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
     if (!scrollContainerRef.current) return;
     setIsDragging(true);
     setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
     setScrollLeft(scrollContainerRef.current.scrollLeft);
     scrollContainerRef.current.style.cursor = 'grabbing';
     scrollContainerRef.current.style.userSelect = 'none';
-  };
+  }, []);
 
-  const onMouseLeaveOrUp = () => {
+  const onMouseLeaveOrUp = useCallback(() => {
     if (!isDragging) return;
     setIsDragging(false);
     if (scrollContainerRef.current) {
       scrollContainerRef.current.style.cursor = 'grab';
       scrollContainerRef.current.style.userSelect = 'auto';
     }
-  };
+  }, [isDragging]);
 
-  const onMouseMove = (e: React.MouseEvent) => {
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !scrollContainerRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollContainerRef.current.offsetLeft;
     const walk = (x - startX) * 2; // scroll-fast
     scrollContainerRef.current.scrollLeft = scrollLeft - walk;
-  };
+  }, [isDragging, startX, scrollLeft]);
 
 
   const fetchProjects = useCallback(async (isInitialLoad = false) => {
@@ -110,12 +114,32 @@ export default function BrowsePage() {
 
       const querySnapshot = await getDocs(q);
       const newProjects = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Project));
-      
+
       setProjects(prev => isInitialLoad ? newProjects : [...prev, ...newProjects]);
-      
+
       const newLastDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
       setLastDoc(newLastDoc || null);
       setHasMore(querySnapshot.docs.length === PROJECTS_PER_PAGE);
+
+      // Batch fetch designers for new projects
+      if (newProjects.length > 0) {
+        const newDesignerIds = Array.from(new Set(newProjects.map(p => p.designerId)))
+          .filter(id => !designers[id]); // Only fetch designers we don't have
+
+        if (newDesignerIds.length > 0) {
+          const designerPromises = newDesignerIds.map(id => getDoc(doc(db, 'users', id)));
+          const designerDocs = await Promise.all(designerPromises);
+
+          const newDesigners: Record<string, Designer> = {};
+          designerDocs.forEach(docSnap => {
+            if (docSnap.exists()) {
+              newDesigners[docSnap.id] = { ...docSnap.data(), id: docSnap.id } as Designer;
+            }
+          });
+
+          setDesigners(prev => ({ ...prev, ...newDesigners }));
+        }
+      }
       
     } catch (error) {
       console.error("Error fetching projects: ", error);
@@ -127,7 +151,7 @@ export default function BrowsePage() {
         setIsLoading(false);
         setIsLoadingMore(false);
     }
-  }, [db, activeTag, lastDoc, hasMore, sortBy]);
+  }, [db, activeTag, lastDoc, hasMore, sortBy, designers]);
 
   // Initial load and filter changes
   useEffect(() => {
@@ -158,16 +182,17 @@ export default function BrowsePage() {
     };
   }, [loadMoreRef, hasMore, isLoading, isLoadingMore, fetchProjects]);
 
-  const handleTagClick = (tag: string | null) => {
+  // Optimized: Use useCallback for tag and sort handlers
+  const handleTagClick = useCallback((tag: string | null) => {
     setActiveTag(prevTag => {
       const newTag = prevTag === tag ? null : tag;
       return newTag;
     });
-  }
+  }, []);
 
-  const handleSortChange = (sortOption: 'viewCount' | 'likeCount' | null) => {
+  const handleSortChange = useCallback((sortOption: 'viewCount' | 'likeCount' | null) => {
     setSortBy(sortOption);
-  };
+  }, []);
 
   const filteredProjects = useMemo(() => {
     if (!projects) return [];
@@ -317,7 +342,11 @@ export default function BrowsePage() {
         <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredProjects.map(project => (
-                <PortfolioCard key={project.id} project={project} />
+                <PortfolioCard
+                  key={project.id}
+                  project={project}
+                  designer={designers[project.designerId] || null}
+                />
             ))}
             </div>
             <div ref={loadMoreRef} className="h-10 mt-8 flex justify-center items-center">

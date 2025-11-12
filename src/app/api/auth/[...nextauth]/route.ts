@@ -48,14 +48,14 @@ export const authOptions: NextAuthOptions = {
       if (account?.provider !== "google" || !user.email) {
         return false;
       }
-      
+
       try {
         const usersRef = collection(db, "users");
         const q = query(usersRef, where("email", "==", user.email));
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          // YANGI FOYDALANUVCHI: hujjatni 'pushSubscriptions' va 'pushNotificationsEnabled' bilan yaratamiz
+          // YANGI FOYDALANUVCHI: hujjatni 'pushSubscriptions' bilan yaratamiz
           const newUserDocRef = doc(usersRef);
           await setDoc(newUserDocRef, {
             id: newUserDocRef.id,
@@ -72,6 +72,8 @@ export const authOptions: NextAuthOptions = {
             pushSubscriptions: [], // Yangi foydalanuvchi uchun bo'sh massiv
             pushNotificationsEnabled: false // Default: disabled
           });
+          // Cache user ID to avoid redundant query in jwt callback
+          user.id = newUserDocRef.id;
         } else {
           // MAVJUD FOYDALANUVCHI: 'pushSubscriptions' va 'pushNotificationsEnabled' maydonlari borligini tekshiramiz
           const userDoc = querySnapshot.docs[0];
@@ -88,6 +90,8 @@ export const authOptions: NextAuthOptions = {
           if (Object.keys(updateData).length > 0) {
             await updateDoc(userDoc.ref, updateData);
           }
+          // Cache user ID and data to avoid redundant queries
+          user.id = userDoc.id;
         }
         return true;
       } catch (error) {
@@ -95,31 +99,26 @@ export const authOptions: NextAuthOptions = {
         return false;
       }
     },
-    
-    async jwt({ token, user }) {
-      if (user && user.email) {
-        const usersRef = collection(db, "users");
-        const q = query(usersRef, where("email", "==", user.email));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-          const userDoc = querySnapshot.docs[0];
-          token.id = userDoc.id; 
-        }
+
+    async jwt({ token, user, account }) {
+      // Optimized: Only query on initial sign-in when user object is present
+      // On subsequent calls, token already has the ID
+      if (user && user.id) {
+        token.id = user.id;
+        // Cache basic user data in token to avoid session callback query
+        token.name = user.name;
+        token.picture = user.image;
       }
       return token;
     },
 
     async session({ session, token }) {
+      // Optimized: Use cached data from token instead of querying Firestore
       if (session.user && token.id) {
-          const userDocRef = doc(db, 'users', token.id as string);
-          const userDoc = await getDoc(userDocRef);
-          if(userDoc.exists()) {
-              const userData = userDoc.data() as Designer;
-              session.user.id = userDoc.id;
-              session.user.name = userData.name;
-              session.user.image = userData.photoURL;
-          }
+        session.user.id = token.id as string;
+        // Use cached name and image from token
+        if (token.name) session.user.name = token.name as string;
+        if (token.picture) session.user.image = token.picture as string;
       }
       return session;
     }
