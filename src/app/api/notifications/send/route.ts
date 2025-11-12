@@ -40,8 +40,14 @@ export async function POST(request: Request) {
         }
 
         const userData = userDoc.data();
+
+        // Check if user has enabled push notifications
+        if (!userData.pushNotificationsEnabled) {
+            return NextResponse.json({ success: true, message: 'User has disabled push notifications.' });
+        }
+
         const subscriptions = userData.pushSubscriptions || [];
-        
+
         if (subscriptions.length === 0) {
             return NextResponse.json({ success: true, message: 'User has no subscriptions.' });
         }

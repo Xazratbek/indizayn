@@ -69,19 +69,26 @@ export const authOptions: NextAuthOptions = {
             bio: '',
             subscriberCount: 0,
             followers: [],
-            pushSubscriptions: [] // Yangi foydalanuvchi uchun bo'sh massiv
+            pushSubscriptions: [], // Yangi foydalanuvchi uchun bo'sh massiv
+            pushNotificationsEnabled: false // Default: disabled
           });
           // Cache user ID to avoid redundant query in jwt callback
           user.id = newUserDocRef.id;
         } else {
-          // MAVJUD FOYDALANUVCHI: 'pushSubscriptions' maydoni borligini tekshiramiz
+          // MAVJUD FOYDALANUVCHI: 'pushSubscriptions' va 'pushNotificationsEnabled' maydonlari borligini tekshiramiz
           const userDoc = querySnapshot.docs[0];
           const userData = userDoc.data();
+          const updateData: any = {};
           if (!userData.pushSubscriptions) {
             // Agar maydon mavjud bo'lmasa, uni qo'shamiz
-            await updateDoc(userDoc.ref, {
-              pushSubscriptions: []
-            });
+            updateData.pushSubscriptions = [];
+          }
+          if (userData.pushNotificationsEnabled === undefined) {
+            // Agar maydon mavjud bo'lmasa, uni qo'shamiz
+            updateData.pushNotificationsEnabled = false;
+          }
+          if (Object.keys(updateData).length > 0) {
+            await updateDoc(userDoc.ref, updateData);
           }
           // Cache user ID and data to avoid redundant queries
           user.id = userDoc.id;

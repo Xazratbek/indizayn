@@ -5,6 +5,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 import { usePathname } from 'next/navigation';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { Designer } from '@/lib/types';
 
 // VAPID public key ni environment variable orqali olish
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -46,6 +49,13 @@ export default function PushNotificationsProvider() {
     const { toast } = useToast();
     const pathname = usePathname();
     const [isSubscribed, setIsSubscribed] = useState(false);
+    const db = useFirestore();
+
+    // Fetch user profile to check pushNotificationsEnabled preference
+    const userProfileQuery = useMemoFirebase(() =>
+        (db && session?.user.id) ? doc(db, 'users', session.user.id) : null
+    , [db, session?.user.id]);
+    const { data: userProfile } = useDoc<Designer>(userProfileQuery);
     
     const subscribeUser = useCallback(async () => {
         if (!VAPID_PUBLIC_KEY) {
@@ -86,6 +96,12 @@ export default function PushNotificationsProvider() {
         // We don't want to show notification prompts on the messages page
         if (pathname.startsWith('/messages')) return;
 
+        // Check if user has enabled push notifications in their profile
+        const pushEnabled = userProfile?.pushNotificationsEnabled ?? false;
+
+        // Only subscribe if user has enabled push notifications in their profile
+        if (!pushEnabled) return;
+
         const permissionPrompted = localStorage.getItem('notification_prompted');
 
         if (status === 'authenticated' && 'Notification' in window && Notification.permission === 'default' && !permissionPrompted) {
@@ -110,14 +126,14 @@ export default function PushNotificationsProvider() {
                     ),
                     duration: 10000,
                 });
-             }, 10000); 
+             }, 10000);
              return () => clearTimeout(timer);
         }
 
         if (status === 'authenticated' && 'Notification' in window && Notification.permission === 'granted' && !isSubscribed) {
             subscribeUser();
         }
-    }, [status, isSubscribed, subscribeUser, toast, pathname]);
+    }, [status, isSubscribed, subscribeUser, toast, pathname, userProfile?.pushNotificationsEnabled]);
 
     return null;
 }

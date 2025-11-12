@@ -11,6 +11,7 @@ import AuthProvider from '@/components/AuthProvider';
 import { FirebaseClientProvider } from '@/firebase';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/react';
+import PushNotificationsProvider from '@/components/PushNotificationsProvider';
 
 
 const roboto = Roboto({
@@ -44,6 +45,7 @@ export default function RootLayout({
         )}>
         <AuthProvider>
           <FirebaseClientProvider>
+            <PushNotificationsProvider />
             <div className="relative flex min-h-dvh flex-col bg-background">
               <Header />
               <main className="flex-1 pb-24 md:pb-0">{children}</main>

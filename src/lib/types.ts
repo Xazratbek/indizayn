@@ -16,6 +16,7 @@ export interface Designer {
   telegramUrl?: string;
   createdAt: Timestamp;
   pushSubscriptions?: any[]; // For Web Push Notifications
+  pushNotificationsEnabled?: boolean; // User preference for push notifications
 }
 
 // Corresponds to the 'projects' collection in Firestore
