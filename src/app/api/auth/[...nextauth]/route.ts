@@ -55,8 +55,8 @@ export const authOptions: NextAuthOptions = {
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          // YANGI FOYDALANUVCHI: hujjatni 'pushSubscriptions' bilan yaratamiz
-          const newUserDocRef = doc(usersRef); 
+          // YANGI FOYDALANUVCHI: hujjatni 'pushSubscriptions' va 'pushNotificationsEnabled' bilan yaratamiz
+          const newUserDocRef = doc(usersRef);
           await setDoc(newUserDocRef, {
             id: newUserDocRef.id,
             uid: user.id,
@@ -69,17 +69,24 @@ export const authOptions: NextAuthOptions = {
             bio: '',
             subscriberCount: 0,
             followers: [],
-            pushSubscriptions: [] // Yangi foydalanuvchi uchun bo'sh massiv
+            pushSubscriptions: [], // Yangi foydalanuvchi uchun bo'sh massiv
+            pushNotificationsEnabled: false // Default: disabled
           });
         } else {
-          // MAVJUD FOYDALANUVCHI: 'pushSubscriptions' maydoni borligini tekshiramiz
+          // MAVJUD FOYDALANUVCHI: 'pushSubscriptions' va 'pushNotificationsEnabled' maydonlari borligini tekshiramiz
           const userDoc = querySnapshot.docs[0];
           const userData = userDoc.data();
+          const updateData: any = {};
           if (!userData.pushSubscriptions) {
             // Agar maydon mavjud bo'lmasa, uni qo'shamiz
-            await updateDoc(userDoc.ref, {
-              pushSubscriptions: []
-            });
+            updateData.pushSubscriptions = [];
+          }
+          if (userData.pushNotificationsEnabled === undefined) {
+            // Agar maydon mavjud bo'lmasa, uni qo'shamiz
+            updateData.pushNotificationsEnabled = false;
+          }
+          if (Object.keys(updateData).length > 0) {
+            await updateDoc(userDoc.ref, updateData);
           }
         }
         return true;

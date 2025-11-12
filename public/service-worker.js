@@ -14,6 +14,8 @@ self.addEventListener('push', (event) => {
     icon: data.options.icon || '/logo.png', // Sayt logotipi
     badge: data.options.badge || '/logo.png', // Android'da ko'rinadigan belgi
     vibrate: data.options.vibrate || [200, 100, 200, 100, 200, 100, 200], // Vibratsiya
+    silent: false, // Sound enabled
+    requireInteraction: false, // Auto-dismiss after a timeout
     data: {
       url: data.options.data.url, // Bosilganda ochiladigan havola
     },

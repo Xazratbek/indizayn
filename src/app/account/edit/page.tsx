@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { useEffect, useState, useRef } from "react";
 import { useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc, updateDoc, DocumentData } from "firebase/firestore";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, ArrowLeft } from "lucide-react";
+import { Upload, ArrowLeft, Bell, BellOff } from "lucide-react";
 import type { Designer } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -40,6 +41,7 @@ export default function ProfileEditPage() {
     file: null,
     previewUrl: null,
   });
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -67,6 +69,7 @@ export default function ProfileEditPage() {
       setValue("bio", userProfile.bio || "");
       setValue("phoneNumber", userProfile.phoneNumber || "");
       setValue("telegramUrl", userProfile.telegramUrl || "");
+      setPushNotificationsEnabled(userProfile.pushNotificationsEnabled ?? false);
     }
   }, [userProfile, setValue]);
 
@@ -83,6 +86,45 @@ export default function ProfileEditPage() {
     if (file) {
       const previewUrl = URL.createObjectURL(file);
       setCoverPhoto({ file, previewUrl });
+    }
+  };
+
+  const handlePushNotificationToggle = async (checked: boolean) => {
+    if (checked) {
+      // Request permission when enabling
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          setPushNotificationsEnabled(true);
+          toast({
+            variant: "success",
+            title: "Bildirishnomalar yoqildi!",
+            description: "Siz yangi bildirishnomalarni olasiz.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Ruxsat berilmadi",
+            description: "Bildirishnomalarni yoqish uchun brauzer sozlamalarida ruxsat bering.",
+          });
+          setPushNotificationsEnabled(false);
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Qo'llab-quvvatlanmaydi",
+          description: "Sizning brauzeringiz bildirishnomalarni qo'llab-quvvatlamaydi.",
+        });
+        setPushNotificationsEnabled(false);
+      }
+    } else {
+      // Just disable it
+      setPushNotificationsEnabled(false);
+      toast({
+        variant: "warning",
+        title: "Bildirishnomalar o'chirildi",
+        description: "Siz endi bildirishnoma olmaysiz.",
+      });
     }
   };
 
@@ -105,7 +147,9 @@ export default function ProfileEditPage() {
   const onSubmit = async (data: { name: string; specialization: string; bio: string; phoneNumber: string; telegramUrl: string; }) => {
     if (!user || !userProfile) return;
 
-    if (!isDirty && !profilePic.file && !coverPhoto.file) {
+    const pushNotificationChanged = pushNotificationsEnabled !== (userProfile.pushNotificationsEnabled ?? false);
+
+    if (!isDirty && !profilePic.file && !coverPhoto.file && !pushNotificationChanged) {
       toast({ description: "O'zgarish kiritilmadi.", variant: "warning" });
       return;
     }
@@ -141,7 +185,7 @@ export default function ProfileEditPage() {
       }
 
       const userRef = doc(db, "users", user.id);
-      
+
       const updatedData: Partial<Designer> = {};
       if (dirtyFields.name) updatedData.name = data.name;
       if (dirtyFields.specialization) updatedData.specialization = data.specialization;
@@ -150,6 +194,7 @@ export default function ProfileEditPage() {
       if (dirtyFields.telegramUrl) updatedData.telegramUrl = data.telegramUrl;
       if (newPhotoURL && newPhotoURL !== userProfile.photoURL) updatedData.photoURL = newPhotoURL;
       if (newCoverPhotoURL && newCoverPhotoURL !== userProfile.coverPhotoURL) updatedData.coverPhotoURL = newCoverPhotoURL;
+      if (pushNotificationChanged) updatedData.pushNotificationsEnabled = pushNotificationsEnabled;
 
 
       if (Object.keys(updatedData).length > 0) {
@@ -282,6 +327,33 @@ export default function ProfileEditPage() {
               <Label htmlFor="telegramUrl">Telegram username (ixtiyoriy)</Label>
               <Input id="telegramUrl" type="text" {...register("telegramUrl")} placeholder="foydalanuvchi_nomi"/>
             </div>
+
+            <div className="space-y-4 pt-4 border-t">
+              <div className="flex items-center justify-between space-x-4">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    {pushNotificationsEnabled ? (
+                      <Bell className="h-4 w-4 text-primary" />
+                    ) : (
+                      <BellOff className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <Label htmlFor="push-notifications" className="font-medium cursor-pointer">
+                      Brauzer bildirishnomalari
+                    </Label>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Yangi xabarlar, izohlar va boshqa yangiliklar haqida bildirishnoma oling
+                  </p>
+                </div>
+                <Switch
+                  id="push-notifications"
+                  checked={pushNotificationsEnabled}
+                  onCheckedChange={handlePushNotificationToggle}
+                  disabled={isSaving}
+                />
+              </div>
+            </div>
+
             <Button type="submit" disabled={isSaving}>
               {isSaving && <LoadingPage />}
               Profilni yangilash
