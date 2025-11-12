@@ -243,28 +243,48 @@ export default function ChatWindow({ currentUser, selectedUserId, onBack }: Chat
   );
   const { data: partner, isLoading: partnerLoading } = useDoc<Designer>(recipientDocRef);
 
-  const messagesQuery = useMemoFirebase(
+  // Optimized: Fetch only messages for the specific conversation
+  // We fetch two queries in parallel - messages sent by current user to selected user,
+  // and messages sent by selected user to current user
+  const messagesQuery1 = useMemoFirebase(
     () => db && currentUser?.id && selectedUserId
         ? query(
             collection(db, 'messages'),
-            or(
-                where('senderId', '==', currentUser.id),
-                where('receiverId', '==', currentUser.id)
-            ),
+            where('senderId', '==', currentUser.id),
+            where('receiverId', '==', selectedUserId),
             orderBy('createdAt', 'asc')
           )
         : null,
     [db, currentUser.id, selectedUserId]
   );
-  const { data: allMessages, isLoading: messagesLoading } = useCollection<Message>(messagesQuery);
-  
+  const messagesQuery2 = useMemoFirebase(
+    () => db && currentUser?.id && selectedUserId
+        ? query(
+            collection(db, 'messages'),
+            where('senderId', '==', selectedUserId),
+            where('receiverId', '==', currentUser.id),
+            orderBy('createdAt', 'asc')
+          )
+        : null,
+    [db, currentUser.id, selectedUserId]
+  );
+
+  const { data: sentMessages, isLoading: sentMessagesLoading } = useCollection<Message>(messagesQuery1);
+  const { data: receivedMessages, isLoading: receivedMessagesLoading } = useCollection<Message>(messagesQuery2);
+  const messagesLoading = sentMessagesLoading || receivedMessagesLoading;
+
+  // Combine and sort messages from both queries
   const conversationMessages = useMemo(() => {
-    if (!allMessages || !selectedUserId) return [];
-    return allMessages.filter(msg => 
-        (msg.senderId === currentUser.id && msg.receiverId === selectedUserId) ||
-        (msg.senderId === selectedUserId && msg.receiverId === currentUser.id)
-    )
-  }, [allMessages, selectedUserId, currentUser.id]);
+    const allConversationMessages = [
+      ...(sentMessages || []),
+      ...(receivedMessages || [])
+    ];
+    return allConversationMessages.sort((a, b) => {
+      const aTime = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : 0;
+      const bTime = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : 0;
+      return aTime - bTime;
+    });
+  }, [sentMessages, receivedMessages]);
 
     const getMessageTime = (message: Message | OptimisticMessage): number => {
         const createdAt = message.createdAt;
