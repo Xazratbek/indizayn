@@ -7,10 +7,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
-import type { Project } from '@/lib/types';
+import { collection, query, orderBy, limit, doc, getDoc, documentId, where } from 'firebase/firestore';
+import type { Project, Designer } from '@/lib/types';
 import { useSession, signIn } from 'next-auth/react';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import Image from 'next/image';
 import PortfolioCard from '@/components/portfolio-card';
@@ -57,11 +57,11 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
     }, []);
 
     const numProjects = isMobile ? 6 : 10;
-    const displayProjects = [...projects];
-    while (displayProjects.length > 0 && displayProjects.length < numProjects) {
-        displayProjects.push(...projects.slice(0, numProjects - displayProjects.length));
-    }
-    if (displayProjects.length === 0) return null;
+
+    // Optimized: Use modulo to cycle through projects instead of duplicating arrays
+    if (projects.length === 0) return null;
+
+    const getProject = (index: number) => projects[index % projects.length];
 
      const desktopPositions = [
         // Left Side
@@ -94,32 +94,35 @@ const FloatingShowcase = ({ projects }: { projects: Project[] }) => {
 
     return (
         <div ref={ref} className="absolute inset-0 z-0 h-full w-full">
-            {displayProjects.slice(0, numProjects).map((project, i) => (
-                <motion.div
-                    key={`${project.id}-${i}`}
-                    className={`absolute rounded-lg shadow-lg overflow-hidden float-anim ${positions[i].className}`}
-                    style={{
-                        top: positions[i].top,
-                        left: positions[i].left,
-                        right: positions[i].right,
-                        bottom: positions[i].bottom,
-                        y: positions[i].y,
-                        animationDelay: `${positions[i].delay}s`
-                    }}
-                >
-                     <div className="relative w-full h-full">
-                        <Image
-                            src={project.imageUrl}
-                            alt={project.name}
-                            fill
-                            className="object-cover"
-                            sizes="25vw"
-                            data-ai-hint="project image"
-                        />
-                         <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px]"></div>
-                    </div>
-                </motion.div>
-            ))}
+            {Array.from({ length: numProjects }).map((_, i) => {
+                const project = getProject(i);
+                return (
+                    <motion.div
+                        key={`${project.id}-${i}`}
+                        className={`absolute rounded-lg shadow-lg overflow-hidden float-anim ${positions[i].className}`}
+                        style={{
+                            top: positions[i].top,
+                            left: positions[i].left,
+                            right: positions[i].right,
+                            bottom: positions[i].bottom,
+                            y: positions[i].y,
+                            animationDelay: `${positions[i].delay}s`
+                        }}
+                    >
+                        <div className="relative w-full h-full">
+                            <Image
+                                src={project.imageUrl}
+                                alt={project.name}
+                                fill
+                                className="object-cover"
+                                sizes="25vw"
+                                data-ai-hint="project image"
+                            />
+                            <div className="absolute inset-0 bg-black/10 backdrop-blur-[2px]"></div>
+                        </div>
+                    </motion.div>
+                );
+            })}
         </div>
     );
 };
@@ -137,12 +140,50 @@ export default function Home() {
   , [db]);
   const { data: featuredProjects, isLoading: areProjectsLoading } = useCollection<Project>(featuredProjectsQuery);
 
+  // Batch fetch designers for all projects
+  const [designers, setDesigners] = useState<Record<string, Designer>>({});
+  const [areDesignersLoading, setAreDesignersLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDesigners = async () => {
+      if (!db || !featuredProjects || featuredProjects.length === 0) return;
+
+      setAreDesignersLoading(true);
+      try {
+        // Get unique designer IDs
+        const uniqueDesignerIds = Array.from(new Set(featuredProjects.map(p => p.designerId)));
+
+        // Fetch all designers in parallel
+        const designerPromises = uniqueDesignerIds.map(id =>
+          getDoc(doc(db, 'users', id))
+        );
+
+        const designerDocs = await Promise.all(designerPromises);
+        const designersMap: Record<string, Designer> = {};
+
+        designerDocs.forEach(docSnap => {
+          if (docSnap.exists()) {
+            designersMap[docSnap.id] = { ...docSnap.data(), id: docSnap.id } as Designer;
+          }
+        });
+
+        setDesigners(designersMap);
+      } catch (error) {
+        console.error('Error fetching designers:', error);
+      } finally {
+        setAreDesignersLoading(false);
+      }
+    };
+
+    fetchDesigners();
+  }, [db, featuredProjects]);
+
   const handleStartClick = () => {
     setIsSigningIn(true);
     signIn('google');
   };
 
-  const isLoading = areProjectsLoading || isUserLoading;
+  const isLoading = areProjectsLoading || isUserLoading || areDesignersLoading;
 
   return (
     <div className="flex flex-col">
@@ -291,7 +332,11 @@ export default function Home() {
                     <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                         {featuredProjects.map(project => (
-                            <PortfolioCard key={project.id} project={project} />
+                            <PortfolioCard
+                              key={project.id}
+                              project={project}
+                              designer={designers[project.designerId] || null}
+                            />
                         ))}
                         </div>
                          <div className="text-center mt-12">

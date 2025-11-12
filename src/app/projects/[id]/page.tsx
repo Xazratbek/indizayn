@@ -6,12 +6,12 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp, collection, query, orderBy, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, increment, arrayUnion, arrayRemove, addDoc, serverTimestamp, collection, query, orderBy, limit, deleteDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThumbsUp, Calendar, Wrench, MessageSquare, Send, Tag, UserPlus, UserCheck, Share2, Download, Info, Plus, Eye, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { format, formatDistanceToNowStrict } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { Project, Designer, Comment } from '@/lib/types';
@@ -96,13 +96,25 @@ export default function ProjectDetailsPage() {
   , [db, project]);
   const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
 
-  const commentsQuery = useMemoFirebase(() => 
-      (db && id) 
-          ? query(collection(db, `projects/${id}/comments`), orderBy('createdAt', 'asc')) 
+  // Optimized: Limit comments to most recent 50 by default
+  // This prevents loading thousands of comments on popular projects
+  const commentsQuery = useMemoFirebase(() =>
+      (db && id)
+          ? query(
+              collection(db, `projects/${id}/comments`),
+              orderBy('createdAt', 'desc'), // Changed to desc to get most recent first
+              limit(50) // Limit to 50 most recent comments
+            )
           : null,
       [db, id]
   );
-  const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+  const { data: commentsData, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+
+  // Reverse to show oldest first (maintaining original UX)
+  const comments = useMemo(() => {
+    if (!commentsData) return [];
+    return [...commentsData].reverse();
+  }, [commentsData]);
 
   useEffect(() => {
     if (user && project?.likes) {
@@ -147,15 +159,29 @@ export default function ProjectDetailsPage() {
 
       try {
         const zip = new JSZip();
-        
-        for (let i = 0; i < project.imageUrls.length; i++) {
-            const url = project.imageUrls[i];
-            const response = await fetch(url);
-            const blob = await response.blob();
-            // Get file extension from url or blob type
-            const fileExtension = url.split('.').pop()?.split('?')[0] || blob.type.split('/')[1] || 'jpg';
-            zip.file(`image-${i + 1}.${fileExtension}`, blob);
-        }
+
+        // Optimized: Fetch all images in parallel instead of sequentially
+        const downloadPromises = project.imageUrls.map(async (url, i) => {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                // Get file extension from url or blob type
+                const fileExtension = url.split('.').pop()?.split('?')[0] || blob.type.split('/')[1] || 'jpg';
+                return { blob, fileName: `image-${i + 1}.${fileExtension}` };
+            } catch (err) {
+                console.error(`Failed to download image ${i + 1}:`, err);
+                return null; // Return null for failed downloads
+            }
+        });
+
+        const downloadResults = await Promise.all(downloadPromises);
+
+        // Add successfully downloaded images to zip
+        downloadResults.forEach(result => {
+            if (result) {
+                zip.file(result.fileName, result.blob);
+            }
+        });
 
         const content = await zip.generateAsync({ type: "blob" });
         saveAs(content, `${project.name.replace(/ /g, '_')}.zip`);

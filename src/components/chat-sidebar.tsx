@@ -5,7 +5,7 @@
 import { useMemo } from 'react';
 import type { Session } from 'next-auth';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, or } from 'firebase/firestore';
+import { collection, query, where, orderBy, or, limit } from 'firebase/firestore';
 import type { Message, Designer } from '@/lib/types';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -58,15 +58,18 @@ const renderLastMessage = (msg: Message, currentUserId: string) => {
 export default function ChatSidebar({ currentUser, selectedUserId, onSelectUser }: ChatSidebarProps) {
   const db = useFirestore();
 
+  // Optimized: Limit to recent messages for sidebar (last 50 messages are enough to show recent conversations)
+  // This prevents loading thousands of old messages just to show the conversation list
   const allMessagesQuery = useMemoFirebase(
-    () => db && currentUser?.id 
+    () => db && currentUser?.id
         ? query(
-            collection(db, 'messages'), 
+            collection(db, 'messages'),
             or(
               where('senderId', '==', currentUser.id),
               where('receiverId', '==', currentUser.id)
             ),
-            orderBy('createdAt', 'desc')
+            orderBy('createdAt', 'desc'),
+            limit(50) // Only fetch recent messages to determine active conversations
           )
         : null,
     [db, currentUser.id]

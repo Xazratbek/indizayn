@@ -39,6 +39,7 @@ interface PortfolioCardProps {
   project: Project;
   className?: string;
   showAdminControls?: boolean;
+  designer?: Designer | null; // Optional pre-fetched designer data
 }
 
 function PortfolioCardSkeleton({ className }: { className?: string }) {
@@ -61,7 +62,7 @@ function PortfolioCardSkeleton({ className }: { className?: string }) {
     );
 }
 
-export default function PortfolioCard({ project, className, showAdminControls = false }: PortfolioCardProps) {
+export default function PortfolioCard({ project, className, showAdminControls = false, designer: designerProp }: PortfolioCardProps) {
   const db = useFirestore();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -69,10 +70,14 @@ export default function PortfolioCard({ project, className, showAdminControls = 
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const designerDocRef = useMemoFirebase(() => 
-    (db && project) ? doc(db, 'users', project.designerId) : null
-  , [db, project]);
-  const { data: designer, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
+  // Only fetch designer if not provided as prop
+  const designerDocRef = useMemoFirebase(() =>
+    (db && project && !designerProp) ? doc(db, 'users', project.designerId) : null
+  , [db, project, designerProp]);
+  const { data: fetchedDesigner, isLoading: isDesignerLoading } = useDoc<Designer>(designerDocRef);
+
+  // Use prop if available, otherwise use fetched data
+  const designer = designerProp || fetchedDesigner;
   
   
   const createQueryString = (paramsToUpdate: { [key: string]: string }) => {
@@ -117,7 +122,8 @@ export default function PortfolioCard({ project, className, showAdminControls = 
     }
   }
 
-  if (isDesignerLoading) {
+  // Only show loading if we're fetching (no prop provided) and still loading
+  if (!designerProp && isDesignerLoading) {
     return <PortfolioCardSkeleton className={className} />;
   }
 
